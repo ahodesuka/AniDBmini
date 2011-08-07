@@ -68,7 +68,7 @@ namespace AniDBmini
 
                     reader.ReadToFollowing("default"); // <titles>
                     entry.title = reader.ReadElementContentAsString();
-                    uiDispatcher.BeginInvoke(new UpdateProgressDelegate(_e => { importFilePath.Text = _e.ToString(); }), "Importing: " + entry.title);
+                    uiDispatcher.BeginInvoke(new Action<string>(str => { importFilePath.Text = str; }), "Importing: " + entry.title);
 
                     reader.ReadToFollowing("nihongo");
                     entry.nihongo = reader.ReadElementContentAsString();

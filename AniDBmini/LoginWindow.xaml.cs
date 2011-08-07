@@ -35,17 +35,13 @@ namespace AniDBmini
             if (ConfigFile.Read("autoLogin").ToBoolean() &&
                 (aniDB = new AniDBAPI(ConfigFile.Read("server").ToString(), ConfigFile.Read("port").ToInt32(), ConfigFile.Read("localPort").ToInt32())) != null)
             {
-#if !OFFLINE
                 if (aniDB.Login(ConfigFile.Read("username").ToString(), ConfigFile.Read("password").ToString()))
                 {
-#endif
                     var main = new MainWindow(aniDB);
                     main.Show();
 
                     this.Close();
-#if !OFFLINE
                 }
-#endif
             }
             else if (ConfigFile.Read("rememberUser").ToBoolean())
             {
@@ -75,10 +71,16 @@ namespace AniDBmini
                     if (autoLoginCheckBox.IsChecked == true)
                     {
                         ConfigFile.Write("autoLogin", "true");
+                        ConfigFile.Write("rememberLogin", "true");
                         ConfigFile.Write("username", usernameTextBox.Text);
                         ConfigFile.Write("password", passwordPasswordBox.Password);
                         ConfigFile.Write("server", server[0]);
                         ConfigFile.Write("port", server[1]);
+                    }
+                    else if (rememberUserCheckBox.IsChecked == true)
+                    {
+                        ConfigFile.Write("rememberLogin", "true");
+                        ConfigFile.Write("username", usernameTextBox.Text);
                     }
 
                     var main = new MainWindow(aniDB);
@@ -88,13 +90,11 @@ namespace AniDBmini
                 }
         }
 
-		private void loginTextBox_KeyUp(object sender, KeyEventArgs e)
+        private void OnKeyDown(object sender, KeyEventArgs e)
 		{
 			if (e.Key == Key.Enter)
 				loginButton_Click(sender, null);
 		}
-
-        #endregion
 
         private void autoLoginCheckBox_Click(object sender, RoutedEventArgs e)
         {
@@ -102,6 +102,8 @@ namespace AniDBmini
             rememberUserCheckBox.IsChecked = isChecked;
             rememberUserCheckBox.IsEnabled = !isChecked;
         }
+
+        #endregion
 
     }
 }

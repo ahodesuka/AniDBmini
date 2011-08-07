@@ -15,17 +15,13 @@ namespace AniDBmini.HashAlgorithms
         public byte[] RedHash { get { var hash = Hash; return redHash != null ? (byte[])redHash.Clone() : hash; } } private byte[] redHash;
         public byte[] BlueHash { get { var hash = Hash; return blueHash != null ? (byte[])blueHash.Clone() : hash; } } private byte[] blueHash;
 
-        public event FileHashingProgressHandler FileHashingProgress;
-
-        private BackgroundWorker m_Worker1,
-                                 m_Worker2,
-                                 m_Worker3;
+        public event FileHashingProgressHandler FileHashingProgress = delegate { };
 
         private byte[] nullArray = new byte[0];
         private byte[] nullMd4Hash;
 
         private List<byte[]> md4HashBlocks;
-        private int missing = BLOCKSIZE, i;
+        private int missing = BLOCKSIZE;
         private Md4 md4;
 
         private bool isHashing;
@@ -45,7 +41,7 @@ namespace AniDBmini.HashAlgorithms
         public new byte[] ComputeHash(Stream stream)
         {
             size = stream.Length;
-            totalBytesRead = i = 0;
+            totalBytesRead = 0;
 
             isHashing = true;
 
@@ -91,7 +87,7 @@ namespace AniDBmini.HashAlgorithms
                     missing -= length;
                     length = 0;
 
-                    if (FileHashingProgress != null && i % 512 == 0)
+                    if (missing % (4096 * 512) == 0)
                         FileHashingProgress(this, new FileHashingProgressArgs(totalBytesRead, size));
                 }
                 else
@@ -104,8 +100,6 @@ namespace AniDBmini.HashAlgorithms
                     offset += missing;
                     missing = BLOCKSIZE;
                 }
-
-                i++;
             }
         }
 

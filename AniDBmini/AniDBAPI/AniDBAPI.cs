@@ -39,7 +39,7 @@ namespace AniDBmini
         private DispatcherTimer addTimer;
         private List<HashItem> addToMyList = new List<HashItem>();
 
-		private static ThreadSafeObservableCollection<DebugLine> debugLog;
+		private static TSObservableCollection<DebugLine> debugLog = new TSObservableCollection<DebugLine>();
 
         public string[] statsText = { "Total anime in mylist",
 									  "Total eps in mylist",
@@ -93,10 +93,14 @@ namespace AniDBmini
 
             if (response.Code == 200 || response.Code == 201) // successful login
             {
+#if !OFFLINE
                 sessionKey = response.Message.Split(' ')[1];
+#endif
                 isLoggedIn = true;
                 this.user = user;
                 this.pass = pass;
+
+                AppendDebugLine("Welcome to AniDBmini, connected to: " + apiserver);
             }
             else
             {
@@ -289,7 +293,7 @@ namespace AniDBmini
                     return new APIResponse(e_response, e_code);
             }
 #else
-            return new APIResponse("offline", 200);
+            return new APIResponse("\n1|2", 200);
 #endif
         }
 
@@ -302,19 +306,7 @@ namespace AniDBmini
             set { mainWindow = value; }
         }
 
-		public ThreadSafeObservableCollection<DebugLine> DebugLog
-        {
-			get { return debugLog; }
-            set
-            {
-                if (value != null)
-                {
-                    debugLog = value;
-
-					AppendDebugLine("Welcome to AniDBmini, connected to: " + apiserver);
-                }
-            }
-        }
+        public TSObservableCollection<DebugLine> DebugLog { get { return debugLog; } }
 
         public event FileHashingProgressHandler FileHashingProgress
         {

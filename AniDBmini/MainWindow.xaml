@@ -1,0 +1,584 @@
+﻿<Window x:Class="AniDBmini.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="clr-namespace:System;assembly=mscorlib"
+        xmlns:l="clr-namespace:AniDBmini"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Title="AniDBmini" Height="450" Width="840" Icon="/AniDBmini;component/Resources/AniDBmini.ico" WindowStartupLocation="Manual"
+        MinWidth="740" MinHeight="360" Closing="OnClose" StateChanged="OnStateChanged" IsVisibleChanged="OnIsVisibleChanged">
+    <Window.Resources>
+        
+        <l:FileSizeConverter x:Key="FileSizeConverter" />
+
+<!-- #region TabItemCloseButtonStyle -->
+        
+        <Geometry x:Key="X_CloseButton">M0,0 L10,10 M0,10 L10,0</Geometry>
+        
+        <SolidColorBrush x:Key="TabItemCloseButtonNormalForegroundBrush" Color="#6666"/>
+        <SolidColorBrush x:Key="TabItemCloseButtonHoverForegroundBrush" Color="White"/>
+        <SolidColorBrush x:Key="TabItemCloseButtonPressedForegroundBrush" Color="#EEEE"/>
+
+        <LinearGradientBrush x:Key="TabItemCloseButtonNormalBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientBrush.GradientStops>
+                <GradientStopCollection>
+                    <GradientStop Color="#5FFF" Offset="0.0"/>
+                    <GradientStop Color="#5CCC" Offset="1.0"/>
+                </GradientStopCollection>
+            </GradientBrush.GradientStops>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="TabItemCloseButtonNormalBorderBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientBrush.GradientStops>
+                <GradientStopCollection>
+                    <GradientStop Color="#5CCC" Offset="0.0"/>
+                    <GradientStop Color="#5444" Offset="1.0"/>
+                </GradientStopCollection>
+            </GradientBrush.GradientStops>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="TabItemCloseButtonHoverBackgroundBrush" StartPoint="0,1" EndPoint="1,0">
+            <GradientBrush.GradientStops>
+                <GradientStopCollection>
+                    <GradientStop Color="#FFDF2B1E" Offset="0.0"/>
+                    <GradientStop Color="#FFA41F00" Offset="1.0"/>
+                </GradientStopCollection>
+            </GradientBrush.GradientStops>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="TabItemCloseButtonPressedBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientBrush.GradientStops>
+                <GradientStopCollection>
+                    <GradientStop Color="#FFA41F00" Offset="0.0"/>
+                    <GradientStop Color="#FFDF2B1E" Offset="1.0"/>
+                </GradientStopCollection>
+            </GradientBrush.GradientStops>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="TabItemCloseButtonPressedBorderBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientBrush.GradientStops>
+                <GradientStopCollection>
+                    <GradientStop Color="#5444" Offset="0.0"/>
+                    <GradientStop Color="#5CCC" Offset="1.0"/>
+                </GradientStopCollection>
+            </GradientBrush.GradientStops>
+        </LinearGradientBrush>
+
+        <Style x:Key="TabItemCloseButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="SnapsToDevicePixels" Value="false"/>
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="ButtonBorder"  
+                          CornerRadius="2" 
+                          BorderThickness="1"
+                          Background="{StaticResource TabItemCloseButtonNormalBackgroundBrush}"
+                          BorderBrush="{StaticResource TabItemCloseButtonNormalBorderBrush}">
+                            <Grid>
+                                <Path x:Name="ButtonPath" 
+                              Margin="2"
+                              Data="{StaticResource X_CloseButton}"
+                              Stroke="{StaticResource TabItemCloseButtonNormalForegroundBrush}" 
+                              StrokeThickness="2"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              HorizontalAlignment="Center"/>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource TabItemCloseButtonHoverBackgroundBrush}" />
+                                <Setter TargetName="ButtonPath" Property="Stroke" Value="{StaticResource TabItemCloseButtonHoverForegroundBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="true">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource TabItemCloseButtonPressedBackgroundBrush}" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{StaticResource TabItemCloseButtonPressedBorderBrush}" />
+                                <Setter TargetName="ButtonPath" Property="Stroke" Value="{StaticResource TabItemCloseButtonPressedForegroundBrush}"/>
+                                <Setter TargetName="ButtonPath" Property="Margin" Value="2.5,2.5,1.5,1.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ToolTip" Value="Close" />
+        </Style>
+        
+<!-- #endregion TabItemCloseButtonStyle -->
+
+        <LinearGradientBrush x:Key="AnimeBigTextGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientBrush.GradientStops>
+                <GradientStopCollection>
+                    <GradientStop Color="#3000" Offset="0.0"/>
+                    <GradientStop Color="#2000" Offset="1.0"/>
+                </GradientStopCollection>
+            </GradientBrush.GradientStops>
+        </LinearGradientBrush>
+
+        <DropShadowEffect x:Key="AnimeSmallTextEffect" ShadowDepth="1" RenderingBias="Quality" Opacity="0.8" />
+
+        <ContextMenu x:Key="hashingListBoxItemContextMenu">
+            <MenuItem Header="Remove Selected" Click="removeSelectedItems" />
+        </ContextMenu>
+        <Style x:Key="hashingListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
+            <Setter Property="ContextMenu" Value="{StaticResource hashingListBoxItemContextMenu}"/>
+        </Style>
+        
+        <ContextMenu x:Key="debugControlContextMenu">
+            <MenuItem Header="Clear log" Click="clearDebugLog" />
+        </ContextMenu>
+        <Style x:Key="debugControlStyle" TargetType="{x:Type Grid}">
+            <Setter Property="ContextMenu" Value="{StaticResource debugControlContextMenu}"/>
+        </Style>
+        
+<!-- #region ImportListButtonTemplate -->     
+        
+        <ControlTemplate x:Key="ImportListButtonTemplate" TargetType="{x:Type Button}">
+            <Border Name="bBorder" BorderThickness="1" CornerRadius="5" BorderBrush="#FDDD">
+                <Border.Background>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#FEEE" Offset="0" />
+                        <GradientStop Color="#FFFF" Offset="1" />
+                    </RadialGradientBrush>
+                </Border.Background>
+                <Grid>
+                    <Image Source="Resources/import.png" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Margin="20,0,0,0"  />
+                    <ContentPresenter x:Name="Contents" HorizontalAlignment="Center" VerticalAlignment="Center" Width="Auto" Margin="60,0,0,0"
+                                      TextBlock.FontSize="48" TextBlock.FontFamily="Calibri">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush EndPoint="0,1" StartPoint="0,0">
+                                <GradientStop Color="#F444" Offset="0" />
+                                <GradientStop Color="#F111" Offset="1" />
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                        <ContentPresenter.Effect>
+                            <DropShadowEffect ShadowDepth="0" RenderingBias="Quality" Opacity="0.5" BlurRadius="5" Direction="315" />
+                        </ContentPresenter.Effect>
+                    </ContentPresenter>
+                </Grid>
+            </Border>
+            <ControlTemplate.Resources>
+                <Storyboard x:Key="MouseEnterTimeLine">
+                    <ColorAnimation Duration="0:0:0.3" Storyboard.TargetName="bBorder" Storyboard.TargetProperty="BorderBrush.Color" To="#FBBB" />
+                    <ColorAnimation Duration="0:0:0.3" Storyboard.TargetName="bBorder" Storyboard.TargetProperty="Background.GradientStops[0].Color" To="#FFFF" />
+                    <ColorAnimation Duration="0:0:0.3" Storyboard.TargetName="bBorder" Storyboard.TargetProperty="Background.GradientStops[1].Color" To="#FEEE" />
+                </Storyboard>
+                <Storyboard x:Key="MouseExitTimeLine">
+                    <ColorAnimation Duration="0:0:0.3" Storyboard.TargetName="bBorder" Storyboard.TargetProperty="BorderBrush.Color" To="#FDDD" />
+                    <ColorAnimation Duration="0:0:0.3" Storyboard.TargetName="bBorder" Storyboard.TargetProperty="Background.GradientStops[0].Color" To="#FEEE" />
+                    <ColorAnimation Duration="0:0:0.3" Storyboard.TargetName="bBorder" Storyboard.TargetProperty="Background.GradientStops[1].Color" To="#FFFF" />
+                </Storyboard>
+            </ControlTemplate.Resources>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard Storyboard="{StaticResource MouseEnterTimeLine}"/>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard Storyboard="{StaticResource MouseExitTimeLine}"/>
+                    </Trigger.ExitActions>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+<!-- #endregion ImportListButtonTemplate -->
+        
+<!-- #region ImageStoryboards -->
+        
+        <Storyboard x:Key="ImageMouseEnter">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Transform" Storyboard.TargetProperty="ScaleX">
+                <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1.0" />
+                <EasingDoubleKeyFrame KeyTime="0:0:0.2" Value="1.3">
+                    <EasingDoubleKeyFrame.EasingFunction>
+                        <BackEase EasingMode="EaseOut" />
+                    </EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Transform" Storyboard.TargetProperty="ScaleY">
+                <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1.0" />
+                <EasingDoubleKeyFrame KeyTime="0:0:0.2" Value="1.3">
+                    <EasingDoubleKeyFrame.EasingFunction>
+                        <BackEase EasingMode="EaseOut" />
+                    </EasingDoubleKeyFrame.EasingFunction>
+                </EasingDoubleKeyFrame>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimation Storyboard.TargetName="Img" Storyboard.TargetProperty="(Image.LayoutTransform).(RotateTransform.Angle)" To="6" Duration="0:0:0.1" />
+            <DoubleAnimation Storyboard.TargetName="ImgBlur" Storyboard.TargetProperty="Opacity" To="0.7" Duration="0:0:0.1" />
+        </Storyboard>
+        
+        <Storyboard x:Key="ImageMouseExit">
+            <DoubleAnimation Storyboard.TargetName="Transform" Storyboard.TargetProperty="ScaleX" To="1.0" Duration="0:0:0.05" />
+            <DoubleAnimation Storyboard.TargetName="Transform" Storyboard.TargetProperty="ScaleY" To="1.0" Duration="0:0:0.05" />
+            <DoubleAnimation Storyboard.TargetName="Img" Storyboard.TargetProperty="(Image.LayoutTransform).(RotateTransform.Angle)" To="0" Duration="0:0:0.05" />
+            <DoubleAnimation Storyboard.TargetName="ImgBlur" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.05" />
+        </Storyboard>
+
+<!-- #endregion ImageStoryboards -->
+
+<!-- #region MPCHCButonTemplate -->
+
+        <ControlTemplate x:Key="MPCHCButonTemplate" TargetType="{x:Type Button}">
+            <Grid>
+                <Image Name="Img" Source="Resources/mpchc.png" Width="24" Height="24" VerticalAlignment="Center" Panel.ZIndex="1">
+                    <Image.RenderTransformOrigin>
+                        <Point X="0.5" Y="0.5" />
+                    </Image.RenderTransformOrigin>
+                    <Image.RenderTransform>
+                        <ScaleTransform x:Name="Transform" />
+                    </Image.RenderTransform>
+                    <Image.LayoutTransform>
+                        <RotateTransform CenterX="0.5" CenterY="0.5" />
+                    </Image.LayoutTransform>
+                </Image>
+                <Image Name="ImgBlur" Source="Resources/mpchc.png" Width="24" Height="24" Opacity="0">
+                    <Image.RenderTransform>
+                        <ScaleTransform ScaleX="1.3" ScaleY="1.3"/>
+                    </Image.RenderTransform>
+                    <Image.RenderTransformOrigin>
+                        <Point X="0.5" Y="0.5" />
+                    </Image.RenderTransformOrigin>
+                    <Image.BitmapEffect>
+                        <BlurBitmapEffect Radius="10" />
+                    </Image.BitmapEffect>
+                    <Image.LayoutTransform>
+                        <RotateTransform CenterX="0.5" CenterY="0.5" Angle="6" />
+                    </Image.LayoutTransform>
+                </Image>
+            </Grid>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard Storyboard="{StaticResource ImageMouseEnter}"/>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard Storyboard="{StaticResource ImageMouseExit}"/>
+                    </Trigger.ExitActions>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+<!-- #endregion MPCHCButtonTemplate -->
+
+<!-- #region RandomButonTemplate -->
+
+        <ControlTemplate x:Key="RandomButonTemplate" TargetType="{x:Type Button}">
+            <Grid>
+                <Image Name="Img" Source="Resources/random.png" Width="24" Height="24" VerticalAlignment="Center" Panel.ZIndex="1">
+                    <Image.RenderTransformOrigin>
+                        <Point X="0.5" Y="0.5" />
+                    </Image.RenderTransformOrigin>
+                    <Image.RenderTransform>
+                        <ScaleTransform x:Name="Transform" />
+                    </Image.RenderTransform>
+                    <Image.LayoutTransform>
+                        <RotateTransform CenterX="0.5" CenterY="0.5" />
+                    </Image.LayoutTransform>
+                </Image>
+                <Image Name="ImgBlur" Source="Resources/random.png" Width="24" Height="24" Opacity="0">
+                    <Image.RenderTransform>
+                        <ScaleTransform ScaleX="1.3" ScaleY="1.3"/>
+                    </Image.RenderTransform>
+                    <Image.RenderTransformOrigin>
+                        <Point X="0.5" Y="0.5" />
+                    </Image.RenderTransformOrigin>
+                    <Image.BitmapEffect>
+                        <BlurBitmapEffect Radius="10" />
+                    </Image.BitmapEffect>
+                    <Image.LayoutTransform>
+                        <RotateTransform CenterX="0.5" CenterY="0.5" Angle="6" />
+                    </Image.LayoutTransform>
+                </Image>
+            </Grid>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard Storyboard="{StaticResource ImageMouseEnter}"/>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard Storyboard="{StaticResource ImageMouseExit}"/>
+                    </Trigger.ExitActions>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+<!-- #endregion RandomButonTemplate -->
+
+    </Window.Resources>
+    <Grid>
+        <Button Template="{StaticResource MPCHCButonTemplate}" Click="mpchcLaunch" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,2" Panel.ZIndex="1" ToolTip="Open Media Player Classic - Home Cinema" />
+        <Button Template="{StaticResource RandomButonTemplate}" Click="randomAnimeButton_Click" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="46,2" Panel.ZIndex="1" ToolTip="Random Anime">
+            <Button.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Watched" Tag="1" Click="randomAnimeLabelContextMenuItem_Click" />
+                    <MenuItem Header="Unwatched" Tag="2" Click="randomAnimeLabelContextMenuItem_Click" />
+                    <MenuItem Header="From database" Tag="0" Click="randomAnimeLabelContextMenuItem_Click" />
+                    <MenuItem Header="From mylist" Tag="3" Click="randomAnimeLabelContextMenuItem_Click" />
+                </ContextMenu>
+            </Button.ContextMenu>
+        </Button>
+        <TabControl x:Name="mainTabControl" Margin="5,5,5,5">
+            <TabItem Width="66" IsEnabled="False" Focusable="False" Visibility="Hidden" />
+            <TabItem Header="Home" IsSelected="True">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="350" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <GroupBox Header="MyList Stats" Margin="15,15,15,20">
+                        <Grid Margin="0" x:Name="MyListStatsGrid">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="144" />
+                                <ColumnDefinition Width="144" />
+                            </Grid.ColumnDefinitions>
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Header="Debug" Margin="15,15,15,20" Grid.Column="1">
+                        <Grid Margin="0" Style="{StaticResource debugControlStyle}">
+                            <ScrollViewer x:Name="debugListBoxScrollViewer" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="debugListBox" Margin="0" BorderThickness="0" Background="{x:Null}" SizeChanged="debugListBox_SizeChanged">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="50" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Time}" Padding="3" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Message}" Padding="3" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Hashing" x:Name="hashinTabItem">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="300*" />
+                        <ColumnDefinition Width="286" />
+                        <ColumnDefinition Width="172" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="265*" />
+                        <RowDefinition Height="80" />
+                    </Grid.RowDefinitions>
+                    <ListBox x:Name="hashingListBox" Margin="5,5,5,0" Drop="hashingListBox_Drop" AllowDrop="True" SelectionMode="Extended" ItemContainerStyle="{StaticResource hashingListBoxItemStyle}" Grid.ColumnSpan="3" HorizontalContentAlignment="Stretch" KeyUp="hashingListBox_KeyUp">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="50" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Name}" Padding="3" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Size, Converter={StaticResource FileSizeConverter}, ConverterParameter=true}" Padding="3" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <ProgressBar Grid.Row="1" Height="24" Margin="5,16,5,0" x:Name="fileProgressBar" VerticalAlignment="Top" />
+                    <ProgressBar Grid.Row="1" Height="24" Margin="5,0,5,10" Name="totalProgressBar" VerticalAlignment="Bottom" />
+                    <GroupBox Grid.Column="1" Grid.Row="1" Header="MyList Options" Margin="5" Name="hashingMyListOptions">
+                        <Grid Margin="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <CheckBox Content="Add to mylist" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="addToMyListCheckBox" VerticalAlignment="Top" IsChecked="True" IsEnabled="True" />
+                            <CheckBox Content="Watched" Height="16" HorizontalAlignment="Left" Margin="6,0,0,6" Name="watchedCheckBox" VerticalAlignment="bottom" />
+                            <ComboBox Grid.Column="1" Height="24" Margin="6,6,6,0" Name="stateComboBox" VerticalAlignment="Top">
+                                <ComboBoxItem Content="Unknown" />
+                                <ComboBoxItem Content="Internal storage (HDD)" IsSelected="True" />
+                                <ComboBoxItem Content="External storage (CD, DVD, ...)" />
+                                <ComboBoxItem Content="Deleted" />
+                            </ComboBox>
+                        </Grid>
+                    </GroupBox>
+                    <Button Content="Add File(s)" HorizontalAlignment="Right" Margin="0,12,90,0" Name="addFilesButton" Width="80" Grid.Row="1" Height="28" VerticalAlignment="Top" Grid.Column="2" Click="addFilesButton_Click" />
+                    <Button Content="Add Folder(s)" HorizontalAlignment="Right" Margin="0,0,90,6" Name="addFoldersButton" Width="80" Grid.Row="1" Height="28" VerticalAlignment="bottom" Grid.Column="2" Click="addFoldersButton_Click" />
+                    <Button Content="Start" Style="{StaticResource NuclearGreenButton}" HorizontalAlignment="Right" Margin="0,12,5,0" Name="hashingStartButton" Width="80" Grid.Row="1" Click="startHashingButton_Click" IsEnabled="False" Height="28" VerticalAlignment="Top" Grid.Column="2" />
+                    <Button Content="Stop" HorizontalAlignment="Right" Margin="0,0,5,6" Name="hashingStopButton" Width="80" Grid.Row="1" IsEnabled="False" Height="28" VerticalAlignment="bottom" Grid.Column="2" Click="hashingStopButton_Click" />
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="mylistTabItem" Header="Mylist">
+                <Grid>
+                    <Button VerticalAlignment="Center" HorizontalAlignment="Center" Height="80" Width="380" Template="{StaticResource ImportListButtonTemplate}" Content="Import Mylist" Click="ImportList_Click" />
+                    <DataGrid AutoGenerateColumns="True" Visibility="Collapsed">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Title" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="animeTabItem" Header="Anime" Visibility="Collapsed">
+                <TabControl x:Name="animeTabControl" Margin="5" Style="{StaticResource BlueTabControl}" ItemContainerStyle="{StaticResource BlueTabItem}">
+                    <TabControl.ItemTemplate>
+                        <DataTemplate>                            
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="18" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Romaji}" VerticalAlignment="Center" />
+                                <Button Style="{StaticResource TabItemCloseButtonStyle}" Grid.Column="1" Margin="8,0,-4,0" Click="OnTabCloseClick" Tag="{Binding AnimeID}" />
+                            </Grid>
+                        </DataTemplate>
+                    </TabControl.ItemTemplate>
+                    <TabControl.ContentTemplate>
+                        <DataTemplate>
+                            <ScrollViewer ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="270" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="336" />
+                                    </Grid.RowDefinitions>
+                                    <Border BorderThickness="1" CornerRadius="5" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="3,6,3,3" BorderBrush="#FF617cb5"
+                                            MaxHeight="330" MaxWidth="255" Tag="{Binding AnimeID}" Grid.Column="0">
+                                        <Border.Effect>
+                                            <DropShadowEffect ShadowDepth="0" RenderingBias="Quality" Opacity="0.3" />
+                                        </Border.Effect>
+                                        <Grid>
+                                            <Border Name="imgMask" Background="White" CornerRadius="3"/>
+                                            <Image Source="{Binding Image}" Margin="1">
+                                                <Image.OpacityMask>
+                                                    <VisualBrush Visual="{Binding ElementName=imgMask}"/>
+                                                </Image.OpacityMask>
+                                            </Image>
+                                        </Grid>
+                                    </Border>
+                                    <Grid Grid.Column="1">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="42" />
+                                            <RowDefinition Height="42" />
+                                            <RowDefinition Height="{Binding EnglishRowHeight}" />
+                                            <RowDefinition Height="42" />
+                                            <RowDefinition Height="42" />
+                                            <RowDefinition Height="{Binding EndDateRowHeight}" />
+                                            <RowDefinition Height="42" />
+                                            <RowDefinition Height="42" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Text="Links" HorizontalAlignment="Left" FontSize="32" FontFamily="Segoe UI" FontWeight="Bold" Foreground="{StaticResource AnimeBigTextGradient}" />
+                                        <Border BorderThickness="1" CornerRadius="5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,28,0,0" BorderBrush="#FF617cb5" Height="24" Grid.RowSpan="2">
+                                            <Border.Effect>
+                                                <DropShadowEffect ShadowDepth="0" RenderingBias="Quality" Opacity="0.4" />
+                                            </Border.Effect>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="20" />
+                                                    <ColumnDefinition Width="20" />
+                                                    <ColumnDefinition Width="20" />
+                                                </Grid.ColumnDefinitions>
+                                                <Border Background="#bfff" CornerRadius="3" Grid.ColumnSpan="3"/>
+                                                <Image Source="Resources/official.png" Tag="{Binding Officialurl}" ToolTip="Official Website" MouseLeftButtonUp="AnimeURLClick" Margin="2" Cursor="Hand" />
+                                                <Image Source="Resources/anidb.png" Tag="{Binding AniDBurl}" ToolTip="AniDB Entry" Grid.Column="1" MouseLeftButtonUp="AnimeURLClick" Margin="2" Cursor="Hand" />
+                                                <Image Source="Resources/ann.png" Tag="{Binding ANNurl}" ToolTip="Anime News Network Entry" Grid.Column="2" MouseLeftButtonUp="AnimeURLClick" Margin="2" Cursor="Hand" />
+                                            </Grid>
+                                        </Border>
+
+                                        <TextBlock Text="Romaji Title" HorizontalAlignment="Right" FontSize="32" FontFamily="Segoe UI" FontWeight="Bold" Foreground="{StaticResource AnimeBigTextGradient}" />
+                                        <TextBlock Text="{Binding Romaji}" HorizontalAlignment="Right" VerticalAlignment="Bottom" FontSize="16" Margin="0,0,10,-2" Effect="{StaticResource AnimeSmallTextEffect}" />
+
+                                        <TextBlock Text="Japanese Title" HorizontalAlignment="Right" FontSize="32" Grid.Row="1" FontFamily="Segoe UI" FontWeight="Bold" Foreground="{StaticResource AnimeBigTextGradient}" />
+                                        <TextBlock Text="{Binding Kanji}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="1" FontSize="16" Margin="0,0,10,-2" Effect="{StaticResource AnimeSmallTextEffect}" />
+
+                                        <TextBlock Text="English Title" HorizontalAlignment="Right" FontSize="32" FontFamily="Segoe UI" Grid.Row="2" FontWeight="Bold" Foreground="{StaticResource AnimeBigTextGradient}" />
+                                        <TextBlock Text="{Binding English}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="2" FontSize="16" Margin="0,0,10,-2" Effect="{StaticResource AnimeSmallTextEffect}" />
+                                        
+                                        <TextBlock Text="Episodes" HorizontalAlignment="Right" FontSize="32" Grid.Row="3" FontFamily="Segoe UI" FontWeight="Bold" Foreground="{StaticResource AnimeBigTextGradient}" />
+                                        <TextBlock Text="{Binding Eps}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="3" FontSize="16" Margin="0,0,10,-2" Effect="{StaticResource AnimeSmallTextEffect}" />
+
+                                        <TextBlock Text="{Binding AirDateText}" HorizontalAlignment="Right" FontSize="32" Grid.Row="4" FontFamily="Segoe UI" FontWeight="Bold" Foreground="{StaticResource AnimeBigTextGradient}" />
+                                        <TextBlock Text="{Binding StartDate}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="4" FontSize="16" Margin="0,0,10,-2" Effect="{StaticResource AnimeSmallTextEffect}" />
+                                        
+                                        <TextBlock Text="End Date" HorizontalAlignment="Right" FontSize="32" Grid.Row="5" FontFamily="Segoe UI" FontWeight="Bold" Foreground="{StaticResource AnimeBigTextGradient}" />
+                                        <TextBlock Text="{Binding EndDate}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="5" FontSize="16" Margin="0,0,10,-2" Effect="{StaticResource AnimeSmallTextEffect}" />
+
+                                        <TextBlock Text="Ratings" HorizontalAlignment="Right" FontSize="32" Grid.Row="6" FontFamily="Segoe UI" FontWeight="Bold" Foreground="{StaticResource AnimeBigTextGradient}" />
+                                        <TextBlock Text="{Binding Ratings}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="6" FontSize="16" Margin="0,0,10,-2" Effect="{StaticResource AnimeSmallTextEffect}" />
+
+                                        <TextBlock Text="Reviews" HorizontalAlignment="Right" FontSize="32" Grid.Row="7" FontFamily="Segoe UI" FontWeight="Bold" Foreground="{StaticResource AnimeBigTextGradient}" />
+                                        <TextBlock Text="{Binding Reviews}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="7" FontSize="16" Margin="0,0,10,-2" Effect="{StaticResource AnimeSmallTextEffect}" />
+
+                                        <TextBlock Text="Categories" HorizontalAlignment="Left" FontSize="32" VerticalAlignment="Top" Grid.Row="1" Margin="0,12,0,0" FontFamily="Segoe UI" FontWeight="Bold" Foreground="{StaticResource AnimeBigTextGradient}" Grid.RowSpan="3" />
+                                        <TextBlock Text="{Binding Categories}" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1" FontSize="14" Margin="10,36,0,0" Width="250" Effect="{StaticResource AnimeSmallTextEffect}" Grid.RowSpan="5" TextWrapping="Wrap" />
+
+                                        <Grid Grid.Row="6" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="250" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="{Binding AnimationAwardRowHeight}" />
+                                                <RowDefinition Height="{Binding OofujiAwardRowHeight}" />
+                                            </Grid.RowDefinitions>
+                                            <Border BorderThickness="1" CornerRadius="5" HorizontalAlignment="Center" Margin="3" BorderBrush="#FF617cb5">
+                                                <Border.Style>
+                                                    <Style>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding AnimationAward}" Value="False">
+                                                                <Setter Property="Border.Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Border.Effect>
+                                                    <DropShadowEffect ShadowDepth="0" RenderingBias="Quality" Opacity="0.3" />
+                                                </Border.Effect>
+                                                <Grid>
+                                                    <Border Name="maskanimation" Background="White" CornerRadius="3"/>
+                                                    <Image Source="Resources/animation.png" Grid.Column="0" Margin="1">
+                                                        <Image.OpacityMask>
+                                                            <VisualBrush Visual="{Binding ElementName=maskanimation}"/>
+                                                        </Image.OpacityMask>
+                                                    </Image>                                                   
+                                                </Grid>
+                                            </Border>
+                                            <Border BorderThickness="1" CornerRadius="5" HorizontalAlignment="Center" Margin="3" BorderBrush="#FF617cb5" Grid.Row="1">
+                                                <Border.Style>
+                                                    <Style>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding OofujiAward}" Value="False">
+                                                                <Setter Property="Border.Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Border.Effect>
+                                                    <DropShadowEffect ShadowDepth="0" RenderingBias="Quality" Opacity="0.3" />
+                                                </Border.Effect>
+                                                <Grid>
+                                                    <Border Name="maskoofuji" Background="White" CornerRadius="3"/>
+                                                    <Image Source="Resources/oofuji.png" Grid.Column="1" Margin="1">
+                                                        <Image.OpacityMask>
+                                                            <VisualBrush Visual="{Binding ElementName=maskoofuji}"/>
+                                                        </Image.OpacityMask>
+                                                    </Image>
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                            </ScrollViewer>
+                        </DataTemplate>
+                    </TabControl.ContentTemplate>
+                </TabControl>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

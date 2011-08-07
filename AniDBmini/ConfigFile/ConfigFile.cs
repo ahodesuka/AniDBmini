@@ -28,7 +28,8 @@ namespace AniDBmini
             { "password", "" },
             { "server", "api.anidb.net" },
             { "port", "9000" },
-            { "localPort", "9001" }
+            { "localPort", "9001" },
+            { "mpchcPath", "" },
         };
 
         #endregion Fields

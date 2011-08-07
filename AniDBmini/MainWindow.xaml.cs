@@ -26,9 +26,9 @@ namespace AniDBmini
     public delegate void UpdateProgressDelegate(object arg);
 
     public partial class MainWindow : Window
-	{
+    {
 
-		#region Fields
+        #region Fields
 
         public static string m_AppName = Application.ResourceAssembly.GetName().Name;
 
@@ -49,9 +49,10 @@ namespace AniDBmini
 
 		private string[] allowedVideoFiles = { "*.avi", "*.mkv", "*.mov", "*.mp4", "*.mpeg", "*.mpg", "*.ogm" };
 
-		private ThreadSafeObservableCollection<HashItem> hashFileList = new ThreadSafeObservableCollection<HashItem>();
-		private ThreadSafeObservableCollection<DebugLine> debugLog = new ThreadSafeObservableCollection<DebugLine>();
-        private ThreadSafeObservableCollection<AnimeTab> animeTabList = new ThreadSafeObservableCollection<AnimeTab>();
+        private TSObservableCollection<MylistStat> mylistStatsList = new TSObservableCollection<MylistStat>();
+        private TSObservableCollection<DebugLine> debugLog = new TSObservableCollection<DebugLine>();
+        private TSObservableCollection<HashItem> hashFileList = new TSObservableCollection<HashItem>();
+        private TSObservableCollection<AnimeTab> animeTabList = new TSObservableCollection<AnimeTab>();
 
 		#endregion Fields
 
@@ -67,16 +68,15 @@ namespace AniDBmini
 
 			aniDB.DebugLog = debugLog;
 
-            hashingListBox.ItemsSource = hashFileList;
-			debugListBox.ItemsSource = aniDB.DebugLog;
+            mylistStats.ItemsSource = mylistStatsList;
+            hashingListBox.ItemsSource =  hashFileList;
             animeTabControl.ItemsSource = animeTabList;
 
             animeTabList.OnCountChanged += new CountChangedHandler(animeTabList_OnCountChanged);
 
 			aniDB.FileHashingProgress += new FileHashingProgressHandler(OnFileHashingProgress);
-#if !OFFLINE
+
             InitializeStats();
-#endif
             InitializeNotifyIcon();
         }
 
@@ -90,54 +90,34 @@ namespace AniDBmini
         private void InitializeStats()
         {
             int[] stats = aniDB.MyListStats();
-            int[] i = { 0, 0 };
+            int i = 0;
 
             foreach (int stat in stats)
             {
-                string text = aniDB.statsText[i[0]];
-                string label;
+                string text = aniDB.statsText[i];
+                string value;
 
                 if (text != "x")
                 {
-                    MyListStatsGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(28) });
-
-                    if (i[0] == 3)
-                        label = (Math.Round((stat / 1024f) / (stat > 1048576 ? 1024f : 1), 2)).ToString() + (stat > 1048576 ? "TB" : "GB");
-                    else if (i[0] == 16)
+                    if (i == 3)
+                        value = (Math.Round((stat / 1024f) / (stat > 1048576 ? 1024f : 1), 2)).ToString() + (stat > 1048576 ? "TB" : "GB");
+                    else if (i == 16)
                     {
                         int days = (int)Math.Floor((stat / 60f) / 24f);
                         int hours = (int)Math.Floor((((stat / 60f) / 24f) - (int)Math.Floor((stat / 60f) / 24f)) * 24);
                         int minutes = (int)((Math.Round((((stat / 60f) / 24f) - (int)Math.Floor((stat / 60f) / 24f)) * 24, 2) - hours) * 60);
-                        label = days + "d " + hours + "h " + minutes + "m";
+                        value = days + "d " + hours + "h " + minutes + "m";
                     }
-                    else if (i[0] >= 10 && i[0] <= 12)
-                        label = stat + "%";
+                    else if (i >= 10 && i <= 12)
+                        value = stat + "%";
                     else
-                        label = stat.ToString();
+                        value = stat.ToString();
 
-                    for (int c = 0; c < MyListStatsGrid.ColumnDefinitions.Count; ++c)
-                    {
-                        Label newLabel = new Label();
-
-                        newLabel.Content = c == 1 ? label : text;
-                        newLabel.FontSize = 12;
-                        newLabel.Height = 28;
-                        newLabel.HorizontalContentAlignment = c == 1 ? System.Windows.HorizontalAlignment.Right : System.Windows.HorizontalAlignment.Left;
-                        newLabel.Margin = new Thickness(5, 0, 5, 0);
-                        newLabel.Padding = new Thickness(0, 0, 0, 0);
-                        newLabel.SetValue(Grid.RowProperty, i[1]);
-                        newLabel.SetValue(Grid.ColumnProperty, c);
-                        newLabel.VerticalAlignment = System.Windows.VerticalAlignment.Top;
-                        newLabel.VerticalContentAlignment = System.Windows.VerticalAlignment.Center;
-
-                        MyListStatsGrid.Children.Add(newLabel);
-                    }
-
-                    i[1]++;
+                    mylistStatsList.Add(new MylistStat(text, value));
                 }
 
-                i[0]++;
-            }
+                i++;
+            }            
         }
 
         private void InitializeNotifyIcon()

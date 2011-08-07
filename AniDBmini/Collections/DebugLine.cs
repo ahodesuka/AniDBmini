@@ -1,18 +1,14 @@
-﻿using System;
-
-namespace AniDBmini.Collections
+﻿namespace AniDBmini.Collections
 {
 	public class DebugLine
 	{
-		private string time, message;
+		public string Time { get; private set; }
+        public string Message { get; private set; }
 
 		public DebugLine(string _t, string _m)
 		{
-			time = _t;
-			message = _m;
+            Time = _t;
+            Message = _m;
 		}
-
-		public string Time { get { return time; } }
-		public string Message { get { return message; } }
 	}
 }

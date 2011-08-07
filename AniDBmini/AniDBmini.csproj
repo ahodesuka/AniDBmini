@@ -110,7 +110,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="Mylist\ImportWindow.xaml">
+    <Page Include="AniDBmini\Mylist\ImportWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -129,23 +129,24 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Collections\DebugLine.cs" />
+    <Compile Include="Collections\MylistStat.cs" />
     <Compile Include="Collections\Mylist\EpisodeEntry.cs" />
     <Compile Include="Collections\Mylist\FileEntry.cs" />
     <Compile Include="Collections\HashItem.cs" />
-    <Compile Include="Collections\ThreadSafeObservableCollection.cs" />
-    <Compile Include="HashAlgorithms\Ed2k.cs" />
-    <Compile Include="HashAlgorithms\Md4.cs" />
+    <Compile Include="Collections\TSObservableCollection.cs" />
+    <Compile Include="AniDBAPI\HashAlgorithms\Ed2k.cs" />
+    <Compile Include="AniDBAPI\HashAlgorithms\Md4.cs" />
     <Compile Include="AniDBAPI\APIResponse.cs" />
     <Compile Include="MPCAPI\MPCAPI.cs" />
     <Compile Include="MPCAPI\FileWatchedEvent.cs" />
-    <Compile Include="Mylist\ImportWindow.xaml.cs">
+    <Compile Include="AniDBmini\Mylist\ImportWindow.xaml.cs">
       <DependentUpon>ImportWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Includes\ExtensionMethods.cs" />
-    <Compile Include="Converters\FileSizeConverter.cs" />
-    <Compile Include="ConfigFile\ConfigFile.cs" />
-    <Compile Include="Includes\WinAPI.cs" />
-    <Compile Include="ConfigFile\ConfigValue.cs" />
+    <Compile Include="AniDBmini\ExtensionMethods.cs" />
+    <Compile Include="AniDBmini\Converters\FileSizeConverter.cs" />
+    <Compile Include="AniDBmini\ConfigFile\ConfigFile.cs" />
+    <Compile Include="AniDBmini\WinAPI.cs" />
+    <Compile Include="AniDBmini\ConfigFile\ConfigValue.cs" />
     <Compile Include="LoginWindow.xaml.cs">
       <DependentUpon>LoginWindow.xaml</DependentUpon>
     </Compile>
@@ -156,7 +157,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Collections\Mylist\MylistEntry.cs" />
-    <Compile Include="Mylist\MylistLocal.cs" />
+    <Compile Include="AniDBmini\Mylist\MylistLocal.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

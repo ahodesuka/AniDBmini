@@ -334,11 +334,21 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <GroupBox Header="MyList Stats" Margin="15,15,15,20">
-                        <Grid Margin="0" x:Name="MyListStatsGrid">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="144" />
-                                <ColumnDefinition Width="144" />
-                            </Grid.ColumnDefinitions>
+                        <Grid Margin="0">
+                            <ItemsControl x:Name="mylistStats" Margin="0" BorderThickness="0" Background="{x:Null}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Height="28" Margin="5,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="200" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding sText}" Padding="3" FontSize="12" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="1" Text="{Binding sValue}" Padding="3" FontSize="12" HorizontalAlignment="Right"  VerticalAlignment="Center" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="Debug" Margin="15,15,15,20" Grid.Column="1">

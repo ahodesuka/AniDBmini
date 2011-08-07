@@ -289,7 +289,7 @@ namespace AniDBmini
                     return new APIResponse(e_response, e_code);
             }
 #else
-            return new APIResponse("offline", 0);
+            return new APIResponse("offline", 200);
 #endif
         }
 

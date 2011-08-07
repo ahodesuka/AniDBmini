@@ -16,8 +16,6 @@ namespace AniDBmini
         #region Fields
 
         private AniDBAPI aniDB;
-        private ConfigFile config;
-        private string configPath = @".\data\config.ini";
 
         #endregion Fields
 
@@ -34,19 +32,26 @@ namespace AniDBmini
 
         private void Window_Initialized(object sender, EventArgs e)
         {
-            config = new ConfigFile(configPath, MainWindow.m_AppName);
-
-            if (config.Read("autoLogin").ToBoolean() &&
-                (aniDB = new AniDBAPI(config.Read("server").ToString(), config.Read("port").ToInt32(), config.Read("localPort").ToInt32())) != null)
-#if !OFFLINE
-                if (aniDB.Login(config.Read("username").ToString(), config.Read("password").ToString()))
-#endif
+            if (ConfigFile.Read("autoLogin").ToBoolean() &&
+                (aniDB = new AniDBAPI(ConfigFile.Read("server").ToString(), ConfigFile.Read("port").ToInt32(), ConfigFile.Read("localPort").ToInt32())) != null)
             {
+#if !OFFLINE
+                if (aniDB.Login(ConfigFile.Read("username").ToString(), ConfigFile.Read("password").ToString()))
+                {
+#endif
                     var main = new MainWindow(aniDB);
                     main.Show();
 
                     this.Close();
+#if !OFFLINE
                 }
+#endif
+            }
+            else if (ConfigFile.Read("rememberUser").ToBoolean())
+            {
+                rememberUserCheckBox.IsChecked = true;
+                usernameTextBox.Text = ConfigFile.Read("username").ToString();
+            }
         }
 
         private void loginButton_Click(object sender, RoutedEventArgs e)
@@ -62,18 +67,18 @@ namespace AniDBmini
             loginButton.IsEnabled = false;
             string[] server = serverComboBox.SelectedValue.ToString().Split(':');
 
-            if ((aniDB = new AniDBAPI(server[0], int.Parse(server[1]), config.Read("localPort").ToInt32())) != null)
+            if ((aniDB = new AniDBAPI(server[0], int.Parse(server[1]), ConfigFile.Read("localPort").ToInt32())) != null)
                 if (!aniDB.Login(usernameTextBox.Text, passwordPasswordBox.Password))
                     loginButton.IsEnabled = true;
                 else
                 {
                     if (autoLoginCheckBox.IsChecked == true)
                     {
-                        config.Write("autoLogin", "true");
-                        config.Write("username", usernameTextBox.Text);
-                        config.Write("password", passwordPasswordBox.Password);
-                        config.Write("server", server[0]);
-                        config.Write("port", server[1]);
+                        ConfigFile.Write("autoLogin", "true");
+                        ConfigFile.Write("username", usernameTextBox.Text);
+                        ConfigFile.Write("password", passwordPasswordBox.Password);
+                        ConfigFile.Write("server", server[0]);
+                        ConfigFile.Write("port", server[1]);
                     }
 
                     var main = new MainWindow(aniDB);
@@ -90,6 +95,13 @@ namespace AniDBmini
 		}
 
         #endregion
+
+        private void autoLoginCheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            bool isChecked = (bool)autoLoginCheckBox.IsChecked;
+            rememberUserCheckBox.IsChecked = isChecked;
+            rememberUserCheckBox.IsEnabled = !isChecked;
+        }
 
     }
 }

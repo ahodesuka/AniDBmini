@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 
 #endregion Using Statements
@@ -13,74 +12,55 @@ namespace AniDBmini
     /// <summary>
     /// Create a New INI file to store or load data
     /// </summary>
-    public class ConfigFile
+    public static class ConfigFile
     {
-        public string configPath, configSection;
-        public Dictionary<string, string> Defaults = new Dictionary<string, string>();
 
-        /// <summary>
-        /// method for writing data to an ini file
-        /// </summary>
-        [DllImport("kernel32")]
-        private static extern long WritePrivateProfileString(string lPAppName, string lpKeyName, string lpString, string lpFileName);
+        #region Fields
 
-        /// <summary>
-        /// method for reading from a specified section of an ini file
-        /// </summary>
-        [DllImport("kernel32")]
-        private static extern int GetPrivateProfileString(string lpAppName, string lpKeyName, string lpDefault, StringBuilder lpReturnedString, int nSize, string lpFilePath);
+        private static string configPath = @".\data\config.ini",
+                              configSection = MainWindow.m_AppName;
 
-        /// <summary>
-        /// ConfigFile Constructor.
-        /// </summary>
-        public ConfigFile(string path, string section)
+        private static readonly Dictionary<string, string> Default = new Dictionary<string, string>
         {
-            LoadDefaultConfig();
+            { "autoLogin", "false" },
+            { "rememberUser", "true" },
+            { "username", "" },
+            { "password", "" },
+            { "server", "api.anidb.net" },
+            { "port", "9000" },
+            { "localPort", "9001" }
+        };
 
-            configPath = path;
-            configSection = section;
-
-            if (!File.Exists(path) || string.IsNullOrWhiteSpace(File.ReadAllText(path)))
-                CreateDefaultConfig();
-        }
+        #endregion Fields
 
         #region Private Methods
 
         /// <summary>
-        /// Add the default values to the defaultConfig dictionary.
+        /// Check if the config file exists, or if it is emtpy.
+        /// If either, create a config file w/defaults.
         /// </summary>
-        private void LoadDefaultConfig()
+        private static void CheckDefaultConfig()
         {
-            Defaults.Add("autoLogin", "false");
-            Defaults.Add("username", "");
-            Defaults.Add("password", "");
-            Defaults.Add("server", "api.anidb.net");
-            Defaults.Add("port", "9000");
-            Defaults.Add("localPort", "9001");
-        }
+            if (!File.Exists(configPath) || string.IsNullOrWhiteSpace(File.ReadAllText(configPath)))
+            {
+                try
+                {
+                    using (StreamWriter sw = File.CreateText(configPath))
+                        sw.WriteLine("[" + configSection + "]");
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(configPath));
+                }
+                finally
+                {
+                    using (StreamWriter sw = File.CreateText(configPath))
+                        sw.WriteLine("[" + configSection + "]");
+                }
 
-        /// <summary>
-        /// Creates a default config file.
-        /// </summary>
-        private void CreateDefaultConfig()
-        {
-            try
-            {
-                using (StreamWriter sw = File.CreateText(configPath))
-                    sw.WriteLine("[" + configSection + "]");
+                foreach (KeyValuePair<string, string> kvp in Default)
+                    Write(kvp.Key, kvp.Value);
             }
-            catch (DirectoryNotFoundException)
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(configPath));
-            }
-            finally
-            {
-                using (StreamWriter sw = File.CreateText(configPath))
-                    sw.WriteLine("[" + configSection + "]");
-            }
-
-            foreach (KeyValuePair<string, string> kvp in Defaults)
-                this.Write(kvp.Key, kvp.Value);
         }
 
         #endregion
@@ -90,15 +70,17 @@ namespace AniDBmini
         /// <summary>
         /// Read Data Value From the ini File
         /// </summary>
-        public ConfigValue Read(string Key)
+        public static ConfigValue Read(string Key)
         {
-            StringBuilder temp = new StringBuilder(255);
-            int i = GetPrivateProfileString(configSection, Key, null, temp, 255, configPath);
+            CheckDefaultConfig();
 
-            if (string.IsNullOrWhiteSpace(temp.ToString()) && !string.IsNullOrWhiteSpace(Defaults[Key]))
+            StringBuilder temp = new StringBuilder(255);
+            int i = WinAPI.GetPrivateProfileString(configSection, Key, null, temp, 255, configPath);
+
+            if (string.IsNullOrWhiteSpace(temp.ToString()) && !string.IsNullOrWhiteSpace(Default[Key]))
             {
-                Write(Key, Defaults[Key]);
-                return new ConfigValue(Defaults[Key]);
+                Write(Key, Default[Key]);
+                return new ConfigValue(Default[Key]);
             }
             else
                 return new ConfigValue(temp.ToString());
@@ -107,9 +89,11 @@ namespace AniDBmini
         /// <summary>
         /// Write Data to the ini File
         /// </summary>
-        public void Write(string Key, string Value)
+        public static void Write(string Key, string Value)
         {
-            WritePrivateProfileString(configSection, Key, Value, configPath);
+            CheckDefaultConfig();
+
+            WinAPI.WritePrivateProfileString(configSection, Key, Value, configPath);
         }
 
         #endregion Reading/Writing

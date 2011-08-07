@@ -1,5 +1,10 @@
-﻿using System;
+﻿
+#region Using Statements
+
+using System;
 using System.Runtime.InteropServices;
+
+#endregion Using Statements
 
 namespace AniDBmini
 {
@@ -33,6 +38,12 @@ namespace AniDBmini
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         private static extern int GetLocaleInfo(int Locale, int LCType, [In, MarshalAs(UnmanagedType.LPWStr)] string lpLCData, int cchData);
+
+        [DllImport("kernel32.dll")]
+        public static extern int GetPrivateProfileString(string lpAppName, string lpKeyName, string lpDefault, System.Text.StringBuilder lpReturnedString, int nSize, string lpFilePath);
+
+        [DllImport("kernel32.dll")]
+        public static extern long WritePrivateProfileString(string lPAppName, string lpKeyName, string lpString, string lpFileName);
 
         [DllImport("user32.dll")]
         public static extern bool IsWindowVisible(IntPtr hWnd);

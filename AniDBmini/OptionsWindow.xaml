@@ -1,0 +1,104 @@
+﻿<Window x:Class="AniDBmini.OptionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:AniDBmini"
+        Title="AniDBmini Options" Height="330" Width="500" ResizeMode="NoResize" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource WindowBackgroundBrush}" FontFamily="Calibri">
+    <Window.Resources>
+        <l:WholeNumberConverter x:Key="WholeNumberConverter"/>
+        <ControlTemplate x:Key="HeaderTextBlockTemplate" TargetType="{x:Type HeaderedContentControl}">
+            <Border Background="#F333" BorderThickness="1" CornerRadius="2" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,5" BorderBrush="#FFFF" Height="24">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="2" Opacity="0.75" ShadowDepth="0" />
+                </Border.Effect>
+                <Grid VerticalAlignment="Top">
+                    <ContentPresenter ContentSource="Header" Margin="5,0" TextBlock.FontSize="16" TextBlock.Foreground="#FFFF">
+                        <ContentPresenter.Effect>
+                            <DropShadowEffect Color="#F000" Opacity="0.75" ShadowDepth="0" />
+                        </ContentPresenter.Effect>
+                    </ContentPresenter>
+                </Grid>
+            </Border>
+        </ControlTemplate>
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="130" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="38" />
+        </Grid.RowDefinitions>
+        <TreeView x:Name="OptionsTreeView" Margin="5" SelectedItemChanged="OnSelectedItemChanged">
+            <TreeViewItem Header="General" Margin="-15,0,0,0" Tag="0" IsSelected="True" />
+            <TreeViewItem Header="MPC-HC Hooking" Margin="-15,0,0,0" Tag="1" />
+        </TreeView>
+        <Grid x:Name="OptionGirds" Grid.Column="1"  Margin="5">
+            <Grid>
+                <HeaderedContentControl Header="General" Template="{StaticResource HeaderTextBlockTemplate}" />
+            </Grid>
+            <Grid Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="36"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <HeaderedContentControl Header="MPC-HC Hooking" Template="{StaticResource HeaderTextBlockTemplate}" />
+                <GroupBox Header="Media Player Classic - Home Cinema" Grid.Row="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="80"/>                            
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="22" />
+                            <RowDefinition Height="32" />
+                            <RowDefinition Height="24" />
+                            <RowDefinition Height="22" />
+                            <RowDefinition Height="24" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="22" />
+                            <RowDefinition Height="24" />
+                        </Grid.RowDefinitions>
+                        <Label Content="Location:" Margin="5,0" VerticalAlignment="Bottom" />
+                        <TextBox x:Name="mpchcLocationTextBox" Grid.Row="1" Margin="5,0" Height="24" TextChanged="enableApplyButton" />
+                        <Button Grid.Column="1" Grid.Row="1" Content="Browse" Margin="5,0" Height="24" Click="MPCBrowseOnClick" />
+                        <StackPanel Grid.ColumnSpan="2" Grid.Row="2" Orientation="Horizontal">
+                            <Label Content="Mark watched:"  Margin="5,0" VerticalAlignment="Center" />
+                            <RadioButton x:Name="mpcMarkDuring" Content="During playback" Margin="5" VerticalAlignment="Center" Click="enableApplyButton" />
+                            <RadioButton x:Name="mpcMarkAfter" Content="After playback" Margin="5" VerticalAlignment="Center" Click="enableApplyButton" />
+                        </StackPanel>
+                        <Label Content="Watched threshold:" Grid.ColumnSpan="2" Grid.Row="3" Margin="5,0" VerticalAlignment="Bottom">
+                            <Label.ToolTip>
+                                <TextBlock>
+                                    The percent of the file in which you need to watch for the file to be counted as watched.<LineBreak/>
+                                    Note: Does not include time skipped, ie OP/EP/Previews.
+                                </TextBlock>
+                            </Label.ToolTip>
+                        </Label>
+                        <Slider x:Name="mpcWatchedPercSlider" Grid.ColumnSpan="2" Grid.Row="4" Margin="10,0" Value="50" Maximum="100" Minimum="1" SmallChange="1" LargeChange="10" ValueChanged="enableApplyButton">
+                            <Slider.ToolTip>
+                                <TextBlock>
+                                    The percent of the file in which you need to watch for the file to be counted as watched.<LineBreak/>
+                                    Note: Does not include time skipped, ie OP/EP/Previews.
+                                </TextBlock>
+                            </Slider.ToolTip>
+                        </Slider>
+                        <TextBlock Grid.ColumnSpan="2" Grid.Row="5" Margin="5,0" HorizontalAlignment="Center">
+                            <TextBlock x:Name="mpcWatchedPerc" Text="{Binding ElementName=mpcWatchedPercSlider, Path=Value, Converter={StaticResource WholeNumberConverter}}"/>%
+                        </TextBlock>
+                        <Label Content="Misc. settings:" Grid.ColumnSpan="2" Grid.Row="6" Margin="5,0" VerticalAlignment="Bottom"/>
+                        <StackPanel Grid.ColumnSpan="2" Grid.Row="7" Orientation="Horizontal">
+                            <CheckBox x:Name="ShowFileInTitle" Content="Show file in title" Margin="5,3,0,0" VerticalAlignment="Center" Unchecked="enableApplyButton" Click="enableApplyButton" />
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+            </Grid>
+        </Grid>
+        <StackPanel Grid.ColumnSpan="2" Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="okButton" Content="OK" Height="28" Margin="5" Width="75" Click="OKOnClick" />
+            <Button Content="Cancel" Height="28" Margin="5" Width="75" Click="CancelOnClick" />
+            <Button x:Name="applyButton" Content="Apply" Height="28" Margin="5" Width="75" Click="ApplyOnClick" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -5,15 +5,15 @@
         xmlns:l="clr-namespace:AniDBmini"
         Background="{DynamicResource WindowBackgroundBrush}"
         Title="AniDBmini" Height="450" Width="840" Icon="/AniDBmini;component/Resources/AniDBmini.ico" WindowStartupLocation="Manual"
-        MinWidth="740" MinHeight="360" Closing="OnClose" StateChanged="OnStateChanged" IsVisibleChanged="OnIsVisibleChanged">
+        MinWidth="740" MinHeight="360" Closing="OnClose" StateChanged="OnStateChanged" IsVisibleChanged="OnIsVisibleChanged" FontFamily="Calibri">
     <Window.Resources>
         
         <l:FileSizeConverter x:Key="FileSizeConverter" />
 
-<!-- #region TabItemCloseButtonStyle -->
-        
+        <!-- #region TabItemCloseButtonStyle -->
+
         <Geometry x:Key="X_CloseButton">M0,0 L10,10 M0,10 L10,0</Geometry>
-        
+
         <SolidColorBrush x:Key="TabItemCloseButtonNormalForegroundBrush" Color="#6666"/>
         <SolidColorBrush x:Key="TabItemCloseButtonHoverForegroundBrush" Color="White"/>
         <SolidColorBrush x:Key="TabItemCloseButtonPressedForegroundBrush" Color="#EEEE"/>
@@ -112,8 +112,8 @@
             </Setter>
             <Setter Property="ToolTip" Value="Close" />
         </Style>
-        
-<!-- #endregion TabItemCloseButtonStyle -->
+
+        <!-- #endregion TabItemCloseButtonStyle -->
 
         <LinearGradientBrush x:Key="AnimeBigTextGradient" StartPoint="0,0" EndPoint="0,1">
             <GradientBrush.GradientStops>
@@ -139,9 +139,9 @@
         <Style x:Key="debugControlStyle" TargetType="{x:Type Grid}">
             <Setter Property="ContextMenu" Value="{StaticResource debugControlContextMenu}"/>
         </Style>
-        
-<!-- #region ImportListButtonTemplate -->     
-        
+
+        <!-- #region ImportListButtonTemplate -->
+
         <ControlTemplate x:Key="ImportListButtonTemplate" TargetType="{x:Type Button}">
             <Border Name="bBorder" BorderThickness="1" CornerRadius="5" BorderBrush="#FDDD">
                 <Border.Background>
@@ -190,10 +190,10 @@
             </ControlTemplate.Triggers>
         </ControlTemplate>
 
-<!-- #endregion ImportListButtonTemplate -->
-        
-<!-- #region ImageStoryboards -->
-        
+        <!-- #endregion ImportListButtonTemplate -->
+
+        <!-- #region ImageStoryboards -->
+
         <Storyboard x:Key="ImageMouseEnter">
             <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Transform" Storyboard.TargetProperty="ScaleX">
                 <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1.0" />
@@ -214,7 +214,7 @@
             <DoubleAnimation Storyboard.TargetName="Img" Storyboard.TargetProperty="(Image.LayoutTransform).(RotateTransform.Angle)" To="6" Duration="0:0:0.1" />
             <DoubleAnimation Storyboard.TargetName="ImgBlur" Storyboard.TargetProperty="Opacity" To="0.7" Duration="0:0:0.1" />
         </Storyboard>
-        
+
         <Storyboard x:Key="ImageMouseExit">
             <DoubleAnimation Storyboard.TargetName="Transform" Storyboard.TargetProperty="ScaleX" To="1.0" Duration="0:0:0.05" />
             <DoubleAnimation Storyboard.TargetName="Transform" Storyboard.TargetProperty="ScaleY" To="1.0" Duration="0:0:0.05" />
@@ -222,9 +222,53 @@
             <DoubleAnimation Storyboard.TargetName="ImgBlur" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.05" />
         </Storyboard>
 
-<!-- #endregion ImageStoryboards -->
+        <!-- #endregion ImageStoryboards -->
 
-<!-- #region MPCHCButonTemplate -->
+        <!-- #region OptionsButonTemplate -->
+
+        <ControlTemplate x:Key="OptionsButonTemplate" TargetType="{x:Type Button}">
+            <Grid>
+                <Image Name="Img" Source="Resources/options.png" Width="24" Height="24" VerticalAlignment="Center" Panel.ZIndex="1">
+                    <Image.RenderTransformOrigin>
+                        <Point X="0.5" Y="0.5" />
+                    </Image.RenderTransformOrigin>
+                    <Image.RenderTransform>
+                        <ScaleTransform x:Name="Transform" />
+                    </Image.RenderTransform>
+                    <Image.LayoutTransform>
+                        <RotateTransform CenterX="0.5" CenterY="0.5" />
+                    </Image.LayoutTransform>
+                </Image>
+                <Image Name="ImgBlur" Source="Resources/options.png" Width="24" Height="24" Opacity="0">
+                    <Image.RenderTransform>
+                        <ScaleTransform ScaleX="1.3" ScaleY="1.3"/>
+                    </Image.RenderTransform>
+                    <Image.RenderTransformOrigin>
+                        <Point X="0.5" Y="0.5" />
+                    </Image.RenderTransformOrigin>
+                    <Image.BitmapEffect>
+                        <BlurBitmapEffect Radius="10" />
+                    </Image.BitmapEffect>
+                    <Image.LayoutTransform>
+                        <RotateTransform CenterX="0.5" CenterY="0.5" Angle="6" />
+                    </Image.LayoutTransform>
+                </Image>
+            </Grid>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard Storyboard="{StaticResource ImageMouseEnter}"/>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard Storyboard="{StaticResource ImageMouseExit}"/>
+                    </Trigger.ExitActions>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <!-- #endregion MPCHCButtonTemplate -->
+
+        <!-- #region MPCHCButonTemplate -->
 
         <ControlTemplate x:Key="MPCHCButonTemplate" TargetType="{x:Type Button}">
             <Grid>
@@ -266,9 +310,9 @@
             </ControlTemplate.Triggers>
         </ControlTemplate>
 
-<!-- #endregion MPCHCButtonTemplate -->
+        <!-- #endregion MPCHCButtonTemplate -->
 
-<!-- #region RandomButonTemplate -->
+        <!-- #region RandomButonTemplate -->
 
         <ControlTemplate x:Key="RandomButonTemplate" TargetType="{x:Type Button}">
             <Grid>
@@ -314,8 +358,9 @@
 
     </Window.Resources>
     <Grid>
-        <Button Template="{StaticResource MPCHCButonTemplate}" Click="mpchcLaunch" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,2" Panel.ZIndex="1" ToolTip="Open Media Player Classic - Home Cinema" />
-        <Button Template="{StaticResource RandomButonTemplate}" Click="randomAnimeButton_Click" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="46,2" Panel.ZIndex="1" ToolTip="Random Anime">
+        <Button Template="{StaticResource OptionsButonTemplate}" Click="ShowOpionsWindow" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,3" Panel.ZIndex="1" ToolTip="Options" />
+        <Button Template="{StaticResource MPCHCButonTemplate}" Click="mpchcLaunch" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="42,3" Panel.ZIndex="1" ToolTip="Open Media Player Classic - Home Cinema" />
+        <Button Template="{StaticResource RandomButonTemplate}" Click="randomAnimeButton_Click" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="74,2" Panel.ZIndex="1" ToolTip="Random Anime">
             <Button.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Watched" Tag="1" Click="randomAnimeLabelContextMenuItem_Click" />
@@ -325,8 +370,8 @@
                 </ContextMenu>
             </Button.ContextMenu>
         </Button>
-        <TabControl x:Name="mainTabControl" Margin="5,5,5,5">
-            <TabItem Width="66" IsEnabled="False" Focusable="False" Visibility="Hidden" />
+        <TabControl x:Name="mainTabControl" Margin="5">
+            <TabItem Width="96" IsEnabled="False" Focusable="False" Visibility="Hidden" Height="26" />
             <TabItem Header="Home" IsSelected="True">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -377,8 +422,8 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="300*" />
-                        <ColumnDefinition Width="286" />
-                        <ColumnDefinition Width="172" />
+                        <ColumnDefinition Width="290" />
+                        <ColumnDefinition Width="175" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="265*" />
@@ -403,7 +448,7 @@
                     <GroupBox Grid.Column="1" Grid.Row="1" Header="MyList Options" Margin="5" Name="hashingMyListOptions">
                         <Grid Margin="0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="100" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <CheckBox Content="Add to mylist" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="addToMyListCheckBox" VerticalAlignment="Top" IsChecked="True" IsEnabled="True" />

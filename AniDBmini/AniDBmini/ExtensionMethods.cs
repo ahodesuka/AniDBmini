@@ -55,22 +55,5 @@ namespace AniDBmini
 
             return s2;
         }
-
-        public static void OpenWebPage(string url)
-        {
-            System.Diagnostics.Process p = new System.Diagnostics.Process();
-            p.StartInfo.FileName = GetDefaultBrowserPath();
-            p.StartInfo.Arguments = url;
-            p.Start();
-        }
-
-        private static string GetDefaultBrowserPath()
-        {
-            string key = @"HTTP\shell\open\command";
-            using (Microsoft.Win32.RegistryKey registrykey = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(key, false))
-            {
-                return ((string)registrykey.GetValue(null, null)).Split('"')[1];
-            }
-        }
     }
 }

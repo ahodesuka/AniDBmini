@@ -48,7 +48,6 @@ namespace AniDBmini
         private string[] allowedVideoFiles = { "*.avi", "*.mkv", "*.mov", "*.mp4", "*.mpeg", "*.mpg", "*.ogm" };
 
         private TSObservableCollection<MylistStat> mylistStatsList = new TSObservableCollection<MylistStat>();
-        private TSObservableCollection<DebugLine> debugLog = new TSObservableCollection<DebugLine>();
         private TSObservableCollection<HashItem> hashFileList = new TSObservableCollection<HashItem>();
         private TSObservableCollection<AnimeTab> animeTabList = new TSObservableCollection<AnimeTab>();
 
@@ -207,6 +206,13 @@ namespace AniDBmini
 
         #region Events
 
+        private void ShowOpionsWindow(object sender, RoutedEventArgs e)
+        {
+            OptionsWindow options = new OptionsWindow();
+            options.Owner = this;
+            options.ShowDialog();
+        }
+
         private void mpchcLaunch(object sender, RoutedEventArgs e)
         {
             if (mpcApi == null || !mpcApi.isHooked || !mpcApi.FocusMPC())
@@ -221,14 +227,11 @@ namespace AniDBmini
             HashItem item = new HashItem(e.Path);
             item.State = item.Viewed = 1;
 
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += (s, _e) =>
+            ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
             {
                 item = aniDB.ed2kHash(item);
                 aniDB.AddToMyList(item);
-            };
-
-            worker.RunWorkerAsync();
+            }));
         }
 
         private void randomAnimeButton_Click(object sender, RoutedEventArgs e)
@@ -247,7 +250,7 @@ namespace AniDBmini
 
         private void clearDebugLog(object sender, RoutedEventArgs e)
         {
-            debugLog.Clear();
+            aniDB.DebugLog.Clear();
         }
 
         private void hashingListBox_Drop(object sender, DragEventArgs e)
@@ -367,10 +370,7 @@ namespace AniDBmini
         private void OnStateChanged(object sender, EventArgs args)
         {
             if (this.WindowState == WindowState.Minimized)
-            {
-                m_notifyIcon.Text = this.Title.Truncate(63, false, true);
                 this.Hide();
-            }
             else
                 m_storedWindowState = this.WindowState;
         }
@@ -385,7 +385,7 @@ namespace AniDBmini
         {
             ImportWindow import = new ImportWindow();
             import.Owner = this;
-            import.Show();
+            import.ShowDialog();
         }
 
         private void OnTabCloseClick(object sender, RoutedEventArgs e)
@@ -417,7 +417,7 @@ namespace AniDBmini
         private void AnimeURLClick(object sender, RoutedEventArgs e)
         {
             Image s_img = (Image)sender;
-            ExtensionMethods.OpenWebPage(s_img.Tag.ToString());
+            System.Diagnostics.Process.Start(s_img.Tag.ToString());
         }
 
         private void OnClose(object sender, System.ComponentModel.CancelEventArgs e)
@@ -425,6 +425,20 @@ namespace AniDBmini
             aniDB.Logout();
             m_notifyIcon.Dispose();
             m_notifyIcon = null;
+        }
+
+        #endregion
+
+        #region Properties
+
+        public string wTitle
+        {
+            get { return this.Title; }
+            set
+            {
+                this.Title = value;
+                m_notifyIcon.Text = value.Truncate(63, false, true);
+            }
         }
 
         #endregion

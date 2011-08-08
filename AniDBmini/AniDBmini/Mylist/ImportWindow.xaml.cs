@@ -43,6 +43,59 @@ namespace AniDBmini
 
         #region Private Methods
 
+        private string formatNullable(string str)
+        {
+            return string.IsNullOrWhiteSpace(str) || str == "unknown" ? null : str;
+        }
+
+        private double formatSize(string size)
+        {
+            return double.Parse(size.Replace(".", null));
+        }
+
+        #endregion
+
+        #region Events
+
+        private void BrowseOnClick(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+			dlg.Filter = "Xml Files|*.xml|Tar Files|*.tgz;*.tar";
+
+			Nullable<bool> result = dlg.ShowDialog();
+
+            if (result == true)
+            {
+                importFilePath.Text = dlg.FileName;
+                importStart.IsEnabled = true;
+            }
+        }
+
+        private void StartOnClick(object sender, RoutedEventArgs e)
+        {
+            xmlPath = importFilePath.Text;
+            XmlWorker = new BackgroundWorker();
+
+            XmlWorker.DoWork += new DoWorkEventHandler(DoWork);
+            XmlWorker.RunWorkerCompleted += (s, _e) =>
+            {
+                isWorking = false;
+                if (MessageBox.Show("Importing finised!", "Status", MessageBoxButton.OK, MessageBoxImage.Information) == MessageBoxResult.OK)
+                    this.Close();
+            };
+
+            if (File.Exists(MylistLocal.dbPath))
+                if (MessageBox.Show("A mylist database file already exists.\nDo you wish to overwrite it?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
+                    File.Delete(MylistLocal.dbPath);
+                else
+                    return;
+
+            XmlWorker.RunWorkerAsync();
+
+            isWorking = true;
+            importStart.IsEnabled = false;
+        }
+
         private void DoWork(object sender, DoWorkEventArgs e)
         {
             MylistLocal myList = new MylistLocal();
@@ -102,7 +155,7 @@ namespace AniDBmini
                         while (closePending) { Thread.Sleep(500); }
 
                         EpisodeEntry episode = new EpisodeEntry();
-                                
+
                         episode.eid = int.Parse(episodesReader["eid"]);
                         if (Regex.IsMatch(episodesReader["epno"].Substring(0, 1), @"\D"))
                         {
@@ -179,7 +232,7 @@ namespace AniDBmini
                         }
 
                         filesReader.Close();
-                        entry.Episodes.Add(episode);                        
+                        entry.Episodes.Add(episode);
                     }
 
                     episodesReader.Close();
@@ -188,59 +241,6 @@ namespace AniDBmini
                     myList.InsertMylistEntry(entry);
                 }
             }
-        }
-
-        private string formatNullable(string str)
-        {
-            return string.IsNullOrWhiteSpace(str) || str == "unknown" ? null : str;
-        }
-
-        private double formatSize(string size)
-        {
-            return double.Parse(size.Replace(".", null));
-        }
-
-        #endregion
-
-        #region Events
-
-        private void BrowseOnClick(object sender, RoutedEventArgs e)
-        {
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-			dlg.Filter = "Xml Files|*.xml|Tar Files|*.tgz;*.tar";
-
-			Nullable<bool> result = dlg.ShowDialog();
-
-            if (result == true)
-            {
-                importFilePath.Text = dlg.FileName;
-                importStart.IsEnabled = true;
-            }
-        }
-
-        private void StartOnClick(object sender, RoutedEventArgs e)
-        {
-            xmlPath = importFilePath.Text;
-            XmlWorker = new BackgroundWorker();
-
-            XmlWorker.DoWork += new DoWorkEventHandler(DoWork);
-            XmlWorker.RunWorkerCompleted += (s, _e) =>
-            {
-                isWorking = false;
-                if (MessageBox.Show("Importing finised!", "Status", MessageBoxButton.OK, MessageBoxImage.Information) == MessageBoxResult.OK)
-                    this.Close();
-            };
-
-            if (File.Exists(MylistLocal.dbPath))
-                if (MessageBox.Show("A mylist database file already exists.\nDo you wish to overwrite it?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
-                    File.Delete(MylistLocal.dbPath);
-                else
-                    return;
-
-            XmlWorker.RunWorkerAsync();
-
-            isWorking = true;
-            importStart.IsEnabled = false;
         }
 
         private void OnDragOver(object sender, DragEventArgs e)

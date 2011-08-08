@@ -2,7 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Background="{DynamicResource WindowBackgroundBrush}"
-        Title="Import Mylist" Height="135" Width="275" AllowDrop="True" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Closing="OnClose" Drop="OnDrop">
+        Title="Import Mylist" Height="135" Width="275" AllowDrop="True" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Closing="OnClose" Drop="OnDrop" FontFamily="Calibri">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="34" />

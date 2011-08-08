@@ -1,0 +1,118 @@
+﻿using System;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+
+namespace AniDBmini
+{
+    /// <summary>
+    /// Interaction logic for OptionsWindow.xaml
+    /// </summary>
+    public partial class OptionsWindow : Window
+    {
+
+        #region Fields
+
+        private bool isInitialized;
+
+        #endregion Fields
+
+        #region Constructor
+
+        public OptionsWindow()
+        {
+            InitializeComponent();
+            LoadOptions();
+
+            applyButton.IsEnabled = false;
+            isInitialized = true;
+        }
+
+        #endregion Constructor
+
+        #region Private Methods
+
+        private void LoadOptions()
+        {
+            MPCAPI.MPC_WATCHED mpcMarkedWatched = (MPCAPI.MPC_WATCHED)ConfigFile.Read("mpcMarkWatched").ToInt32();
+
+            mpchcLocationTextBox.Text = ConfigFile.Read("mpcPath").ToString();
+
+            if (mpcMarkedWatched == MPCAPI.MPC_WATCHED.AFTER_FINISHED)
+                mpcMarkAfter.IsChecked = true;
+            else if (mpcMarkedWatched == MPCAPI.MPC_WATCHED.DURING_TICKS)
+                mpcMarkDuring.IsChecked = true;
+
+            mpcWatchedPercSlider.Value = ConfigFile.Read("mpcMarkWatchedPerc").ToInt32();
+            ShowFileInTitle.IsChecked = ConfigFile.Read("mpcShowTitle").ToBoolean();
+        }
+
+        private void SaveOptions()
+        {
+            ConfigFile.Write("mpcPath", mpchcLocationTextBox.Text);
+            ConfigFile.Write("mpcMarkWatched", mpcMarkAfter.IsChecked == true ? "2" : (mpcMarkDuring.IsChecked == true ? "1" : "0"));
+            ConfigFile.Write("mpcMarkWatchedPerc", mpcWatchedPerc.Text);
+            ConfigFile.Write("mpcShowTitle", ShowFileInTitle.IsChecked.ToString());
+
+            applyButton.IsEnabled = false;
+            okButton.Focus();
+        }
+
+        #endregion Private Methods
+
+        #region Events
+
+        private void OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (isInitialized)
+            {
+                int oldIndex = int.Parse(((TreeViewItem)e.OldValue).Tag.ToString());
+                OptionGirds.Children[oldIndex].Visibility = System.Windows.Visibility.Collapsed;
+
+                int selectedIndex = int.Parse(((TreeViewItem)e.NewValue).Tag.ToString());
+                OptionGirds.Children[selectedIndex].Visibility = System.Windows.Visibility.Visible;
+            }
+        }
+
+        private void MPCBrowseOnClick(object sender, RoutedEventArgs e)
+        {
+            string pFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+            dlg.Filter = "MPC-HC main executable|mpc-hc.exe";
+            dlg.InitialDirectory = System.IO.Directory.Exists(pFilesPath + @"\Media Player Classic - Home Cinema") ?
+                                   pFilesPath + @"\Media Player Classic - Home Cinema" : pFilesPath;
+
+            Nullable<bool> result = dlg.ShowDialog();
+
+            if (result == true)
+                mpchcLocationTextBox.Text = dlg.FileName;
+        }
+
+        private void enableApplyButton(object sender, EventArgs e)
+        {
+            if (isInitialized)
+                applyButton.IsEnabled = true;
+        }
+
+        private void OKOnClick(object sender, RoutedEventArgs e)
+        {
+            if (applyButton.IsEnabled == true)
+                SaveOptions();
+
+            this.Close();
+        }
+
+        private void CancelOnClick(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void ApplyOnClick(object sender, RoutedEventArgs e)
+        {
+            SaveOptions();
+        }
+
+        #endregion Events
+
+    }
+}

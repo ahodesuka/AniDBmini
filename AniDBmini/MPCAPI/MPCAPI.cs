@@ -192,6 +192,13 @@ namespace AniDBmini
             CMD_CLOSEAPP = 0xA0004006,
         };
 
+        public enum MPC_WATCHED
+        {
+            DISABLED = 0,
+            DURING_TICKS = 1,
+            AFTER_FINISHED = 2
+        };
+
         #endregion Enums
 
         #region Fields
@@ -199,12 +206,13 @@ namespace AniDBmini
         private MainWindow m_MainWindow;
         private HwndSource m_Source;
         private IntPtr m_hWnd, m_hWndMPC;
-        private DispatcherTimer m_SeekTimer;
+        private DispatcherTimer m_PlayTimer;
 
         private MPC_PLAYSTATE m_currentPlayState;
+        private MPC_WATCHED m_watchedWhen;
         private string m_currentFileTitle, m_currentFilePath;
-        private int m_currentFileLength, m_currentFilePosition;
-        private bool m_fileClosing;
+        private int m_currentFileLength, m_currentFilePosition, m_currentFileTick, m_watchedWhenPerc;
+        private bool m_currentFileWatched, m_ShowInFileTitle;
 
         public bool isHooked { get; private set; }
         public event FileWatchedHandler OnFileWatched = delegate { };
@@ -226,13 +234,17 @@ namespace AniDBmini
 
             using (Process MPC = new Process())
             {
-                MPC.StartInfo = new ProcessStartInfo(ConfigFile.Read("mpchcPath").ToString(), "/slave " + m_hWnd.ToInt32());
+                MPC.StartInfo = new ProcessStartInfo(ConfigFile.Read("mpcPath").ToString(), "/slave " + m_hWnd.ToInt32());
                 MPC.Start();
             }
 
-            m_SeekTimer = new DispatcherTimer();
-            m_SeekTimer.Interval = TimeSpan.FromSeconds(1);
-            m_SeekTimer.Tick += (s, e) => { SendData(MPCAPI_SENDCOMMAND.CMD_GETCURRENTPOSITION, string.Empty); };
+            m_PlayTimer = new DispatcherTimer();
+            m_PlayTimer.Interval = TimeSpan.FromMilliseconds(1000);
+            m_PlayTimer.Tick += delegate
+            {
+                m_currentFileTick++;
+                SendData(MPCAPI_SENDCOMMAND.CMD_GETCURRENTPOSITION, string.Empty);
+            };
         }
 
         #endregion Constructor
@@ -249,29 +261,31 @@ namespace AniDBmini
                     MPCAPI_COMMAND nCmd = (MPCAPI_COMMAND)cds.dwData;
                     string mpcMSG = new String((char*)cds.lpData, 0, cds.cbData / 2);
 
-                    //AniDBAPI.AppendDebugLine(String.Format("{0} : {1}", nCmd, mpcMSG));
-
                     switch (nCmd)
                     {
                         case MPCAPI_COMMAND.CMD_CONNECT:
                             m_hWndMPC = new IntPtr(int.Parse(mpcMSG));
                             break;
-                        // This will only fire for the last item on a playlist..
-                        //case MPCAPI_COMMAND.CMD_NOTIFYENDOFSTREAM:
-                        //    OnFileWatched(this, new FileWatchedArgs(m_currentFilePath));
-                        //    break;
                         case MPCAPI_COMMAND.CMD_CURRENTPOSITION:
                         case MPCAPI_COMMAND.CMD_NOTIFYSEEK:
                             m_currentFilePosition = int.Parse(mpcMSG);
+                            if (!m_currentFileWatched && m_watchedWhen == MPC_WATCHED.DURING_TICKS &&
+                                m_currentFileTick > m_currentFileLength / m_watchedWhenPerc)
+                            {
+                                OnFileWatched(this, new FileWatchedArgs(m_currentFilePath));
+                                m_currentFileWatched = true;
+                                m_PlayTimer.Stop();
+                            }
                             break;
                         case MPCAPI_COMMAND.CMD_NOWPLAYING:
                             string[] playing = mpcMSG.Split('|');
                             m_currentFileTitle = !string.IsNullOrWhiteSpace(playing[0]) ? playing[0] : System.IO.Path.GetFileName(playing[3]);
                             m_currentFilePath = playing[3];
                             m_currentFileLength = int.Parse(playing[4]);
-                            m_currentFilePosition = 0;
+                            m_currentFileWatched = false;
+                            m_currentFilePosition = m_currentFileTick = 0;
+                            LoadConfig();
                             SetTitle();
-                            m_fileClosing = false;
                             break;
                         case MPCAPI_COMMAND.CMD_PLAYMODE:
                             m_currentPlayState = (MPC_PLAYSTATE)int.Parse(mpcMSG);
@@ -279,11 +293,12 @@ namespace AniDBmini
                             switch (m_currentPlayState)
                             {
                                 case MPC_PLAYSTATE.PS_PLAY:
-                                    m_SeekTimer.Start();
+                                    if (!m_currentFileWatched)
+                                        m_PlayTimer.IsEnabled = true;
                                     break;
                                 case MPC_PLAYSTATE.PS_PAUSE:
                                 case MPC_PLAYSTATE.PS_STOP:
-                                    m_SeekTimer.Stop();
+                                    m_PlayTimer.IsEnabled = false;
                                     break;
                             }
                             break;
@@ -295,10 +310,12 @@ namespace AniDBmini
                                     IsMPCAlive();
                                     break;
                                 case MPC_LOADSTATE.MLS_CLOSING:
-                                    if (m_currentFileLength - m_currentFilePosition < m_currentFilePosition / 15 && !m_fileClosing)
+                                    if (!m_currentFileWatched && m_watchedWhen == MPC_WATCHED.AFTER_FINISHED &&
+                                        m_currentFileTick > m_currentFileLength / m_watchedWhenPerc)
                                     {
                                         OnFileWatched(this, new FileWatchedArgs(m_currentFilePath));
-                                        m_fileClosing = true;
+                                        m_currentFileWatched = true;
+                                        m_PlayTimer.Stop();
                                     }
                                     break;
                             }
@@ -343,14 +360,17 @@ namespace AniDBmini
 
         private void SetTitle(string o_Title = null)
         {
-            if (!string.IsNullOrWhiteSpace(o_Title))
-                m_MainWindow.Title = o_Title;
-            else
+            if (m_ShowInFileTitle)
             {
-                string playState = m_currentPlayState == MPC_PLAYSTATE.PS_PLAY ||
-                                   m_currentPlayState == MPC_PLAYSTATE.PS_STOP ? string.Empty : "[Paused]";
+                if (!string.IsNullOrWhiteSpace(o_Title))
+                    m_MainWindow.wTitle = o_Title;
+                else
+                {
+                    string playState = m_currentPlayState == MPC_PLAYSTATE.PS_PLAY ||
+                                       m_currentPlayState == MPC_PLAYSTATE.PS_STOP ? string.Empty : "[Paused] ";
 
-                m_MainWindow.Title = String.Format("{0} - {1} {2}", MainWindow.m_AppName, playState, m_currentFileTitle);
+                    m_MainWindow.wTitle = String.Format("{0} - {1}{2}", MainWindow.m_AppName, playState, m_currentFileTitle);
+                }
             }
         }
 
@@ -370,11 +390,15 @@ namespace AniDBmini
         public bool FocusMPC()
         {
             WinAPI.FocusWindow(m_hWndMPC);
+            return IsMPCAlive();
+        }
 
-            if (!IsMPCAlive())
-                return false;
-
-            return true;
+        public void LoadConfig()
+        {
+            m_watchedWhen = (MPC_WATCHED)ConfigFile.Read("mpcMarkWatched").ToInt32();
+            m_watchedWhenPerc = ConfigFile.Read("mpcMarkWatchedPerc").ToInt32();
+            m_watchedWhenPerc = 100 / (m_watchedWhenPerc != 0 ? m_watchedWhenPerc : new ConfigValue(ConfigFile.Default["mpcMarkWatchedPerc"]).ToInt32());
+            m_ShowInFileTitle = ConfigFile.Read("mpcShowTitle").ToBoolean();
         }
 
         #endregion Public Methods

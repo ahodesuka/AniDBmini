@@ -34,12 +34,6 @@ namespace AniDBmini
         #region Externs
 
         [DllImport("kernel32.dll")]
-        private static extern int GetSystemDefaultLCID();
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-        private static extern int GetLocaleInfo(int Locale, int LCType, [In, MarshalAs(UnmanagedType.LPWStr)] string lpLCData, int cchData);
-
-        [DllImport("kernel32.dll")]
         public static extern int GetPrivateProfileString(string lpAppName, string lpKeyName, string lpDefault, System.Text.StringBuilder lpReturnedString, int nSize, string lpFilePath);
 
         [DllImport("kernel32.dll")]
@@ -47,9 +41,6 @@ namespace AniDBmini
 
         [DllImport("user32.dll")]
         public static extern bool IsWindowVisible(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        public static extern bool IsIconic(IntPtr hWnd);
         
         [DllImport("user32.dll")]
         public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, ref COPYDATASTRUCT lParam);
@@ -68,16 +59,6 @@ namespace AniDBmini
         {
             ShowWindowAsync(hWnd, 1);
             SetForegroundWindow(hWnd);
-        }
-
-        public static string LocalDateFormat()
-        {
-            int size = GetLocaleInfo(GetSystemDefaultLCID(), LOCALE_SSHORTDATE, null, 0);
-
-            String dateFormat = new String(' ', size);
-            GetLocaleInfo(GetSystemDefaultLCID(), LOCALE_SSHORTDATE, dateFormat, size);
-
-            return dateFormat;
         }
 
         #endregion Public Methods

@@ -20,7 +20,7 @@ namespace AniDBmini
         private static string configPath = @".\data\config.ini",
                               configSection = MainWindow.m_AppName;
 
-        private static readonly Dictionary<string, string> Default = new Dictionary<string, string>
+        public static readonly Dictionary<string, string> Default = new Dictionary<string, string>
         {
             { "autoLogin", "false" },
             { "rememberUser", "true" },
@@ -29,7 +29,10 @@ namespace AniDBmini
             { "server", "api.anidb.net" },
             { "port", "9000" },
             { "localPort", "9001" },
-            { "mpchcPath", "" },
+            { "mpcPath", "" },
+            { "mpcMarkWatched", "1" },
+            { "mpcMarkWatchedPerc", "50" },
+            { "mpcShowTitle", "true" },
         };
 
         #endregion Fields

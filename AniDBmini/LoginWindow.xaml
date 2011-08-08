@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:p="clr-namespace:AniDBmini.Properties"
         Background="{DynamicResource WindowBackgroundBrush}" Title="AniDB Login" Height="250" Width="400" ResizeMode="NoResize" BorderThickness="0"
-        Icon="/AniDBmini;component/Resources/AniDBmini.ico" Initialized="Window_Initialized" WindowStartupLocation="CenterScreen">
+        Icon="/AniDBmini;component/Resources/AniDBmini.ico" Initialized="Window_Initialized" WindowStartupLocation="CenterScreen" FontFamily="Calibri">
     <Grid KeyDown="OnKeyDown">
         <Label Content="Username" Height="20" HorizontalAlignment="Left" Margin="30,5,0,0" Name="usernameLabel" VerticalAlignment="Top" Width="100" VerticalContentAlignment="Bottom" Padding="0,5" />
         <TextBox Height="32" Margin="30,25,30,0" Name="usernameTextBox" VerticalAlignment="Top" FontSize="18" VerticalContentAlignment="Center" Text="{Binding Source={x:Static p:Settings.Default}, Path=username}" Padding="3" />

@@ -59,7 +59,6 @@ namespace AniDBmini.Collections
         public AnimeTab(string result)
         {
             string[] animeInfo = result.Split('|');
-            string dateFormat = WinAPI.LocalDateFormat();
 
             AnimeID = int.Parse(animeInfo[0]);
             Year = animeInfo[1];
@@ -75,8 +74,8 @@ namespace AniDBmini.Collections
 
             Episodes = int.Parse(animeInfo[7]);
 
-            StartDate = ExtensionMethods.UnixTimeToDateTime(animeInfo[8]).Date.ToString(dateFormat);
-            EndDate = ExtensionMethods.UnixTimeToDateTime(animeInfo[9]).Date.ToString(dateFormat);
+            StartDate = ExtensionMethods.UnixTimeToDateTime(animeInfo[8]).Date.ToShortDateString();
+            EndDate = ExtensionMethods.UnixTimeToDateTime(animeInfo[9]).Date.ToShortDateString();
             EndDateRowHeight = string.IsNullOrEmpty(animeInfo[9]) || StartDate == EndDate ? 0 : 42;
 
             Officialurl = animeInfo[10];

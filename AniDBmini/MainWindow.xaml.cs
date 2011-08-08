@@ -61,6 +61,7 @@ namespace AniDBmini
             //MessageBox.Show(DateTime.Parse("02.08.2011 12:14:20", System.Globalization.CultureInfo.CreateSpecificCulture("en-GB")).ToString(WindowsLocale.LocalDateFormat()));
 
             aniDB = api;
+            AniDBAPI.AppendDebugLine("Welcome to AniDBmini, connected to: " + aniDB.APIServer);
 
             InitializeComponent();
 
@@ -365,19 +366,19 @@ namespace AniDBmini
 
         private void OnStateChanged(object sender, EventArgs args)
         {
-            if (WindowState == WindowState.Minimized)
+            if (this.WindowState == WindowState.Minimized)
             {
-                m_notifyIcon.Text = this.Title;
+                m_notifyIcon.Text = this.Title.Truncate(63, false, true);
                 this.Hide();
             }
             else
-                m_storedWindowState = WindowState;
+                m_storedWindowState = this.WindowState;
         }
 
         private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs args)
         {
             if (m_notifyIcon != null)
-                m_notifyIcon.Visible = !IsVisible;
+                m_notifyIcon.Visible = !this.IsVisible;
         }
 
         private void ImportList_Click(object sender, RoutedEventArgs e)

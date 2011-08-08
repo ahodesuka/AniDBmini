@@ -1,8 +1,14 @@
-﻿using System;
+﻿
+#region Using Statments
+
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
 using AniDBmini.Collections;
+
+#endregion Using Statements
 
 namespace AniDBmini
 {
@@ -24,6 +30,30 @@ namespace AniDBmini
         {
             double seconds = double.Parse(text, CultureInfo.InvariantCulture);
             return Epoch.AddSeconds(seconds);
+        }
+
+        public static string Truncate(this string s, int length, bool atWord, bool addEllipsis)
+        {
+            if (s == null || s.Length <= length)
+                return s;
+
+            length -= addEllipsis ? 3 : 0;
+            string s2 = s.Substring(0, length);
+
+            if (atWord)
+            {
+                List<char> alternativeCutOffs = new List<char>() { ' ', ',', '.', '?', '/', ':', ';', '\'', '\"', '\'', '-' };
+
+                int lastSpace = s2.LastIndexOf(' ');
+
+                if (lastSpace != -1 && (s.Length >= length + 1 && !alternativeCutOffs.Contains(s.ToCharArray()[length])))
+                    s2 = s2.Remove(lastSpace);
+            }
+
+            if (addEllipsis)
+                s2 += "...";
+
+            return s2;
         }
 
         public static void OpenWebPage(string url)

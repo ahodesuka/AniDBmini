@@ -218,7 +218,7 @@ namespace AniDBmini
             m_MainWindow = main;
             m_hWnd = new WindowInteropHelper(m_MainWindow).Handle;
 
-            m_Source = (HwndSource)PresentationSource.FromVisual(m_MainWindow);
+            m_Source = HwndSource.FromHwnd(m_hWnd);
             m_Source.AddHook(WndProc);
 
             isHooked = true;
@@ -226,7 +226,7 @@ namespace AniDBmini
 
             using (Process MPC = new Process())
             {
-                MPC.StartInfo = new ProcessStartInfo(@"C:\Program Files (x86)\Media Player Classic - Home Cinema\mpc-hc.exe", "/slave " + m_hWnd.ToInt32());
+                MPC.StartInfo = new ProcessStartInfo(ConfigFile.Read("mpchcPath").ToString(), "/slave " + m_hWnd.ToInt32());
                 MPC.Start();
             }
 
@@ -295,7 +295,7 @@ namespace AniDBmini
                                     IsMPCAlive();
                                     break;
                                 case MPC_LOADSTATE.MLS_CLOSING:
-                                    if (m_currentFileLength - m_currentFilePosition < m_currentFilePosition / 13 && !m_fileClosing)
+                                    if (m_currentFileLength - m_currentFilePosition < m_currentFilePosition / 15 && !m_fileClosing)
                                     {
                                         OnFileWatched(this, new FileWatchedArgs(m_currentFilePath));
                                         m_fileClosing = true;
@@ -369,13 +369,10 @@ namespace AniDBmini
 
         public bool FocusMPC()
         {
-            if (!IsMPCAlive())
-                return false;
-
             WinAPI.FocusWindow(m_hWndMPC);
 
-            SendData(MPCAPI_SENDCOMMAND.CMD_OPENFILE, @"Z:\Mawaru Penguin Drum\[gg]_Mawaru_Penguindrum_-_04_[685D0E68].mkv");
-            //SendData(MPCAPI_SENDCOMMAND.CMD_SETPOSITION, "1300");
+            if (!IsMPCAlive())
+                return false;
 
             return true;
         }

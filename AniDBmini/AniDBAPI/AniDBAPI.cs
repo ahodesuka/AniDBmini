@@ -98,9 +98,7 @@ namespace AniDBmini
 #endif
                 isLoggedIn = true;
                 this.user = user;
-                this.pass = pass;
-
-                AppendDebugLine("Welcome to AniDBmini, connected to: " + apiserver);
+                this.pass = pass;                
             }
             else
             {
@@ -223,17 +221,17 @@ namespace AniDBmini
             using (FileStream fs = file.OpenRead())
             {
                 AppendDebugLine("Hashing " + item.Name);
-				byte[] temp;
+                byte[] temp;
 
-				if ((temp = hasher.ComputeHash(fs)) != null)
-				{
-					item.Hash = string.Concat(temp.Select(b => b.ToString("x2")).ToArray());
-					AppendDebugLine("Ed2k hash: " + item.Hash);
+                if ((temp = hasher.ComputeHash(fs)) != null)
+                {
+                    item.Hash = string.Concat(temp.Select(b => b.ToString("x2")).ToArray());
+                    AppendDebugLine("Ed2k hash: " + item.Hash);
 
-					return item;
-				}
-				else
-					AppendDebugLine("Hashing aborted");
+                    return item;
+                }
+                else
+                    AppendDebugLine("Hashing aborted");
 
                 return null;
             }
@@ -306,6 +304,7 @@ namespace AniDBmini
             set { mainWindow = value; }
         }
 
+        public IPEndPoint APIServer { get { return apiserver; } }
         public TSObservableCollection<DebugLine> DebugLog { get { return debugLog; } }
 
         public event FileHashingProgressHandler FileHashingProgress

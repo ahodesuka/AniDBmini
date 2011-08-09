@@ -4,35 +4,31 @@ namespace AniDBmini.Collections
 {
     public class HashItem : IEquatable<HashItem>
     {
-        private string hash, name, path;
-        private double size;
-        private int state, viewed;
-        private bool edit;
+        public string Hash { get; set; }
+        public string Name { get; private set; }
+        public string Path { get; private set; }
 
-        public HashItem(string _path)
+        public double Size { get; private set; }
+
+        public int State { get; set; }
+        public int Viewed { get; set; }
+
+        public bool Edit { get; set; }
+
+        public HashItem(string path)
         {
-            path = _path;
-            name = System.IO.Path.GetFileName(path);
-            size = new System.IO.FileInfo(path).Length;
+            Path = path;
+            Name = System.IO.Path.GetFileName(path);
+            Size = new System.IO.FileInfo(path).Length;
         }
+
+        #region IEquatable
 
         public bool Equals(HashItem other)
         {
-            if (path == other.Path && size == other.Size && name == other.Name)
-                return true;
-            else
-                return false;
+            return Path == other.Path;
         }
 
-        public string Hash { get { return hash; } set { hash = value; } }
-        public string Name { get { return name; } }
-        public string Path { get { return path; } }
-
-        public double Size { get { return size; } }
-
-        public int State { get { return state; } set { state = value; } }
-        public int Viewed { get { return viewed; } set { viewed = value; } }
-
-        public bool Edit { get { return edit; } set { edit = value; } }
+        #endregion IEquatable
     }
 }

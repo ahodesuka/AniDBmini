@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace AniDBmini.Collections
 {
-    public class EpisodeEntry
+    public class EpisodeEntry : IEquatable<EpisodeEntry>
     {
 
         #region Fields
@@ -20,6 +21,15 @@ namespace AniDBmini.Collections
         public EpisodeEntry() { }
 
         #endregion Constructors
+
+        #region IEquatable
+
+        public bool Equals(EpisodeEntry other)
+        {
+            return eid == other.eid;
+        }
+
+        #endregion IEquatable
 
     }
 }

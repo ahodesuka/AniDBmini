@@ -148,7 +148,7 @@ namespace AniDBmini
 
 		private void MyListAdd(HashItem item)
 		{
-            string r_msg = string.Empty;
+            string r_msg = String.Empty;
             APIResponse response = Execute("MYLISTADD size=" + item.Size + 
                                                      "&ed2k=" + item.Hash + 
                                                      "&viewed=" + item.Viewed + 
@@ -260,7 +260,7 @@ namespace AniDBmini
         {
 #if !OFFLINE
             string e_cmd = cmd;
-            string e_response = string.Empty;
+            string e_response = String.Empty;
 
             if (isLoggedIn)
                 e_cmd += (isSingleCMD ? " " : "&") + "s=" + sessionKey;

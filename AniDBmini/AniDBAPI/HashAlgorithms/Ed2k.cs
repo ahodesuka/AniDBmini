@@ -87,7 +87,7 @@ namespace AniDBmini.HashAlgorithms
                     missing -= length;
                     length = 0;
 
-                    if (missing % (4096 * 512) == 0)
+                    if (missing % (5120 * 512) == 0)
                         FileHashingProgress(this, new FileHashingProgressArgs(totalBytesRead, size));
                 }
                 else
@@ -148,6 +148,8 @@ namespace AniDBmini.HashAlgorithms
                     redHash = md4.Hash;
                 }
             }
+
+            FileHashingProgress(this, new FileHashingProgressArgs(totalBytesRead, size));
 
             if (redHash == null) blueIsRed = true;
             return redHash == null ? blueHash : redHash;

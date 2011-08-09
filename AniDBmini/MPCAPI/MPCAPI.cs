@@ -197,6 +197,13 @@ namespace AniDBmini
             CMD_OSDSHOWMESSAGE = 0xA0005000,
         };
 
+        private enum OSD_MESSAGEPOS
+        {
+            OSD_NOMESSAGE = 0,
+            OSD_TOPLEFT = 1,
+            OSD_TOPRIGHT = 2
+        };
+
         public enum MPC_WATCHED
         {
             DISABLED = 0,
@@ -228,9 +235,11 @@ namespace AniDBmini
 
         private MPC_PLAYSTATE m_currentPlayState;
         private MPC_WATCHED m_watchedWhen;
+        private OSD_MESSAGEPOS m_OSDMSGPos;
+
         private string m_currentFileTitle, m_currentFilePath;
-        private int m_currentFileLength, m_currentFilePosition, m_currentFileTick, m_watchedWhenPerc;
-        private bool m_currentFileWatched, m_ShowInFileTitle, m_ShowWatchedOSD;
+        private int m_currentFileLength, m_currentFilePosition, m_currentFileTick, m_watchedWhenPerc, m_OSDMSGDur;
+        private bool m_currentFileWatched, m_ShowInFileTitle;
 
         public bool isHooked { get; private set; }
         public event FileWatchedHandler OnFileWatched = delegate { };
@@ -261,7 +270,7 @@ namespace AniDBmini
             m_PlayTimer.Tick += delegate
             {
                 m_currentFileTick++;
-                SendData(MPCAPI_SENDCOMMAND.CMD_GETCURRENTPOSITION, string.Empty);
+                SendData(MPCAPI_SENDCOMMAND.CMD_GETCURRENTPOSITION, String.Empty);
             };
         }
 
@@ -278,8 +287,6 @@ namespace AniDBmini
                 {
                     MPCAPI_COMMAND nCmd = (MPCAPI_COMMAND)cds.dwData;
                     string mpcMSG = new String((char*)cds.lpData, 0, cds.cbData / 2);
-
-                    AniDBAPI.AppendDebugLine(String.Format("{0} : {1}", nCmd, mpcMSG));
 
                     switch (nCmd)
                     {
@@ -362,8 +369,8 @@ namespace AniDBmini
             {
                 MPC_OSDDATA osdData = new MPC_OSDDATA
                 {
-                    nMsgPos = 1, // TODO: write enum, add to config?
-                    nDurationMS = 2000, // TODO: add to config
+                    nMsgPos = (int)m_OSDMSGPos,
+                    nDurationMS = m_OSDMSGDur,
                     strMsg = strCmd
                 };
                 nCDS = new WinAPI.COPYDATASTRUCT
@@ -385,7 +392,7 @@ namespace AniDBmini
             }
 
             IntPtr cdsPtr = Marshal.AllocCoTaskMem(Marshal.SizeOf(nCDS));
-            Marshal.StructureToPtr(nCDS, cdsPtr, true);
+            Marshal.StructureToPtr(nCDS, cdsPtr, false);
 
             WinAPI.SendMessage(m_hWndMPC, WinAPI.WM_COPYDATA, m_hWnd, cdsPtr);
 
@@ -413,7 +420,7 @@ namespace AniDBmini
                 else
                 {
                     string playState = m_currentPlayState == MPC_PLAYSTATE.PS_PLAY ||
-                                       m_currentPlayState == MPC_PLAYSTATE.PS_STOP ? string.Empty : "[Paused] ";
+                                       m_currentPlayState == MPC_PLAYSTATE.PS_STOP ? String.Empty : "[Paused] ";
 
                     m_MainWindow.wTitle = String.Format("{0} - {1}{2}", MainWindow.m_AppName, playState, m_currentFileTitle);
                 }
@@ -445,13 +452,13 @@ namespace AniDBmini
             m_watchedWhenPerc = ConfigFile.Read("mpcMarkWatchedPerc").ToInt32();
             m_watchedWhenPerc = 100 / (m_watchedWhenPerc != 0 ? m_watchedWhenPerc : new ConfigValue(ConfigFile.Default["mpcMarkWatchedPerc"]).ToInt32());
             m_ShowInFileTitle = ConfigFile.Read("mpcShowTitle").ToBoolean();
-            m_ShowWatchedOSD = ConfigFile.Read("mpcShowOSD").ToBoolean();
+            m_OSDMSGPos = (OSD_MESSAGEPOS)ConfigFile.Read("mpcOSDPos").ToInt32();
+            m_OSDMSGDur = ConfigFile.Read("mpcOSDDurMS").ToInt32();
         }
 
         public void ShowWatchedOSD()
         {
-            if (m_ShowWatchedOSD)
-                SendData(MPCAPI_SENDCOMMAND.CMD_OSDSHOWMESSAGE, MainWindow.m_AppName + ": File marked as watched.");
+            SendData(MPCAPI_SENDCOMMAND.CMD_OSDSHOWMESSAGE, MainWindow.m_AppName + ": File marked as watched.");
         }
 
         #endregion Public Methods

@@ -40,7 +40,9 @@ namespace AniDBmini
         private AniDBAPI aniDB;
         private MPCAPI mpcApi;
 
-        private int storedTabIndex;
+        private DateTime m_hashingStartTime, m_hashingLastTime;
+
+        private int m_storedTabIndex;
 
         private bool isHashing, delayHashing;
         private double totalQueueSize, ppSize;
@@ -145,10 +147,13 @@ namespace AniDBmini
             HashItem item = new HashItem(path);
             hashFileList.Add(item);
 
-            if (!hashingStartButton.IsEnabled)
-                hashingStartButton.IsEnabled = true;
-            else if (isHashing)
-                totalQueueSize += item.Size;
+            m_Dispatcher.BeginInvoke(new Action(delegate
+            {
+                if (!isHashing && !hashingStartButton.IsEnabled)
+                    hashingStartButton.IsEnabled = true;
+                else if (isHashing)
+                    totalQueueSize += item.Size;
+            }));
         }
 
         private void beginHashing()
@@ -182,12 +187,13 @@ namespace AniDBmini
                         hashFileList[0] = _temp;
                         m_Dispatcher.BeginInvoke(new Action<HashItem>(FinishHash), hashFileList[0]);
 
-                        while (delayHashing)   // allow the FinishHash method to complete on
-                            Thread.Sleep(100); // the main thread before continuing.
+                        hashFileListRemove(hashFileList[0]);
                     }
                 }
             };
             m_Worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(OnRunWorkerCompleted);
+
+            m_hashingStartTime = m_hashingLastTime = DateTime.Now;
             m_Worker.RunWorkerAsync();
         }
 
@@ -237,7 +243,9 @@ namespace AniDBmini
             {
                 item = aniDB.ed2kHash(item);
                 aniDB.AddToMyList(item);
-                mpcApi.ShowWatchedOSD();
+
+                if (ConfigFile.Read("mpcShowOSD").ToBoolean())
+                    mpcApi.ShowWatchedOSD();
             }));
         }
 
@@ -311,6 +319,7 @@ namespace AniDBmini
             hashingStopButton.IsEnabled = isHashing = false;
             fileProgressBar.Value = totalProgressBar.Value = ppSize = 0;
             hashingStartButton.IsEnabled = hashFileList.Count > 0;
+            timeRemainingTextBlock.Text = String.Empty;
         }
 
         private void addFilesButton_Click(object sender, RoutedEventArgs e)
@@ -322,8 +331,13 @@ namespace AniDBmini
             Nullable<bool> result = dlg.ShowDialog();
 
             if (result == true)
-                for (int i = 0; i < dlg.FileNames.Length; i++)
-                    addRowToHashTable(dlg.FileNames[i]);
+            {
+                ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+                {
+                    for (int i = 0; i < dlg.FileNames.Length; i++)
+                        addRowToHashTable(dlg.FileNames[i]);
+                }));
+            }
         }
 
         private void addFoldersButton_Click(object sender, RoutedEventArgs e)
@@ -333,38 +347,60 @@ namespace AniDBmini
 
             Forms.DialogResult result = dlg.ShowDialog();
             if (result == Forms.DialogResult.OK)
-                foreach (string _file in Directory.GetFiles(dlg.SelectedPath, "*.*", SearchOption.AllDirectories)
-                                            .Where(s => allowedVideoFiles.Contains("*" + Path.GetExtension(s).ToLower())))
-                    addRowToHashTable(_file);
+            {
+                ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+                {
+                    foreach (string _file in Directory.GetFiles(dlg.SelectedPath, "*.*")
+                                                      .Where(s => allowedVideoFiles.Contains("*" + Path.GetExtension(s).ToLower())))
+                        addRowToHashTable(_file);
+                    foreach (string dir in Directory.GetDirectories(dlg.SelectedPath))
+                        try
+                        {
+                            foreach (string _file in Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories)
+                                                              .Where(s => allowedVideoFiles.Contains("*" + Path.GetExtension(s).ToLower())))
+                                addRowToHashTable(_file);
+                        }
+                        catch (UnauthorizedAccessException) { }
+                }));
+            }
         }
 
         private void OnFileHashingProgress(object sender, FileHashingProgressArgs e)
         {
-            m_Dispatcher.BeginInvoke(new Action<FileHashingProgressArgs>(UpdateProgress), e);
-        }
+            double fileProg = e.ProcessedSize / e.TotalSize * 100;
+            double totalProg = (e.ProcessedSize + ppSize) / totalQueueSize * 100;
+            string remainingString = string.Empty;
 
-        private void UpdateProgress(FileHashingProgressArgs e)
-        {
-            if (isHashing)
+            if (DateTime.Now.Subtract(m_hashingLastTime).TotalMilliseconds >= 1000)
             {
-                fileProgressBar.Value = e.ProcessedSize / e.TotalSize * 100;
-                totalProgressBar.Value = (e.ProcessedSize + ppSize) / totalQueueSize * 100;
+                TimeSpan remainingSpan = TimeSpan.FromSeconds((DateTime.Now.Subtract(m_hashingStartTime).TotalSeconds / (ppSize + e.ProcessedSize)) * (totalQueueSize - (ppSize + e.ProcessedSize)));
+                remainingString = String.Format("Estimated time remaining: {0}h {1}m {2}s", Math.Round(remainingSpan.TotalHours), remainingSpan.Minutes, remainingSpan.Seconds);
+                m_hashingLastTime = DateTime.Now;
             }
+
+            m_Dispatcher.BeginInvoke(new Action(delegate
+            {
+                if (isHashing)
+                {
+                    if (remainingString != string.Empty)
+                        timeRemainingTextBlock.Text = remainingString;
+
+                    fileProgressBar.Value = fileProg;
+                    totalProgressBar.Value = totalProg;
+                }
+            }));
         }
 
         private void FinishHash(HashItem item)
         {
             ppSize += item.Size;
 
-            hashFileListRemove(item);
-            delayHashing = false;
-
             if (addToMyListCheckBox.IsChecked == true)
             {
                 item.Viewed = watchedCheckBox.IsChecked == true ? 1 : 0;
                 item.State = stateComboBox.SelectedIndex;
 
-                aniDB.AddToMyList((HashItem)item);
+                aniDB.AddToMyList(item);
             }
         }
 
@@ -406,14 +442,14 @@ namespace AniDBmini
             if (e.oldCount == 1 && e.newCount == 0) // no more tabs
             {
                 animeTabItem.Visibility = System.Windows.Visibility.Collapsed;
-                ((TabItem)mainTabControl.Items[storedTabIndex]).Focus();
+                ((TabItem)mainTabControl.Items[m_storedTabIndex]).Focus();
             }
             else
             {
                 if (e.oldCount == 0 && e.newCount == 1) // first tab
                 {
                     animeTabItem.Visibility = System.Windows.Visibility.Visible;
-                    storedTabIndex = mainTabControl.SelectedIndex;
+                    m_storedTabIndex = mainTabControl.SelectedIndex;
                 }
 
                 animeTabItem.Focus();

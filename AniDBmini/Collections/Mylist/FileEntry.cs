@@ -1,6 +1,8 @@
-﻿namespace AniDBmini.Collections
+﻿using System;
+
+namespace AniDBmini.Collections
 {
-    public class FileEntry
+    public class FileEntry : IEquatable<FileEntry>
     {
 
         #region Fields
@@ -17,6 +19,15 @@
         public FileEntry() { }
 
         #endregion Constructors
+
+        #region IEquatable
+
+        public bool Equals(FileEntry other)
+        {
+            return lid == other.lid;
+        }
+
+        #endregion IEquatable
 
     }
 }

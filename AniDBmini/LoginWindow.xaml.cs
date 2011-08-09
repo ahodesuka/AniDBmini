@@ -52,9 +52,9 @@ namespace AniDBmini
 
         private void loginButton_Click(object sender, RoutedEventArgs e)
         {
-			if (usernameTextBox.Text == string.Empty ||
+			if (usernameTextBox.Text == String.Empty ||
                 !System.Text.RegularExpressions.Regex.IsMatch(usernameTextBox.Text, @"^[A-z0-9_-]+$") ||
-                passwordPasswordBox.Password == string.Empty)
+                passwordPasswordBox.Password == String.Empty)
 			{
 				MessageBox.Show("Enter a valid username and password!", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
 				return;

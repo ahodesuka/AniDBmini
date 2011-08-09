@@ -46,6 +46,8 @@ namespace AniDBmini
             mpcWatchedPercSlider.Value = ConfigFile.Read("mpcMarkWatchedPerc").ToInt32();
             ShowFileInTitle.IsChecked = ConfigFile.Read("mpcShowTitle").ToBoolean();
             ShowWatchedOSD.IsChecked = ConfigFile.Read("mpcShowOSD").ToBoolean();
+            mpcOSDPos.SelectedIndex = ConfigFile.Read("mpcOSDPos").ToInt32() - 1;
+            mpcOSDDurMS.SelectedIndex = ConfigFile.Read("mpcOSDDurMS").ToInt32() / 1000 - 1;
         }
 
         private void SaveOptions()
@@ -55,6 +57,8 @@ namespace AniDBmini
             ConfigFile.Write("mpcMarkWatchedPerc", mpcWatchedPerc.Text);
             ConfigFile.Write("mpcShowTitle", ShowFileInTitle.IsChecked.ToString());
             ConfigFile.Write("mpcShowOSD", ShowWatchedOSD.IsChecked.ToString());
+            ConfigFile.Write("mpcOSDPos", (mpcOSDPos.SelectedIndex + 1).ToString());
+            ConfigFile.Write("mpcOSDDurMS", ((mpcOSDDurMS.SelectedIndex + 1) * 1000).ToString());
 
             applyButton.IsEnabled = false;
             okButton.Focus();
@@ -88,7 +92,14 @@ namespace AniDBmini
             Nullable<bool> result = dlg.ShowDialog();
 
             if (result == true)
-                mpchcLocationTextBox.Text = dlg.FileName;
+            {
+                if (System.IO.Path.GetFileNameWithoutExtension(dlg.FileName) == "mpc-hc64" && IntPtr.Size == 4)
+                    MessageBox.Show("Media Player Classic - Home Cinema x64 will not work\nwith the x86 version of " + MainWindow.m_AppName + ".\n\n" +
+                                    "Please use the x64 version of " + MainWindow.m_AppName + ".\nOr use the x86 version of Media Player Classic - Home Cinema.",
+                                    "Alert!", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                else
+                    mpchcLocationTextBox.Text = dlg.FileName;
+            }
         }
 
         private void enableApplyButton(object sender, EventArgs e)

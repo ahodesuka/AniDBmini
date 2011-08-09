@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace AniDBmini.Collections
 {
-    public class MylistEntry
+    public class MylistEntry : IEquatable<MylistEntry>
     {
 
         #region Fields
@@ -21,6 +22,15 @@ namespace AniDBmini.Collections
         public MylistEntry() { }
 
         #endregion Constructors
+
+        #region IEquatable
+
+        public bool Equals(MylistEntry other)
+        {
+            return aid == other.aid;
+        }
+
+        #endregion IEquatable
 
     }
 }

@@ -34,6 +34,8 @@ namespace AniDBmini
             { "mpcMarkWatchedPerc", "50" },
             { "mpcShowTitle", "true" },
             { "mpcShowOSD", "true" },
+            { "mpcOSDPos", "1" },
+            { "mpcOSDDurMS", "2000" },
         };
 
         #endregion Fields

@@ -190,6 +190,11 @@ namespace AniDBmini
             /// Close App
             /// </summary>
             CMD_CLOSEAPP = 0xA0004006,
+
+            /// <summary>
+            /// Show host defined OSD message string
+            /// </summary>
+            CMD_OSDSHOWMESSAGE = 0xA0005000,
         };
 
         public enum MPC_WATCHED
@@ -200,6 +205,19 @@ namespace AniDBmini
         };
 
         #endregion Enums
+
+        #region Structs
+
+        [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
+        private struct MPC_OSDDATA
+        {
+            public int nMsgPos;
+            public int nDurationMS;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst=128)]
+            public string strMsg;
+        };
+
+        #endregion Structs
 
         #region Fields
 
@@ -212,7 +230,7 @@ namespace AniDBmini
         private MPC_WATCHED m_watchedWhen;
         private string m_currentFileTitle, m_currentFilePath;
         private int m_currentFileLength, m_currentFilePosition, m_currentFileTick, m_watchedWhenPerc;
-        private bool m_currentFileWatched, m_ShowInFileTitle;
+        private bool m_currentFileWatched, m_ShowInFileTitle, m_ShowWatchedOSD;
 
         public bool isHooked { get; private set; }
         public event FileWatchedHandler OnFileWatched = delegate { };
@@ -260,6 +278,8 @@ namespace AniDBmini
                 {
                     MPCAPI_COMMAND nCmd = (MPCAPI_COMMAND)cds.dwData;
                     string mpcMSG = new String((char*)cds.lpData, 0, cds.cbData / 2);
+
+                    AniDBAPI.AppendDebugLine(String.Format("{0} : {1}", nCmd, mpcMSG));
 
                     switch (nCmd)
                     {
@@ -337,14 +357,40 @@ namespace AniDBmini
         /// <param name="strCmd">Some commands require a parameter.</param>
         private void SendData(MPCAPI_SENDCOMMAND nCmd, string strCmd)
         {
-            WinAPI.COPYDATASTRUCT nCDS = new WinAPI.COPYDATASTRUCT
+            WinAPI.COPYDATASTRUCT nCDS;
+            if (nCmd == MPCAPI_SENDCOMMAND.CMD_OSDSHOWMESSAGE)
             {
-                dwData = (uint)nCmd,
-                cbData = (strCmd.Length + 1) * 2,
-                lpData = Marshal.StringToCoTaskMemUni(strCmd)
-            };
+                MPC_OSDDATA osdData = new MPC_OSDDATA
+                {
+                    nMsgPos = 1, // TODO: write enum, add to config?
+                    nDurationMS = 2000, // TODO: add to config
+                    strMsg = strCmd
+                };
+                nCDS = new WinAPI.COPYDATASTRUCT
+                {
+                    dwData = (IntPtr)(int)nCmd,
+                    cbData = Marshal.SizeOf(osdData)
+                };
+                nCDS.lpData = Marshal.AllocCoTaskMem(nCDS.cbData);
+                Marshal.StructureToPtr(osdData, nCDS.lpData, false);
+            }
+            else
+            {
+                nCDS = new WinAPI.COPYDATASTRUCT
+                {
+                    dwData = (IntPtr)(int)nCmd,
+                    cbData = (strCmd.Length + 1) * 2,
+                    lpData = Marshal.StringToCoTaskMemUni(strCmd)
+                };
+            }
 
-            WinAPI.SendMessage(m_hWndMPC, (uint)WinAPI.WM_COPYDATA, m_hWnd, ref nCDS);
+            IntPtr cdsPtr = Marshal.AllocCoTaskMem(Marshal.SizeOf(nCDS));
+            Marshal.StructureToPtr(nCDS, cdsPtr, true);
+
+            WinAPI.SendMessage(m_hWndMPC, WinAPI.WM_COPYDATA, m_hWnd, cdsPtr);
+
+            Marshal.FreeCoTaskMem(cdsPtr);
+            Marshal.FreeCoTaskMem(nCDS.lpData);
         }
 
         private bool IsMPCAlive()
@@ -399,6 +445,13 @@ namespace AniDBmini
             m_watchedWhenPerc = ConfigFile.Read("mpcMarkWatchedPerc").ToInt32();
             m_watchedWhenPerc = 100 / (m_watchedWhenPerc != 0 ? m_watchedWhenPerc : new ConfigValue(ConfigFile.Default["mpcMarkWatchedPerc"]).ToInt32());
             m_ShowInFileTitle = ConfigFile.Read("mpcShowTitle").ToBoolean();
+            m_ShowWatchedOSD = ConfigFile.Read("mpcShowOSD").ToBoolean();
+        }
+
+        public void ShowWatchedOSD()
+        {
+            if (m_ShowWatchedOSD)
+                SendData(MPCAPI_SENDCOMMAND.CMD_OSDSHOWMESSAGE, MainWindow.m_AppName + ": File marked as watched.");
         }
 
         #endregion Public Methods

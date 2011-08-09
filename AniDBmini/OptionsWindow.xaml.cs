@@ -45,6 +45,7 @@ namespace AniDBmini
 
             mpcWatchedPercSlider.Value = ConfigFile.Read("mpcMarkWatchedPerc").ToInt32();
             ShowFileInTitle.IsChecked = ConfigFile.Read("mpcShowTitle").ToBoolean();
+            ShowWatchedOSD.IsChecked = ConfigFile.Read("mpcShowOSD").ToBoolean();
         }
 
         private void SaveOptions()
@@ -53,6 +54,7 @@ namespace AniDBmini
             ConfigFile.Write("mpcMarkWatched", mpcMarkAfter.IsChecked == true ? "2" : (mpcMarkDuring.IsChecked == true ? "1" : "0"));
             ConfigFile.Write("mpcMarkWatchedPerc", mpcWatchedPerc.Text);
             ConfigFile.Write("mpcShowTitle", ShowFileInTitle.IsChecked.ToString());
+            ConfigFile.Write("mpcShowOSD", ShowWatchedOSD.IsChecked.ToString());
 
             applyButton.IsEnabled = false;
             okButton.Focus();
@@ -78,9 +80,10 @@ namespace AniDBmini
         {
             string pFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-            dlg.Filter = "MPC-HC main executable|mpc-hc.exe";
-            dlg.InitialDirectory = System.IO.Directory.Exists(pFilesPath + @"\Media Player Classic - Home Cinema") ?
-                                   pFilesPath + @"\Media Player Classic - Home Cinema" : pFilesPath;
+            dlg.Filter = "MPC-HC main executable|mpc-hc.exe;mpc-hc64.exe";
+            dlg.InitialDirectory = !string.IsNullOrWhiteSpace(mpchcLocationTextBox.Text) ? mpchcLocationTextBox.Text :
+                                   (System.IO.Directory.Exists(pFilesPath + @"\Media Player Classic - Home Cinema") ?
+                                   pFilesPath + @"\Media Player Classic - Home Cinema" : pFilesPath);
 
             Nullable<bool> result = dlg.ShowDialog();
 
@@ -99,7 +102,7 @@ namespace AniDBmini
             if (applyButton.IsEnabled == true)
                 SaveOptions();
 
-            this.Close();
+            this.DialogResult = true;
         }
 
         private void CancelOnClick(object sender, RoutedEventArgs e)
@@ -109,7 +112,7 @@ namespace AniDBmini
 
         private void ApplyOnClick(object sender, RoutedEventArgs e)
         {
-            SaveOptions();
+            SaveOptions();            
         }
 
         #endregion Events

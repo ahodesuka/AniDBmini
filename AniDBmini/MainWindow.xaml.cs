@@ -210,15 +210,21 @@ namespace AniDBmini
         {
             OptionsWindow options = new OptionsWindow();
             options.Owner = this;
-            options.ShowDialog();
+            if (options.ShowDialog() == true && mpcApi != null)
+                mpcApi.LoadConfig();
         }
 
         private void mpchcLaunch(object sender, RoutedEventArgs e)
         {
             if (mpcApi == null || !mpcApi.isHooked || !mpcApi.FocusMPC())
             {
-                mpcApi = new MPCAPI(this);
-                mpcApi.OnFileWatched += new FileWatchedHandler(OnFileWatched);
+                if (File.Exists(ConfigFile.Read("mpcPath").ToString()))
+                {
+                    mpcApi = new MPCAPI(this);
+                    mpcApi.OnFileWatched += new FileWatchedHandler(OnFileWatched);
+                }
+                else
+                    MessageBox.Show("Media Player Classic - Home Cinema not found!\nPlease ensure you have selected the mpc-hc executable inside the options.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -231,6 +237,7 @@ namespace AniDBmini
             {
                 item = aniDB.ed2kHash(item);
                 aniDB.AddToMyList(item);
+                mpcApi.ShowWatchedOSD();
             }));
         }
 

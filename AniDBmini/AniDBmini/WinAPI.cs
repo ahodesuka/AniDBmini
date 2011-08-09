@@ -21,10 +21,10 @@ namespace AniDBmini
 
         #region Structs
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         public struct COPYDATASTRUCT
         {
-            public uint dwData;
+            public IntPtr dwData;
             public int cbData;
             public IntPtr lpData;
         }
@@ -43,7 +43,7 @@ namespace AniDBmini
         public static extern bool IsWindowVisible(IntPtr hWnd);
         
         [DllImport("user32.dll")]
-        public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, ref COPYDATASTRUCT lParam);
+        public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);

@@ -275,6 +275,14 @@
   <ItemGroup>
     <Resource Include="Resources\options.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="References\Ionic.Tar.dll" />
+    <Content Include="References\ReuxablesLegacy.dll" />
+    <Content Include="References\x64\System.Data.SQLite.dll" />
+    <Content Include="References\x64\System.Data.SQLite.Linq.dll" />
+    <Content Include="References\x86\System.Data.SQLite.dll" />
+    <Content Include="References\x86\System.Data.SQLite.Linq.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

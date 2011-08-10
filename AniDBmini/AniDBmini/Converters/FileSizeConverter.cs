@@ -4,7 +4,7 @@ using System.Windows.Data;
 
 namespace AniDBmini
 {
-	[ValueConversion(typeof(long), typeof(string))]
+    [ValueConversion(typeof(double), typeof(string))]
 	class FileSizeConverter : IValueConverter
 	{
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

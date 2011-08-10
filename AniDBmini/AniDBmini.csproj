@@ -121,8 +121,9 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Data.SQLite">
-      <HintPath>References\$(PlatformName)\System.Data.SQLite.dll</HintPath>
+    <Reference Include="System.Data.SQLite, Version=1.0.74.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>References\$(Platform)\System.Data.SQLite.dll</HintPath>
     </Reference>
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
@@ -170,7 +171,6 @@
     <Compile Include="Collections\TSObservableCollection.cs" />
     <Compile Include="AniDBAPI\HashAlgorithms\Ed2k.cs" />
     <Compile Include="AniDBAPI\HashAlgorithms\Md4.cs" />
-    <Compile Include="AniDBAPI\APIResponse.cs" />
     <Compile Include="MPCAPI\MPCAPI.cs" />
     <Compile Include="MPCAPI\FileWatchedEvent.cs" />
     <Compile Include="AniDBmini\Mylist\ImportWindow.xaml.cs">
@@ -275,14 +275,6 @@
   <ItemGroup>
     <Resource Include="Resources\options.png" />
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="References\Ionic.Tar.dll" />
-    <Content Include="References\ReuxablesLegacy.dll" />
-    <Content Include="References\x64\System.Data.SQLite.dll" />
-    <Content Include="References\x64\System.Data.SQLite.Linq.dll" />
-    <Content Include="References\x86\System.Data.SQLite.dll" />
-    <Content Include="References\x86\System.Data.SQLite.Linq.dll" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
@@ -291,6 +283,6 @@
   <Target Name="BeforeBuild">
   </Target>
   <Target Name="AfterBuild">
-    <MSBuild Condition="'$(Platform)' == 'x64'" Projects="$(MSBuildProjectFile)" Properties="Platform=x86;PlatFormTarget=x86" RunEachTargetSeparately="true" />
+    <MSBuild Condition="'$(Platform)'=='x86'" Projects="$(MSBuildProjectFile)" Properties="Platform=x64;PlatFormTarget=x64" RunEachTargetSeparately="true" />
   </Target>
 </Project>

@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -22,9 +21,19 @@ using AniDBmini.HashAlgorithms;
 namespace AniDBmini
 {
     public class AniDBAPI
-	{
+    {
 
-		#region Fields
+        #region Structs
+
+        public struct APIResponse
+        {
+            public string Message;
+            public int Code;
+        }
+
+        #endregion Structs
+
+        #region Fields
 
         private MainWindow mainWindow;
 		private Ed2k hasher = new Ed2k();
@@ -39,19 +48,19 @@ namespace AniDBmini
         private DispatcherTimer addTimer;
         private List<HashItem> addToMyList = new List<HashItem>();
 
-		private static TSObservableCollection<DebugLine> debugLog = new TSObservableCollection<DebugLine>();
+        private static TSObservableCollection<DebugLine> debugLog = new TSObservableCollection<DebugLine>();
 
         public string[] statsText = { "Total anime in mylist",
-									  "Total eps in mylist",
-									  "Total files in mylist",
-									  "Size of mylist",
-									  "x", "x", "x", "x", "x", "x",
-									  "AniDB watched",
-									  "AniDB in mylist",
-									  "Mylist watched",
-									  "Eps watched",
-									  "x", "x",
-									  "Time wasted" };
+                                      "Total eps in mylist",
+                                      "Total files in mylist",
+                                      "Size of mylist",
+                                      "x", "x", "x", "x", "x", "x",
+                                      "AniDB watched",
+                                      "AniDB in mylist",
+                                      "Mylist watched",
+                                      "Eps watched",
+                                      "x", "x",
+                                      "Time wasted" };
 
 		#endregion Fields
 
@@ -146,13 +155,13 @@ namespace AniDBmini
             }
         }
 
-		private void MyListAdd(HashItem item)
-		{
+        private void MyListAdd(HashItem item)
+        {
             string r_msg = String.Empty;
-            APIResponse response = Execute("MYLISTADD size=" + item.Size + 
-                                                     "&ed2k=" + item.Hash + 
-                                                     "&viewed=" + item.Viewed + 
-                                                     "&state=" + item.State + (item.Edit ? "&edit=1" : null));
+            APIResponse response = Execute("MYLISTADD size=" + item.Size +
+                                                        "&ed2k=" + item.Hash +
+                                                        "&viewed=" + item.Viewed +
+                                                        "&state=" + item.State + (item.Edit ? "&edit=1" : null));
             switch (response.Code)
             {
                 case 210:
@@ -177,11 +186,11 @@ namespace AniDBmini
                     r_msg = "Error! Mylist entry not found.";
                     break;
             }
-            
-			AppendDebugLine(r_msg);
+
+            AppendDebugLine(r_msg);
 
             addToMyList.Remove(item);
-		}
+        }
 
         public int[] MyListStats()
         {
@@ -237,19 +246,19 @@ namespace AniDBmini
             }
         }
 
-		public void cancelHashing()
-		{            
-			hasher.Cancel();
-			hasher.Clear();
-		}
+        public void cancelHashing()
+        {
+            hasher.Cancel();
+            hasher.Clear();
+        }
 
 		#endregion File Hashing
 
 		#region Private Methods
 
-		public static void AppendDebugLine(string line)
+        public static void AppendDebugLine(string line)
         {
-			debugLog.Add(new DebugLine(DateTime.Now.ToLongTimeString(), line.ToString()));
+            debugLog.Add(new DebugLine(DateTime.Now.ToLongTimeString(), line.ToString()));
         }
 
         /// <summary>
@@ -285,19 +294,19 @@ namespace AniDBmini
                         var login = new LoginWindow();
                         login.Show();
                         mainWindow.Close();
-                        return null;
+                        return new APIResponse();
                     }
                 default:
-                    return new APIResponse(e_response, e_code);
+                    return new APIResponse { Message = e_response, Code = e_code };
             }
 #else
-            return new APIResponse("\n1|2", 200);
+            return new APIResponse { Message = "\n1|2", Code = 200 };
 #endif
         }
 
-		#endregion Private Methods
+        #endregion Private Methods
 
-		#region Properties
+        #region Properties
 
         public MainWindow MainWindow
         {

@@ -130,6 +130,12 @@ namespace AniDBmini
             cm_open.Text = "Open";
             cm_open.Click += (s, e) => { Show(); WindowState = m_storedWindowState; };
             m_notifyContextMenu.MenuItems.Add(cm_open);
+
+            Forms.MenuItem cm_MPCHCopen = new Forms.MenuItem();
+            cm_MPCHCopen.Text = "Open MPC-HC";
+            cm_MPCHCopen.Click += (s, e) => { mpchcLaunch(this, null); };
+            m_notifyContextMenu.MenuItems.Add(cm_MPCHCopen);
+
             m_notifyContextMenu.MenuItems.Add("-");
 
             Forms.MenuItem cm_exit = new Forms.MenuItem();
@@ -293,6 +299,9 @@ namespace AniDBmini
 
         private void OnClose(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (ConfigFile.Read("mpcClose").ToBoolean() && mpcApi.isHooked)
+                mpcApi.CloseMPC();
+
             aniDB.Logout();
             m_notifyIcon.Dispose();
             m_notifyIcon = null;

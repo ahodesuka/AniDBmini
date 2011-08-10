@@ -13,7 +13,7 @@ namespace AniDBmini
 
         #region Fields
 
-        private bool isInitialized;
+        private bool isInitialized, dlgResult;
 
         #endregion Fields
 
@@ -46,6 +46,7 @@ namespace AniDBmini
             mpcWatchedPercSlider.Value = ConfigFile.Read("mpcMarkWatchedPerc").ToInt32();
             ShowFileInTitle.IsChecked = ConfigFile.Read("mpcShowTitle").ToBoolean();
             ShowWatchedOSD.IsChecked = ConfigFile.Read("mpcShowOSD").ToBoolean();
+            mpcClose.IsChecked = ConfigFile.Read("mpcClose").ToBoolean();
             mpcOSDPos.SelectedIndex = ConfigFile.Read("mpcOSDPos").ToInt32() - 1;
             mpcOSDDurMS.SelectedIndex = ConfigFile.Read("mpcOSDDurMS").ToInt32() / 1000 - 1;
         }
@@ -57,9 +58,11 @@ namespace AniDBmini
             ConfigFile.Write("mpcMarkWatchedPerc", mpcWatchedPerc.Text);
             ConfigFile.Write("mpcShowTitle", ShowFileInTitle.IsChecked.ToString());
             ConfigFile.Write("mpcShowOSD", ShowWatchedOSD.IsChecked.ToString());
+            ConfigFile.Write("mpcClose", mpcClose.IsChecked.ToString());
             ConfigFile.Write("mpcOSDPos", (mpcOSDPos.SelectedIndex + 1).ToString());
             ConfigFile.Write("mpcOSDDurMS", ((mpcOSDDurMS.SelectedIndex + 1) * 1000).ToString());
 
+            dlgResult = true;
             applyButton.IsEnabled = false;
             okButton.Focus();
         }
@@ -110,10 +113,10 @@ namespace AniDBmini
 
         private void OKOnClick(object sender, RoutedEventArgs e)
         {
-            if (applyButton.IsEnabled == true)
+            if (applyButton.IsEnabled)
                 SaveOptions();
 
-            this.DialogResult = true;
+            this.DialogResult = dlgResult;
         }
 
         private void CancelOnClick(object sender, RoutedEventArgs e)

@@ -36,6 +36,7 @@ namespace AniDBmini
             { "mpcShowOSD", "True" },
             { "mpcOSDPos", "1" },
             { "mpcOSDDurMS", "2000" },
+            { "mpcClose", "False" },
         };
 
         #endregion Fields

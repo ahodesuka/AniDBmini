@@ -441,6 +441,11 @@ namespace AniDBmini
 
         #region Public Methods
 
+        public void CloseMPC()
+        {
+            SendData(MPCAPI_SENDCOMMAND.CMD_CLOSEAPP, String.Empty);
+        }
+
         public bool FocusMPC()
         {
             WinAPI.FocusWindow(m_hWndMPC);

@@ -94,18 +94,27 @@
                 </GroupBox>
                 <GroupBox Header="Misc. Settings" Grid.Row="2">
                     <StackPanel>
-                        <StackPanel Margin="5" Orientation="Horizontal">
-                            <CheckBox x:Name="ShowFileInTitle" Content="Show file in title" Margin="5,3,0,0" VerticalAlignment="Center" Click="enableApplyButton" />
-                            <CheckBox x:Name="ShowWatchedOSD" Content="Show OSD message" Margin="5,3,0,0" VerticalAlignment="Center" Click="enableApplyButton" ToolTip="Show a message inside MPC-HC when a file is marked as watched." />
-                        </StackPanel>
-                        <StackPanel Margin="5" Orientation="Horizontal">
+                        <Grid Margin="5,5,5,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="158" />
+                                <ColumnDefinition Width="158" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <CheckBox x:Name="ShowFileInTitle" Content="Show file in title" Margin="5,2,0,0" VerticalAlignment="Center" Click="enableApplyButton" />
+                                <CheckBox x:Name="ShowWatchedOSD" Content="Show OSD message" Margin="5,2,0,0" VerticalAlignment="Center" Click="enableApplyButton" ToolTip="Show a message inside MPC-HC when a file is marked as watched." />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <CheckBox x:Name="mpcClose" Content="Close MPC-HC on exit" Margin="5,2,0,0" VerticalAlignment="Center" Click="enableApplyButton" />
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel Margin="5,5,5,0" Orientation="Horizontal">
                             <Label Content="OSD message position:" Margin="5,0" />
                             <ComboBox x:Name="mpcOSDPos" Height="24" Margin="5,0" SelectionChanged="enableApplyButton" SelectedIndex="0" ToolTip="MadVR OSD posistion will always be top left.">
                                 <ComboBoxItem>Top Left</ComboBoxItem>
                                 <ComboBoxItem>Top Right</ComboBoxItem>
                             </ComboBox>
                         </StackPanel>
-                        <StackPanel Margin="5" Orientation="Horizontal">
+                        <StackPanel Margin="5,5,5,0" Orientation="Horizontal">
                             <Label Content="OSD message duration:" Margin="5,0" />
                             <ComboBox x:Name="mpcOSDDurMS" Height="24" Margin="5,0" SelectionChanged="enableApplyButton" SelectedIndex="1">
                                 <ComboBoxItem>1 Second</ComboBoxItem>

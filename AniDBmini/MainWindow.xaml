@@ -533,7 +533,7 @@
                                         </Grid.RowDefinitions>
 
                                         <TextBlock Text="Links" HorizontalAlignment="Left" FontSize="32" FontFamily="Segoe UI" FontWeight="Bold" Foreground="{StaticResource AnimeBigTextGradient}" />
-                                        <Border BorderThickness="1" CornerRadius="5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,28,0,0" BorderBrush="#FF617cb5" Height="24" Grid.RowSpan="2">
+                                        <Border BorderThickness="1" CornerRadius="5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,28,0,0" BorderBrush="#FF617cb5" Height="24" Grid.RowSpan="2" Panel.ZIndex="1">
                                             <Border.Effect>
                                                 <DropShadowEffect ShadowDepth="0" RenderingBias="Quality" Opacity="0.4" />
                                             </Border.Effect>

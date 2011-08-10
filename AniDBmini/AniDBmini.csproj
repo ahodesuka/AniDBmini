@@ -157,18 +157,18 @@
       <SubType>Designer</SubType>
     </Page>
     <Compile Include="AniDBmini\Converters\WholeNumberConverter.cs" />
-    <Compile Include="Collections\AnimeTab.cs" />
+    <Compile Include="AniDBmini\Collections\AnimeTab.cs" />
     <Compile Include="AniDBAPI\AniDBAPI.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Collections\DebugLine.cs" />
-    <Compile Include="Collections\MylistStat.cs" />
-    <Compile Include="Collections\Mylist\EpisodeEntry.cs" />
-    <Compile Include="Collections\Mylist\FileEntry.cs" />
-    <Compile Include="Collections\HashItem.cs" />
-    <Compile Include="Collections\TSObservableCollection.cs" />
+    <Compile Include="AniDBmini\Collections\DebugLine.cs" />
+    <Compile Include="AniDBmini\Collections\MylistStat.cs" />
+    <Compile Include="AniDBmini\Collections\Mylist\EpisodeEntry.cs" />
+    <Compile Include="AniDBmini\Collections\Mylist\FileEntry.cs" />
+    <Compile Include="AniDBmini\Collections\HashItem.cs" />
+    <Compile Include="AniDBmini\Collections\TSObservableCollection.cs" />
     <Compile Include="AniDBAPI\HashAlgorithms\Ed2k.cs" />
     <Compile Include="AniDBAPI\HashAlgorithms\Md4.cs" />
     <Compile Include="MPCAPI\MPCAPI.cs" />
@@ -194,7 +194,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Collections\Mylist\MylistEntry.cs" />
+    <Compile Include="AniDBmini\Collections\Mylist\MylistEntry.cs" />
     <Compile Include="AniDBmini\Mylist\MylistLocal.cs" />
     <Compile Include="OptionsWindow.xaml.cs">
       <DependentUpon>OptionsWindow.xaml</DependentUpon>
@@ -275,6 +275,13 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\options.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="References\Ionic.Tar.dll" />
+    <Content Include="References\ReuxablesLegacy.dll" />
+    <Content Include="References\System.Data.SQLite.Linq.dll" />
+    <Content Include="References\x64\System.Data.SQLite.dll" />
+    <Content Include="References\x86\System.Data.SQLite.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

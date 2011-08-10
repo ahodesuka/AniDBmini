@@ -273,7 +273,7 @@ namespace AniDBmini
 
         private void mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (mainTabControl.SelectedIndex != 3)
+            if ((TabItem)mainTabControl.SelectedItem != animeTabItem)
                 m_storedTabIndex = mainTabControl.SelectedIndex;
         }
 

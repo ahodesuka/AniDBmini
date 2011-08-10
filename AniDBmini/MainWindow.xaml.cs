@@ -44,7 +44,7 @@ namespace AniDBmini
 
         private int m_storedTabIndex;
 
-        private bool isHashing, delayHashing;
+        private bool isHashing;
         private double totalQueueSize, ppSize;
 
         private string[] allowedVideoFiles = { "*.avi", "*.mkv", "*.mov", "*.mp4", "*.mpeg", "*.mpg", "*.ogm" };
@@ -92,7 +92,7 @@ namespace AniDBmini
 
             foreach (int stat in stats)
             {
-                string text = aniDB.statsText[i];
+                string text = AniDBAPI.statsText[i];
                 string value;
 
                 if (text != "x")
@@ -180,7 +180,6 @@ namespace AniDBmini
                     }
 
                     HashItem _temp = aniDB.ed2kHash(hashFileList[0]);
-                    delayHashing = true;
 
                     if (isHashing && _temp != null) // if we have not aborted remove item from queue and process
                     {
@@ -260,7 +259,26 @@ namespace AniDBmini
         private void randomAnimeLabelContextMenuItem_Click(object sender, RoutedEventArgs e)
         {
             MenuItem mi = (MenuItem)sender;
-            animeTabList.Add(aniDB.RandomAnime(int.Parse(mi.Tag.ToString())));
+            this.Cursor = Cursors.Wait;
+
+            ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+            {
+                int aid = 0;
+                AnimeTab aTab = null;
+
+                m_Dispatcher.Invoke(new Action(delegate { aniDB.RandomAnime(int.Parse(mi.Tag.ToString()), out aid); }), TimeSpan.FromSeconds(1), null);
+
+                if (aid != 0)
+                {
+                    Thread.Sleep(2000); // Flood prevention.
+                    m_Dispatcher.Invoke(new Action(delegate { aniDB.Anime(aid, out aTab); }), TimeSpan.FromSeconds(1), null);
+
+                    if (aTab != null)
+                        animeTabList.Add(aTab);
+                }
+
+                this.Dispatcher.BeginInvoke(new Action(delegate { this.Cursor = Cursors.Arrow; }), null);
+            }));
         }
 
         private void clearDebugLog(object sender, RoutedEventArgs e)
@@ -369,7 +387,7 @@ namespace AniDBmini
         {
             double fileProg = e.ProcessedSize / e.TotalSize * 100;
             double totalProg = (e.ProcessedSize + ppSize) / totalQueueSize * 100;
-            string remainingString = string.Empty;
+            string remainingString = String.Empty;
 
             if (DateTime.Now.Subtract(m_hashingLastTime).TotalMilliseconds >= 1000)
             {

@@ -238,7 +238,8 @@ namespace AniDBmini
         private OSD_MESSAGEPOS m_OSDMSGPos;
 
         private string m_currentFileTitle, m_currentFilePath;
-        private int m_currentFileLength, m_currentFilePosition, m_currentFileTick, m_watchedWhenPerc, m_OSDMSGDur;
+        private int m_currentFileLength, m_currentFilePosition, m_currentFileTick, m_OSDMSGDur;
+        private double m_watchedWhenPerc;
         private bool m_currentFileWatched, m_ShowInFileTitle;
 
         public bool isHooked { get; private set; }
@@ -297,7 +298,7 @@ namespace AniDBmini
                         case MPCAPI_COMMAND.CMD_NOTIFYSEEK:
                             m_currentFilePosition = int.Parse(mpcMSG);
                             if (!m_currentFileWatched && m_watchedWhen == MPC_WATCHED.DURING_TICKS &&
-                                m_currentFileTick > m_currentFileLength / m_watchedWhenPerc)
+                                m_currentFileTick > m_currentFileLength * m_watchedWhenPerc)
                             {
                                 OnFileWatched(this, new FileWatchedArgs(m_currentFilePath));
                                 m_currentFileWatched = true;
@@ -338,7 +339,7 @@ namespace AniDBmini
                                     break;
                                 case MPC_LOADSTATE.MLS_CLOSING:
                                     if (!m_currentFileWatched && m_watchedWhen == MPC_WATCHED.AFTER_FINISHED &&
-                                        m_currentFileTick > m_currentFileLength / m_watchedWhenPerc)
+                                        m_currentFileTick > m_currentFileLength * m_watchedWhenPerc)
                                     {
                                         OnFileWatched(this, new FileWatchedArgs(m_currentFilePath));
                                         m_currentFileWatched = true;
@@ -449,8 +450,7 @@ namespace AniDBmini
         public void LoadConfig()
         {
             m_watchedWhen = (MPC_WATCHED)ConfigFile.Read("mpcMarkWatched").ToInt32();
-            m_watchedWhenPerc = ConfigFile.Read("mpcMarkWatchedPerc").ToInt32();
-            m_watchedWhenPerc = 100 / (m_watchedWhenPerc != 0 ? m_watchedWhenPerc : new ConfigValue(ConfigFile.Default["mpcMarkWatchedPerc"]).ToInt32());
+            m_watchedWhenPerc = ConfigFile.Read("mpcMarkWatchedPerc").ToInt32() * .01;
             m_ShowInFileTitle = ConfigFile.Read("mpcShowTitle").ToBoolean();
             m_OSDMSGPos = (OSD_MESSAGEPOS)ConfigFile.Read("mpcOSDPos").ToInt32();
             m_OSDMSGDur = ConfigFile.Read("mpcOSDDurMS").ToInt32();

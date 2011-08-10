@@ -50,17 +50,17 @@ namespace AniDBmini
 
         private static TSObservableCollection<DebugLine> debugLog = new TSObservableCollection<DebugLine>();
 
-        public string[] statsText = { "Total anime in mylist",
-                                      "Total eps in mylist",
-                                      "Total files in mylist",
-                                      "Size of mylist",
-                                      "x", "x", "x", "x", "x", "x",
-                                      "AniDB watched",
-                                      "AniDB in mylist",
-                                      "Mylist watched",
-                                      "Eps watched",
-                                      "x", "x",
-                                      "Time wasted" };
+        public static string[] statsText = { "Total anime in mylist",
+                                             "Total eps in mylist",
+                                             "Total files in mylist",
+                                             "Size of mylist",
+                                             "x", "x", "x", "x", "x", "x",
+                                             "AniDB watched",
+                                             "AniDB in mylist",
+                                             "Mylist watched",
+                                             "Eps watched",
+                                             "x", "x",
+                                             "Time wasted" };
 
 		#endregion Fields
 
@@ -127,6 +127,10 @@ namespace AniDBmini
 
         #region DATA
 
+        /// <summary>
+        /// Anime command to create a anime tab from a 
+        /// anime ID on mylist.
+        /// </summary>
         public AnimeTab Anime(int animeID)
         {
             APIResponse response = Execute("ANIME aid=" + animeID + "&amask=b2e05efe400080");
@@ -135,6 +139,22 @@ namespace AniDBmini
                 return new AnimeTab(Regex.Split(response.Message, "\n")[1]);
             else
                 return null;
+        }
+
+        /// <summary>
+        /// Anime command to create a anime tab from a 
+        /// RANDOMANIME command.
+        /// </summary>
+        /// <param name="animeID">Anime ID to query.</param>
+        /// <param name="aTab">Tab item to return.</param>
+        public void Anime(int animeID, out AnimeTab aTab)
+        {            
+            APIResponse response = Execute("ANIME aid=" + animeID + "&amask=b2e05efe400080");
+
+            if (response.Code == 230)
+                aTab = new AnimeTab(Regex.Split(response.Message, "\n")[1]);
+            else
+                aTab = null;
         }
 
         #endregion DATA
@@ -198,12 +218,10 @@ namespace AniDBmini
             return Array.ConvertAll<string, int>(Regex.Split(r_msg, "\n")[1].Split('|'), delegate(string s) { return int.Parse(s); });
         }
 
-        public AnimeTab RandomAnime(int type)
+        public void RandomAnime(int type, out int aid)
         {
             string r_msg = Execute("RANDOMANIME type=" + type).Message;
-            int randomID = int.Parse(Regex.Split(r_msg, "\n")[1].Split('|')[0]);
-
-            return Anime(randomID);
+            aid = int.Parse(Regex.Split(r_msg, "\n")[1].Split('|')[0]);
         }
 
         #endregion MYLIST

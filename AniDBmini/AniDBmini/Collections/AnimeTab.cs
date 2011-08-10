@@ -38,7 +38,7 @@ namespace AniDBmini.Collections
         public string Officialurl { get; private set; }
         public string AniDBurl { get; private set; }
         public string ANNurl { get; private set; }
-        public string Image { get; private set; }
+        public BitmapImage Image { get; private set; }
 
         public string Ratings { get { return string.Format("{0:0.00}", RatingMean) + " (" + RatingCount.ToString() + ")"; } }
         public string Reviews { get { return string.Format("{0:0.00}", ReviewMean) + " (" + ReviewCount.ToString() + ")"; } }
@@ -81,7 +81,7 @@ namespace AniDBmini.Collections
             Officialurl = animeInfo[10];
             AniDBurl = "http://anidb.net/perl-bin/animedb.pl?show=anime&aid=" + AnimeID;
             ANNurl = "http://www.animenewsnetwork.com/encyclopedia/anime.php?id=" + animeInfo[19];
-            Image = "http://img7.anidb.net/pics/anime/" + animeInfo[11];
+            Image = new BitmapImage(new Uri("http://img7.anidb.net/pics/anime/" + animeInfo[11]));
 
             RatingMean = !string.IsNullOrEmpty(animeInfo[12]) ?
                          double.Parse(animeInfo[12]) / 100 : double.Parse(animeInfo[14]) / 100;

@@ -370,7 +370,7 @@
                 </ContextMenu>
             </Button.ContextMenu>
         </Button>
-        <TabControl x:Name="mainTabControl" Margin="5">
+        <TabControl x:Name="mainTabControl" Margin="5" SelectionChanged="mainTabControl_SelectionChanged">
             <TabItem Width="96" IsEnabled="False" Focusable="False" Visibility="Hidden" Height="26" />
             <TabItem Header="Home" IsSelected="True">
                 <Grid>

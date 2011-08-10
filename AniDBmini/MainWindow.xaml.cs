@@ -34,7 +34,7 @@ namespace AniDBmini
         private Forms.ContextMenu m_notifyContextMenu = new Forms.ContextMenu();
         private WindowState m_storedWindowState = WindowState.Normal;
 
-        private BackgroundWorker m_Worker;
+        private BackgroundWorker m_HashWorker;
         private Dispatcher m_Dispatcher = Dispatcher.CurrentDispatcher;
 
         private AniDBAPI aniDB;
@@ -140,6 +140,8 @@ namespace AniDBmini
 
         #endregion
 
+        #region Private Methods
+
         #region Hashing
 
         private void addRowToHashTable(string path)
@@ -156,6 +158,20 @@ namespace AniDBmini
             }));
         }
 
+        private void removeRowFromHashTable(HashItem item, bool _e = false)
+        {
+            if (isHashing && _e)
+                totalQueueSize -= item.Size;
+
+            hashFileList.Remove(item);
+
+            m_Dispatcher.BeginInvoke(new Action(delegate
+            {
+                if (hashFileList.Count == 0)
+                    hashingStartButton.IsEnabled = hashingStopButton.IsEnabled = false;
+            }));
+        }
+
         private void beginHashing()
         {
             hashingStartButton.IsEnabled = false;
@@ -166,50 +182,23 @@ namespace AniDBmini
             for (int i = 0; i < hashFileList.Count; i++)
                 totalQueueSize += hashFileList[i].Size;
 
-            m_Worker = new BackgroundWorker();
-            m_Worker.WorkerSupportsCancellation = true;
+            m_HashWorker = new BackgroundWorker();
+            m_HashWorker.WorkerSupportsCancellation = true;
 
-            m_Worker.DoWork += (s, e) =>
-            {
-                while (hashFileList.Count > 0 && isHashing)
-                {
-                    if (m_Worker.CancellationPending)
-                    {
-                        e.Cancel = true;
-                        return;
-                    }
-
-                    HashItem _temp = aniDB.ed2kHash(hashFileList[0]);
-
-                    if (isHashing && _temp != null) // if we have not aborted remove item from queue and process
-                    {
-                        hashFileList[0] = _temp;
-                        m_Dispatcher.BeginInvoke(new Action<HashItem>(FinishHash), hashFileList[0]);
-
-                        hashFileListRemove(hashFileList[0]);
-                    }
-                }
-            };
-            m_Worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(OnRunWorkerCompleted);
+            m_HashWorker.DoWork += new DoWorkEventHandler(OnHashWorkerDoWork);
+            m_HashWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(OnHashWorkerCompleted);
 
             m_hashingStartTime = m_hashingLastTime = DateTime.Now;
-            m_Worker.RunWorkerAsync();
-        }
-
-        private void hashFileListRemove(HashItem item, bool _e = false)
-        {
-            if (isHashing && _e)
-                totalQueueSize -= item.Size;
-
-            hashFileList.Remove(item);
-
-            if (hashFileList.Count == 0)
-                hashingStartButton.IsEnabled = hashingStopButton.IsEnabled = false;
+            m_HashWorker.RunWorkerAsync();
         }
 
         #endregion Hashing
 
+        #endregion Private Methods
+
         #region Events
+
+        #region Main Window
 
         private void ShowOpionsWindow(object sender, RoutedEventArgs e)
         {
@@ -229,7 +218,8 @@ namespace AniDBmini
                     mpcApi.OnFileWatched += new FileWatchedHandler(OnFileWatched);
                 }
                 else
-                    MessageBox.Show("Media Player Classic - Home Cinema not found!\nPlease ensure you have selected the mpc-hc executable inside the options.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Media Player Classic - Home Cinema not found!\n" +
+                                    "Please ensure you have selected the mpc-hc executable inside the options.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -281,10 +271,51 @@ namespace AniDBmini
             }));
         }
 
+        private void mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (mainTabControl.SelectedIndex != 3)
+                m_storedTabIndex = mainTabControl.SelectedIndex;
+        }
+
+        private void OnStateChanged(object sender, EventArgs args)
+        {
+            if (this.WindowState == WindowState.Minimized)
+                this.Hide();
+            else
+                m_storedWindowState = this.WindowState;
+        }
+
+        private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs args)
+        {
+            if (m_notifyIcon != null)
+                m_notifyIcon.Visible = !this.IsVisible;
+        }
+
+        private void OnClose(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            aniDB.Logout();
+            m_notifyIcon.Dispose();
+            m_notifyIcon = null;
+        }
+
+        #endregion Main Window
+
+        #region Home Tab
+
         private void clearDebugLog(object sender, RoutedEventArgs e)
         {
             aniDB.DebugLog.Clear();
         }
+
+        private void debugListBox_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (debugListBoxScrollViewer.VerticalOffset == debugListBoxScrollViewer.ScrollableHeight)
+                debugListBoxScrollViewer.ScrollToBottom();
+        }
+
+        #endregion Home Tab
+
+        #region Hashing Tab
 
         private void hashingListBox_Drop(object sender, DragEventArgs e)
         {
@@ -306,7 +337,7 @@ namespace AniDBmini
         private void removeSelectedItems(object sender, RoutedEventArgs e)
         {
             while (hashingListBox.SelectedItems.Count > 0)
-                hashFileListRemove((HashItem)hashingListBox.SelectedItems[0], true);
+                removeRowFromHashTable((HashItem)hashingListBox.SelectedItems[0], true);
         }
 
         private void hashingListBox_KeyUp(object sender, KeyEventArgs e)
@@ -325,19 +356,43 @@ namespace AniDBmini
         {
             if (isHashing)
             {
-                m_Worker.CancelAsync();
+                m_HashWorker.CancelAsync();
                 aniDB.cancelHashing();
 
-                OnRunWorkerCompleted(sender, null);
+                OnHashWorkerCompleted(sender, null);
             }
         }
 
-        private void OnRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private void OnHashWorkerDoWork(object sender, DoWorkEventArgs e)
+        {
+            while (hashFileList.Count > 0 && isHashing)
+            {
+                if (m_HashWorker.CancellationPending)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+
+                HashItem _temp = aniDB.ed2kHash(hashFileList[0]);
+
+                if (isHashing && _temp != null) // if we have not aborted remove item from queue and process
+                {
+                    hashFileList[0] = _temp;
+                    m_Dispatcher.BeginInvoke(new Action<HashItem>(FinishHash), hashFileList[0]);
+
+                    removeRowFromHashTable(hashFileList[0]);
+                }
+            }
+        }
+
+        private void OnHashWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             hashingStopButton.IsEnabled = isHashing = false;
             fileProgressBar.Value = totalProgressBar.Value = ppSize = 0;
             hashingStartButton.IsEnabled = hashFileList.Count > 0;
             timeRemainingTextBlock.Text = String.Empty;
+
+            m_HashWorker.Dispose();
         }
 
         private void addFilesButton_Click(object sender, RoutedEventArgs e)
@@ -422,25 +477,9 @@ namespace AniDBmini
             }
         }
 
-        private void debugListBox_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (debugListBoxScrollViewer.VerticalOffset == debugListBoxScrollViewer.ScrollableHeight)
-                debugListBoxScrollViewer.ScrollToBottom();
-        }
+        #endregion Hashing Tab
 
-        private void OnStateChanged(object sender, EventArgs args)
-        {
-            if (this.WindowState == WindowState.Minimized)
-                this.Hide();
-            else
-                m_storedWindowState = this.WindowState;
-        }
-
-        private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs args)
-        {
-            if (m_notifyIcon != null)
-                m_notifyIcon.Visible = !this.IsVisible;
-        }
+        #region Mylist Tab
 
         private void ImportList_Click(object sender, RoutedEventArgs e)
         {
@@ -448,6 +487,10 @@ namespace AniDBmini
             import.Owner = this;
             import.ShowDialog();
         }
+
+        #endregion Mylist Tab
+
+        #region Anime Tab
 
         private void OnTabCloseClick(object sender, RoutedEventArgs e)
         {
@@ -460,7 +503,7 @@ namespace AniDBmini
             if (e.oldCount == 1 && e.newCount == 0) // no more tabs
             {
                 animeTabItem.Visibility = System.Windows.Visibility.Collapsed;
-                ((TabItem)mainTabControl.Items[m_storedTabIndex]).Focus();
+                mainTabControl.SelectedIndex = m_storedTabIndex;
             }
             else
             {
@@ -481,12 +524,7 @@ namespace AniDBmini
             System.Diagnostics.Process.Start(s_img.Tag.ToString());
         }
 
-        private void OnClose(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            aniDB.Logout();
-            m_notifyIcon.Dispose();
-            m_notifyIcon = null;
-        }
+        #endregion Anime Tab
 
         #endregion
 

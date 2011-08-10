@@ -94,8 +94,8 @@ namespace AniDBmini
             if (result == true)
             {
                 if (System.IO.Path.GetFileNameWithoutExtension(dlg.FileName) == "mpc-hc64" && IntPtr.Size == 4)
-                    MessageBox.Show("Media Player Classic - Home Cinema x64 will not work\nwith the x86 version of " + MainWindow.m_AppName + ".\n\n" +
-                                    "Please use the x64 version of " + MainWindow.m_AppName + ".\nOr use the x86 version of Media Player Classic - Home Cinema.",
+                    MessageBox.Show("Media Player Classic - Home Cinema 64bit will not work\nwith the 32bit version of " + MainWindow.m_AppName + ".\n\n" +
+                                    "Please use the 64bit version of " + MainWindow.m_AppName + ".\nOr use the 32bit version of Media Player Classic - Home Cinema.",
                                     "Alert!", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 else
                     mpchcLocationTextBox.Text = dlg.FileName;

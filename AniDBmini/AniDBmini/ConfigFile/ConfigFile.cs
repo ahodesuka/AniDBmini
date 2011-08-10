@@ -22,8 +22,8 @@ namespace AniDBmini
 
         public static readonly Dictionary<string, string> Default = new Dictionary<string, string>
         {
-            { "autoLogin", "false" },
-            { "rememberUser", "true" },
+            { "autoLogin", "False" },
+            { "rememberUser", "True" },
             { "username", "" },
             { "password", "" },
             { "server", "api.anidb.net" },
@@ -32,8 +32,8 @@ namespace AniDBmini
             { "mpcPath", "" },
             { "mpcMarkWatched", "1" },
             { "mpcMarkWatchedPerc", "50" },
-            { "mpcShowTitle", "true" },
-            { "mpcShowOSD", "true" },
+            { "mpcShowTitle", "True" },
+            { "mpcShowOSD", "True" },
             { "mpcOSDPos", "1" },
             { "mpcOSDDurMS", "2000" },
         };

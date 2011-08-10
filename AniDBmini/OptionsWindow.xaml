@@ -100,14 +100,14 @@
                         </StackPanel>
                         <StackPanel Margin="5" Orientation="Horizontal">
                             <Label Content="OSD message position:" Margin="5,0" />
-                            <ComboBox x:Name="mpcOSDPos" Height="24" Margin="5,0" SelectionChanged="enableApplyButton" ToolTip="MadVR OSD posistion will always be top left.">
+                            <ComboBox x:Name="mpcOSDPos" Height="24" Margin="5,0" SelectionChanged="enableApplyButton" SelectedIndex="0" ToolTip="MadVR OSD posistion will always be top left.">
                                 <ComboBoxItem>Top Left</ComboBoxItem>
                                 <ComboBoxItem>Top Right</ComboBoxItem>
                             </ComboBox>
                         </StackPanel>
                         <StackPanel Margin="5" Orientation="Horizontal">
                             <Label Content="OSD message duration:" Margin="5,0" />
-                            <ComboBox x:Name="mpcOSDDurMS" Height="24" Margin="5,0" SelectionChanged="enableApplyButton">
+                            <ComboBox x:Name="mpcOSDDurMS" Height="24" Margin="5,0" SelectionChanged="enableApplyButton" SelectedIndex="1">
                                 <ComboBoxItem>1 Second</ComboBoxItem>
                                 <ComboBoxItem>2 Seconds</ComboBoxItem>
                                 <ComboBoxItem>3 Seconds</ComboBoxItem>

@@ -70,8 +70,8 @@ namespace AniDBmini
                 {
                     if (autoLoginCheckBox.IsChecked == true)
                     {
-                        ConfigFile.Write("autoLogin", "true");
-                        ConfigFile.Write("rememberLogin", "true");
+                        ConfigFile.Write("autoLogin", "True");
+                        ConfigFile.Write("rememberUser", "True");
                         ConfigFile.Write("username", usernameTextBox.Text);
                         ConfigFile.Write("password", passwordPasswordBox.Password);
                         ConfigFile.Write("server", server[0]);
@@ -79,8 +79,15 @@ namespace AniDBmini
                     }
                     else if (rememberUserCheckBox.IsChecked == true)
                     {
-                        ConfigFile.Write("rememberLogin", "true");
+                        ConfigFile.Write("rememberUser", "True");
                         ConfigFile.Write("username", usernameTextBox.Text);
+                    }
+                    else
+                    {
+                        ConfigFile.Write("autoLogin", "False");
+                        ConfigFile.Write("rememberUser", "False");
+                        ConfigFile.Write("username", string.Empty);
+                        ConfigFile.Write("password", string.Empty);
                     }
 
                     var main = new MainWindow(aniDB);

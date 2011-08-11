@@ -156,7 +156,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Compile Include="AniDBmini\Converters\WholeNumberConverter.cs" />
+    <Compile Include="AniDBmini\Converters.cs" />
     <Compile Include="AniDBmini\Collections\AnimeTab.cs" />
     <Compile Include="AniDBAPI\AniDBAPI.cs" />
     <Compile Include="App.xaml.cs">
@@ -177,7 +177,6 @@
       <DependentUpon>ImportWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="AniDBmini\ExtensionMethods.cs" />
-    <Compile Include="AniDBmini\Converters\FileSizeConverter.cs" />
     <Compile Include="AniDBmini\ConfigFile\ConfigFile.cs" />
     <Compile Include="AniDBmini\WinAPI.cs" />
     <Compile Include="AniDBmini\ConfigFile\ConfigValue.cs" />

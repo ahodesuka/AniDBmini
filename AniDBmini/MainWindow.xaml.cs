@@ -215,6 +215,25 @@ namespace AniDBmini
             }
         }
 
+        private void SetDetailsVisibility(DataGridRow row)
+        {
+            if (row == null)
+                return;
+
+            Button btn = row.FindChild<Button>();
+
+            if (row.DetailsVisibility == Visibility.Collapsed)
+            {
+                btn.Style = (Style)FindResource("MylistContractButtonStyle");
+                row.DetailsVisibility = Visibility.Visible;
+            }
+            else if (row.DetailsVisibility == Visibility.Visible)
+            {
+                btn.Style = (Style)FindResource("MylistExpandButtonStyle");
+                row.DetailsVisibility = Visibility.Collapsed;
+            }
+        }
+
         #endregion Mylist
 
         #endregion Private Methods
@@ -525,6 +544,14 @@ namespace AniDBmini
 
             if (import.ShowDialog() == true)
                 SetMylistVisibility();
+        }
+
+        private void MylistExpandButton_Click(object sender, RoutedEventArgs e)
+        {
+            DataGridRow row = ((DependencyObject)e.OriginalSource).FindAncestor<DataGridRow>();
+            SetDetailsVisibility(row);
+
+            e.Handled = true;
         }
 
         #endregion Mylist Tab

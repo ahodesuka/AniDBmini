@@ -114,6 +114,8 @@
         </Style>
 
         <!-- #endregion TabItemCloseButtonStyle -->
+        
+        <!-- #region AnimeTab Resources -->
 
         <LinearGradientBrush x:Key="AnimeBigTextGradient" StartPoint="0,0" EndPoint="0,1">
             <GradientBrush.GradientStops>
@@ -125,19 +127,14 @@
         </LinearGradientBrush>
 
         <DropShadowEffect x:Key="AnimeSmallTextEffect" ShadowDepth="1" RenderingBias="Quality" Opacity="0.8" />
+        
+        <!-- #endregion AnimeTab Resources -->
 
         <ContextMenu x:Key="hashingListBoxItemContextMenu">
             <MenuItem Header="Remove Selected" Click="removeSelectedItems" />
         </ContextMenu>
         <Style x:Key="hashingListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
             <Setter Property="ContextMenu" Value="{StaticResource hashingListBoxItemContextMenu}"/>
-        </Style>
-        
-        <ContextMenu x:Key="debugControlContextMenu">
-            <MenuItem Header="Clear log" Click="clearDebugLog" />
-        </ContextMenu>
-        <Style x:Key="debugControlStyle" TargetType="{x:Type Grid}">
-            <Setter Property="ContextMenu" Value="{StaticResource debugControlContextMenu}"/>
         </Style>
 
         <!-- #region ImportListButtonTemplate -->
@@ -191,6 +188,50 @@
         </ControlTemplate>
 
         <!-- #endregion ImportListButtonTemplate -->
+
+        <!-- #region MylistExpandButtonStyle -->
+
+        <Geometry x:Key="ExpandButton">M4,0 L4,8 M8,4 L0,4</Geometry>
+        <Geometry x:Key="ContractButton">M8,4 L0,4</Geometry>
+
+        <Style x:Key="MylistExpandButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="SnapsToDevicePixels" Value="false"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="Height" Value="9"/>
+            <Setter Property="Width" Value="9"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="ButtonBorder" Background="White" BorderThickness="1" BorderBrush="Black" SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
+                            <Path SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased" x:Name="ButtonPath" Data="{StaticResource ExpandButton}" Stroke="Black"
+                                    StrokeThickness="1" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="1" Width="7" Height="7"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="MylistContractButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="SnapsToDevicePixels" Value="false"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="Height" Value="9"/>
+            <Setter Property="Width" Value="9"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="ButtonBorder" Background="White" BorderThickness="1" BorderBrush="Black" SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
+                            <Path SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased" x:Name="ButtonPath" Data="{StaticResource ContractButton}" Stroke="Black"
+                                    StrokeThickness="1" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="1" Width="7" Height="7"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- #endregion MylistExpandButtonStyle -->
 
         <!-- #region ImageStoryboards -->
 
@@ -397,7 +438,12 @@
                         </Grid>
                     </GroupBox>
                     <GroupBox Header="Debug" Margin="15,15,15,20" Grid.Column="1">
-                        <Grid Margin="0" Style="{StaticResource debugControlStyle}">
+                        <Grid Margin="0">
+                            <Grid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Clear log" Click="clearDebugLog" />
+                                </ContextMenu>
+                            </Grid.ContextMenu>
                             <ScrollViewer x:Name="debugListBoxScrollViewer" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto">
                                 <ItemsControl x:Name="debugListBox" Margin="0" BorderThickness="0" Background="{x:Null}" SizeChanged="debugListBox_SizeChanged">
                                     <ItemsControl.ItemTemplate>
@@ -474,20 +520,36 @@
                 <Grid>
                     <Button x:Name="mylistImortButton" VerticalAlignment="Center" HorizontalAlignment="Center" Height="80" Width="380" Template="{StaticResource ImportListButtonTemplate}" Content="Import Mylist" Click="ImportList_Click" Panel.ZIndex="1" />
                     <Border Background="#9FFF" BorderBrush="#FCCC" CornerRadius="2" BorderThickness="1">
-                        <DataGrid x:Name="mylistDataGrid" AutoGenerateColumns="False" CanUserResizeRows="False" IsReadOnly="True" SelectionMode="Single"
-                                  HorizontalGridLinesBrush="#FDDD" VerticalGridLinesBrush="#FDDD" FontFamily="Segoe UI" RowDetailsVisibilityMode="Collapsed"
-                                  HeadersVisibility="Column" BorderThickness="0" Padding="2,0" RowHeight="20" Background="Transparent">
+                        <DataGrid x:Name="mylistDataGrid" AutoGenerateColumns="False" CanUserResizeRows="False" IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow"
+                                  HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" FontFamily="Segoe UI" RowDetailsVisibilityMode="Collapsed" 
+                                  HeadersVisibility="Column" BorderThickness="0" RowHeight="20" Background="Transparent" HorizontalScrollBarVisibility="Disabled"
+                                  MouseDoubleClick="MylistExpandButton_Click">
+                            <DataGrid.CellStyle>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="BorderThickness" Value="0" />
+                                </Style>
+                            </DataGrid.CellStyle>
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#FEEE" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="Title" Width="300" MinWidth="75" SortMemberPath="title">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" Margin="5,0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Style="{StaticResource MylistExpandButtonStyle}" Click="MylistExpandButton_Click" />
                                                 <TextBlock Name="title" Text="{Binding title}" />
                                             </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="EPs" SortMemberPath="eps_my">
+                                <DataGridTemplateColumn Header="EPs" Width="75" SortMemberPath="eps_my">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" Margin="5,0">
@@ -498,7 +560,7 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Watched" SortMemberPath="eps_watched">
+                                <DataGridTemplateColumn Header="Watched" Width="75" SortMemberPath="eps_watched">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" Margin="5,0">
@@ -509,8 +571,70 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Size" Binding="{Binding size, Converter={StaticResource FileSizeConverter}, ConverterParameter=true}" Width="75" />
+                                <DataGridTextColumn Header="Size" Binding="{Binding size, Converter={StaticResource FileSizeConverter}, ConverterParameter=true}" Width="*" />
                             </DataGrid.Columns>
+                            <DataGrid.RowDetailsTemplate>
+                                <DataTemplate>
+                                    <DataGrid AutoGenerateColumns="False" CanUserResizeRows="False" IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow"
+                                  HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" FontFamily="Segoe UI" RowDetailsVisibilityMode="Collapsed" 
+                                  HeadersVisibility="Column" BorderThickness="0" RowHeight="20" Background="Transparent" HorizontalScrollBarVisibility="Disabled" ItemsSource="{Binding Episodes}">
+                                        <DataGrid.CellStyle>
+                                            <Style TargetType="DataGridCell">
+                                                <Setter Property="BorderThickness" Value="0" />
+                                            </Style>
+                                        </DataGrid.CellStyle>
+                                        <DataGrid.RowStyle>
+                                            <Style TargetType="DataGridRow">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#FEEE" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGrid.RowStyle>
+                                        <DataGrid.Columns>
+                                            <DataGridTemplateColumn Header="Title" Width="300" MinWidth="75" SortMemberPath="title">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Button Style="{StaticResource MylistExpandButtonStyle}" Click="MylistExpandButton_Click" />
+                                                            <TextBlock Name="title" Text="{Binding title}" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn Header="EPs" Width="75" SortMemberPath="eps_my">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal" Margin="5,0">
+                                                            <TextBlock Name="eps_my" Text="{Binding eps_my}" />
+                                                            <TextBlock Text="/" />
+                                                            <TextBlock Text="{Binding eps_total}" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn Header="Watched" Width="75" SortMemberPath="eps_watched">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal" Margin="5,0">
+                                                            <TextBlock Name="eps_watched" Text="{Binding eps_watched}" />
+                                                            <TextBlock Text="/" />
+                                                            <TextBlock Text="{Binding eps_total}" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTextColumn Header="Size" Binding="{Binding size, Converter={StaticResource FileSizeConverter}, ConverterParameter=true}" Width="*" />
+                                        </DataGrid.Columns>
+                                        <DataGrid.RowDetailsTemplate>
+                                            <DataTemplate>
+
+                                            </DataTemplate>
+                                        </DataGrid.RowDetailsTemplate>
+                                    </DataGrid>
+                                </DataTemplate>
+                            </DataGrid.RowDetailsTemplate>
                         </DataGrid>
                     </Border>
                 </Grid>

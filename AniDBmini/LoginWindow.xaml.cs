@@ -30,7 +30,7 @@ namespace AniDBmini
 
         #region Events
 
-        private void Window_Initialized(object sender, EventArgs e)
+        private void OnInitialized(object sender, EventArgs e)
         {
             if (ConfigFile.Read("autoLogin").ToBoolean() &&
                 (aniDB = new AniDBAPI(ConfigFile.Read("server").ToString(), ConfigFile.Read("port").ToInt32(), ConfigFile.Read("localPort").ToInt32())) != null)

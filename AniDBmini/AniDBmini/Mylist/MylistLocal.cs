@@ -20,7 +20,10 @@ namespace AniDBmini
 
         public const string dbPath = @".\data\local.db";
 
+        private bool isSQLConnOpen;
         private SQLiteConnection SQLConn;
+
+        public TSObservableCollection<MylistEntry> Entries = new TSObservableCollection<MylistEntry>();
 
         #endregion Fields
 
@@ -28,19 +31,64 @@ namespace AniDBmini
 
         public MylistLocal()
         {
-            SQLConn = new SQLiteConnection(@"Data Source=" + dbPath + ";version=3;");
-            SQLConn.Open();
+            if (Initialize())
+                PopulateEntries();
         }
 
         #endregion Constructor
 
+        #region Private Methods
+
+        private bool Initialize(bool create = false)
+        {
+            if (File.Exists(dbPath) != create && !isSQLConnOpen)
+            {
+                SQLConn = new SQLiteConnection(@"Data Source=" + dbPath + ";version=3;");
+                SQLConn.Open();
+
+                isSQLConnOpen = true;
+            }
+
+            return isSQLConnOpen;
+        }
+
+        private void PopulateEntries()
+        {
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
+            {
+                cmd.CommandText = @"SELECT a.aid, a.type, a.title, a.nihongo, a.english, a.eps_total, a.eps_my,
+                                           a.eps_watched, IFNULL(SUM(f.size), 0) AS size
+                                      FROM anime AS a
+                                 LEFT JOIN episodes AS e ON e.aid = a.aid
+                                 LEFT JOIN files AS f ON f.eid = e.eid
+                                  GROUP BY a.aid
+                                  ORDER BY a.title ASC;";
+
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    while (reader.Read())
+                        Entries.Add(new MylistEntry(reader));
+            }
+        }
+
+        #endregion Private Methods
+
         #region Public Methods
+
+        public void Close()
+        {
+            if (isSQLConnOpen)
+                SQLConn.Close();
+
+            isSQLConnOpen = false;
+        }
 
         /// <summary>
         /// Creates an empty database with correct table structures.
         /// </summary>
         public void Create() // TODO: Add foreign keys.
         {
+            Initialize(true);
+
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
                 cmd.CommandText = @"CREATE TABLE anime ('aid' INTEGER PRIMARY KEY NOT NULL, 'type' VARCHAR NOT NULL,
@@ -50,7 +98,7 @@ namespace AniDBmini
                                     CREATE TABLE episodes ('eid' INTEGER PRIMARY KEY, 'aid' INTEGER NOT NULL, 'epno' INTEGER NOT NULL, 'type' VARCHAR,
                                                            'english' VARCHAR NOT NULL, 'nihongo' VARCHAR, 'romaji' VARCHAR, 'airdate' VARCHAR, 'watched' INTEGER);
                                     CREATE TABLE files ('lid' INTEGER PRIMARY KEY NOT NULL, 'eid' INTEGER, 'gid' INTEGER, 'ed2k' VARCHAR, 'addeddate' VARCHAR, 'watcheddate' VARCHAR, 
-                                                        'length' INTEGER, 'size' INTEGER, 'source' VARCHAR, 'vcodec' VARCHAR, 'acodec' VARCHAR, 'generic' INTEGER);
+                                                        'length' INTEGER, 'size' INTEGER, 'source' VARCHAR, 'vcodec' VARCHAR, 'acodec' VARCHAR, 'path' VARCHAR, 'generic' INTEGER);
                                     CREATE TABLE groups ('gid' INTEGER PRIMARY KEY NOT NULL, 'name' VARCHAR, 'abbr' VARCHAR);";
                 cmd.ExecuteNonQuery();
             }
@@ -78,6 +126,8 @@ namespace AniDBmini
         /// </summary>
         public void InsertMylistEntry(MylistEntry entry)
         {
+            Entries.Add(entry);
+
             using (SQLiteTransaction dbTrans = SQLConn.BeginTransaction())
             {
                 using (SQLiteCommand cmd = SQLConn.CreateCommand())
@@ -121,7 +171,7 @@ namespace AniDBmini
 
                     SQLiteCommand fileCmd = SQLConn.CreateCommand();
 
-                    fileCmd.CommandText = @"INSERT INTO files VALUES (@lid, @eid, @gid, @ed2k, @addeddate, @watcheddate, @length, @size, @source, @vcodec, @acodec, @generic);";
+                    fileCmd.CommandText = @"INSERT INTO files VALUES (@lid, @eid, @gid, @ed2k, @addeddate, @watcheddate, @length, @size, @source, @vcodec, @acodec, @path, @generic);";
 
                     SQLiteParameter[] fParams = { new SQLiteParameter("@lid"),
                                                   new SQLiteParameter("@eid"),
@@ -134,6 +184,7 @@ namespace AniDBmini
                                                   new SQLiteParameter("@source"),
                                                   new SQLiteParameter("@vcodec"),
                                                   new SQLiteParameter("@acodec"),
+                                                  new SQLiteParameter("@path"),
                                                   new SQLiteParameter("@generic") };
 
                     fParams[2].IsNullable = fParams[3].IsNullable = fParams[5].IsNullable = fParams[6].IsNullable = 
@@ -167,7 +218,8 @@ namespace AniDBmini
                             fParams[8].Value = file.source;
                             fParams[9].Value = file.vcodec;
                             fParams[10].Value = file.acodec;
-                            fParams[11].Value = file.generic;
+                            fParams[11].Value = file.path;
+                            fParams[12].Value = file.generic;
 
                             fileCmd.ExecuteNonQuery();
                         }

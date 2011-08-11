@@ -26,16 +26,18 @@ namespace AniDBmini
 
         private BackgroundWorker XmlWorker;
         private string xmlPath;
-        private bool closePending, isWorking;
+        private bool closePending, isBackup, isWorking;
 
+        private MylistLocal m_myList;
         private Dispatcher uiDispatcher = Dispatcher.CurrentDispatcher;
 
         #endregion Fields
 
         #region Constructor
 
-        public ImportWindow()
+        public ImportWindow(MylistLocal myList)
         {
+            m_myList = myList;
             InitializeComponent();
         }
 
@@ -81,12 +83,22 @@ namespace AniDBmini
             {
                 isWorking = false;
                 if (MessageBox.Show("Importing finised!", "Status", MessageBoxButton.OK, MessageBoxImage.Information) == MessageBoxResult.OK)
-                    this.Close();
+                {
+                    if (isBackup)
+                        File.Delete(MylistLocal.dbPath + ".bak");
+
+                    this.DialogResult = true;
+                }
             };
 
             if (File.Exists(MylistLocal.dbPath))
-                if (MessageBox.Show("A mylist database file already exists.\nDo you wish to overwrite it?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
-                    File.Delete(MylistLocal.dbPath);
+                if (MessageBox.Show("A mylist database file already exists.\nDo you wish to overwrite it?", "Confirm",
+                                    MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
+                {
+                    m_myList.Close();
+                    File.Move(MylistLocal.dbPath, MylistLocal.dbPath + ".bak");
+                    isBackup = true;
+                }
                 else
                     return;
 
@@ -98,8 +110,7 @@ namespace AniDBmini
 
         private void DoWork(object sender, DoWorkEventArgs e)
         {
-            MylistLocal myList = new MylistLocal();
-            myList.Create();
+            m_myList.Create();
 
             List<int> m_groupList = new List<int>();
             List<MylistEntry> m_list = new List<MylistEntry>();
@@ -146,6 +157,8 @@ namespace AniDBmini
                     entry.watched = Convert.ToBoolean(int.Parse(reader["watched"]));
                     entry.size = formatSize(reader["size"]);
 
+                    entry.Episodes = new List<EpisodeEntry>();
+
                     if (!reader.ReadToFollowing("episodes")) // <episodes>
                         goto Finish;
 
@@ -182,6 +195,8 @@ namespace AniDBmini
                         episodesReader.ReadToFollowing("status"); // <status/>
                         episode.watched = Convert.ToBoolean(int.Parse(episodesReader["watched"]));
 
+                        episode.Files = new List<FileEntry>();
+
                         if (!episodesReader.ReadToFollowing("files")) // <files>
                             goto Finish;
 
@@ -205,7 +220,7 @@ namespace AniDBmini
 
                                 file.ed2k = filesReader["ed2k"];
                                 file.length = int.Parse(filesReader["length"]);
-                                file.size = int.Parse(filesReader["lid"]);
+                                file.size = int.Parse(filesReader["size"]);
                                 file.source = formatNullable(filesReader["source"]);
                                 file.vcodec = formatNullable(filesReader["vcodec"]);
                                 file.acodec = formatNullable(filesReader["acodec"]);
@@ -218,7 +233,7 @@ namespace AniDBmini
                                     filesReader.ReadToFollowing("group_abbr");
                                     string group_abbr = filesReader.ReadElementContentAsString();
 
-                                    myList.InsertGroup(file.gid, group_name, group_abbr);
+                                    m_myList.InsertGroup(file.gid, group_name, group_abbr);
                                     m_groupList.Add(file.gid);
                                 }
                             }
@@ -238,7 +253,7 @@ namespace AniDBmini
                     episodesReader.Close();
 
                 Finish:
-                    myList.InsertMylistEntry(entry);
+                    m_myList.InsertMylistEntry(entry);
                 }
             }
         }
@@ -281,7 +296,12 @@ namespace AniDBmini
                     e.Cancel = true;
                 }
                 else if (File.Exists(MylistLocal.dbPath))
+                {
                     File.Delete(MylistLocal.dbPath);
+
+                    if (isBackup)
+                        File.Delete(MylistLocal.dbPath + ".bak");
+                }
             }
         }
 

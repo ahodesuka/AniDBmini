@@ -5,7 +5,7 @@
         xmlns:l="clr-namespace:AniDBmini"
         Background="{DynamicResource WindowBackgroundBrush}"
         Title="AniDBmini" Height="450" Width="840" Icon="/AniDBmini;component/Resources/AniDBmini.ico" WindowStartupLocation="Manual"
-        MinWidth="740" MinHeight="360" Closing="OnClose" StateChanged="OnStateChanged" IsVisibleChanged="OnIsVisibleChanged" FontFamily="Calibri">
+        MinWidth="740" MinHeight="360" Initialized="OnInitialized" Closing="OnClose" StateChanged="OnStateChanged" IsVisibleChanged="OnIsVisibleChanged" FontFamily="Calibri">
     <Window.Resources>
         
         <l:FileSizeConverter x:Key="FileSizeConverter" />
@@ -472,12 +472,47 @@
             </TabItem>
             <TabItem x:Name="mylistTabItem" Header="Mylist">
                 <Grid>
-                    <Button VerticalAlignment="Center" HorizontalAlignment="Center" Height="80" Width="380" Template="{StaticResource ImportListButtonTemplate}" Content="Import Mylist" Click="ImportList_Click" />
-                    <DataGrid AutoGenerateColumns="True" Visibility="Collapsed">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Title" />
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <Button x:Name="mylistImortButton" VerticalAlignment="Center" HorizontalAlignment="Center" Height="80" Width="380" Template="{StaticResource ImportListButtonTemplate}" Content="Import Mylist" Click="ImportList_Click" Panel.ZIndex="1" />
+                    <Border Background="#9FFF" BorderBrush="#FCCC" CornerRadius="2" BorderThickness="1">
+                        <DataGrid x:Name="mylistDataGrid" AutoGenerateColumns="False" CanUserResizeRows="False" IsReadOnly="True" SelectionMode="Single"
+                                  HorizontalGridLinesBrush="#FDDD" VerticalGridLinesBrush="#FDDD" FontFamily="Segoe UI" RowDetailsVisibilityMode="Collapsed"
+                                  HeadersVisibility="Column" BorderThickness="0" Padding="2,0" RowHeight="20" Background="Transparent">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="Title" Width="300" MinWidth="75" SortMemberPath="title">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="5,0">
+                                                <TextBlock Name="title" Text="{Binding title}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="EPs" SortMemberPath="eps_my">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="5,0">
+                                                <TextBlock Name="eps_my" Text="{Binding eps_my}" />
+                                                <TextBlock Text="/" />
+                                                <TextBlock Text="{Binding eps_total}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Watched" SortMemberPath="eps_watched">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="5,0">
+                                                <TextBlock Name="eps_watched" Text="{Binding eps_watched}" />
+                                                <TextBlock Text="/" />
+                                                <TextBlock Text="{Binding eps_total}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Size" Binding="{Binding size, Converter={StaticResource FileSizeConverter}, ConverterParameter=true}" Width="75" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
                 </Grid>
             </TabItem>
             <TabItem x:Name="animeTabItem" Header="Anime" Visibility="Collapsed">

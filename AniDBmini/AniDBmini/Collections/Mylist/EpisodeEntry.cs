@@ -12,7 +12,7 @@ namespace AniDBmini.Collections
         public string type, english, nihongo, romaji, airdate;
         public bool watched;
 
-        public List<FileEntry> Files = new List<FileEntry>();
+        public List<FileEntry> Files { get; set; }
 
         #endregion Fields
 

@@ -39,6 +39,7 @@ namespace AniDBmini
 
         private AniDBAPI aniDB;
         private MPCAPI mpcApi;
+        private MylistLocal m_myList;
 
         private DateTime m_hashingStartTime, m_hashingLastTime;
 
@@ -65,6 +66,7 @@ namespace AniDBmini
             AniDBAPI.AppendDebugLine("Welcome to AniDBmini, connected to: " + aniDB.APIServer);
 
             InitializeComponent();
+            SetMylistVisibility();
 
             mylistStats.ItemsSource = mylistStatsList;
             debugListBox.ItemsSource = aniDB.DebugLog;
@@ -73,9 +75,6 @@ namespace AniDBmini
 
             animeTabList.OnCountChanged += new CountChangedHandler(animeTabList_OnCountChanged);
             aniDB.FileHashingProgress += new FileHashingProgressHandler(OnFileHashingProgress);
-
-            InitializeStats();
-            InitializeNotifyIcon();
         }
 
         #endregion Constructor
@@ -200,11 +199,40 @@ namespace AniDBmini
 
         #endregion Hashing
 
+        #region Mylist
+
+        private void SetMylistVisibility()
+        {
+            if (m_myList.Entries.Count > 0)
+            {
+                mylistImortButton.Visibility = Visibility.Collapsed;
+                mylistDataGrid.IsEnabled = true;
+            }
+            else
+            {
+                mylistImortButton.Visibility = Visibility.Visible;
+                mylistDataGrid.IsEnabled = false;
+            }
+        }
+
+        #endregion Mylist
+
         #endregion Private Methods
 
         #region Events
 
         #region Main Window
+
+        private void OnInitialized(object sender, EventArgs e)
+        {
+            m_myList = new MylistLocal();
+
+            mylistDataGrid.DataContext = 
+            mylistDataGrid.ItemsSource = m_myList.Entries;
+
+            InitializeStats();
+            InitializeNotifyIcon();
+        }
 
         private void ShowOpionsWindow(object sender, RoutedEventArgs e)
         {
@@ -492,9 +520,11 @@ namespace AniDBmini
 
         private void ImportList_Click(object sender, RoutedEventArgs e)
         {
-            ImportWindow import = new ImportWindow();
+            ImportWindow import = new ImportWindow(m_myList);
             import.Owner = this;
-            import.ShowDialog();
+
+            if (import.ShowDialog() == true)
+                SetMylistVisibility();
         }
 
         #endregion Mylist Tab

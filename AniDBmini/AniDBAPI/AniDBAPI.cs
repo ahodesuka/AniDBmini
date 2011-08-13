@@ -91,7 +91,7 @@ namespace AniDBmini
 
 		public AniDBAPI(string server, int port, int localPort)
         {
-#if DEBUG
+#if !DEBUG
             apiserver = new IPEndPoint(IPAddress.Any, localPort);
             conn.Connect(server, port); //TODO: Check if connect was succesful or not
 #endif
@@ -107,7 +107,7 @@ namespace AniDBmini
 
             if (response.Code == 200 || response.Code == 201) // successful login
             {
-#if DEBUG
+#if !DEBUG
                 sessionKey = response.Message.Split(' ')[1];
 #endif
                 isLoggedIn = true;
@@ -141,8 +141,6 @@ namespace AniDBmini
 
             if (response.Code == 230)
                 OnAnimeTabFetched(new AnimeTab(Regex.Split(response.Message, "\n")[1]));
-            else
-                return;
         }
 
         private void File(HashItem item)
@@ -151,7 +149,7 @@ namespace AniDBmini
             {
                 APIResponse response = Execute(String.Format("FILE size={0}&ed2k={1}&fmask=7800682810&amask=70e0f0c0", item.Size, item.Hash));
 
-                if (response.Code == 220)
+                //if (response.Code == 220)
                 {
                     string[] info = Regex.Split(response.Message, "\n")[1].Split('|');
 
@@ -253,7 +251,7 @@ namespace AniDBmini
             Action random = new Action(delegate
             {
                 APIResponse response = Execute(String.Format("RANDOMANIME type={0}", type));
-                if (response.Code == 230)
+                //if (response.Code == 230)
                 {
                     Action anime = new Action(delegate { Anime(int.Parse(Regex.Split(response.Message, "\n")[1].Split('|')[0])); });
                     LowPriorityCommand(anime);
@@ -264,18 +262,6 @@ namespace AniDBmini
         }
 
         #endregion MYLIST
-
-        #region NOTIFY
-
-        /// <summary>
-        /// not in use.
-        /// </summary>
-        private bool Uptime()
-        {
-            return Execute("UPTIME").Code == 501 ? false : true;
-        }
-
-        #endregion NOTIFY
 
         #region File Hashing
 
@@ -338,7 +324,7 @@ namespace AniDBmini
         /// <returns>Response from server.</returns>
         private APIResponse Execute(string cmd)
         {
-#if DEBUG
+#if !DEBUG
             string e_cmd = cmd;
             string e_response = String.Empty;
 
@@ -350,9 +336,6 @@ namespace AniDBmini
             data = conn.Receive(ref apiserver);
 
             m_lastCommand = DateTime.Now;
-#if DEBUG
-            System.Diagnostics.Debug.WriteLine(String.Format("Executed: {0} @ {1}", cmd, m_lastCommand.ToShortTimeString()));
-#endif
 
             e_response = Encoding.UTF8.GetString(data, 0, data.Length);
             int e_code = int.Parse(e_response.Substring(0, 3));
@@ -377,7 +360,10 @@ namespace AniDBmini
             }
 #else
             m_lastCommand = DateTime.Now;
-            return new APIResponse { Message = "\n1|2", Code = 200 };
+            APIResponse response = new APIResponse { Message = "\n1|2", Code = 200 };
+            System.Diagnostics.Debug.WriteLine(String.Format("Executed: {0} @ {1}", cmd, m_lastCommand.ToLongTimeString()));
+            System.Diagnostics.Debug.WriteLine(String.Format("Response: {0}", response.Message));
+            return response;
 #endif
         }
 

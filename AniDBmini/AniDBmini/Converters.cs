@@ -41,4 +41,18 @@ namespace AniDBmini
             throw new NotImplementedException();
         }
     }
+
+    [ValueConversion(typeof(int), typeof(string))]
+    class EpisodesZeroToQuestionMark : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return (int)value == 0 ? "?" : value.ToString();
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

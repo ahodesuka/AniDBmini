@@ -28,6 +28,20 @@ namespace AniDBmini
 
         #endregion Constructor
 
+        #region Private Methods
+
+        private void StartMainWindow()
+        {
+            MainWindow main = new MainWindow(aniDB);            
+            main.Show();
+
+            aniDB.MainWindow = main;
+
+            this.Close();
+        }
+
+        #endregion Private Methods
+
         #region Events
 
         private void OnInitialized(object sender, EventArgs e)
@@ -36,12 +50,7 @@ namespace AniDBmini
                 (aniDB = new AniDBAPI(ConfigFile.Read("server").ToString(), ConfigFile.Read("port").ToInt32(), ConfigFile.Read("localPort").ToInt32())) != null)
             {
                 if (aniDB.Login(ConfigFile.Read("username").ToString(), ConfigFile.Read("password").ToString()))
-                {
-                    var main = new MainWindow(aniDB);
-                    main.Show();
-
-                    this.Close();
-                }
+                    StartMainWindow();
             }
             else if (ConfigFile.Read("rememberUser").ToBoolean())
             {
@@ -90,10 +99,7 @@ namespace AniDBmini
                         ConfigFile.Write("password", string.Empty);
                     }
 
-                    var main = new MainWindow(aniDB);
-                    main.Show();
-
-                    this.Close();
+                    StartMainWindow();
                 }
         }
 

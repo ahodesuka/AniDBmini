@@ -41,7 +41,7 @@ namespace AniDBmini
         private MPCAPI mpcApi;
         private MylistLocal m_myList;
 
-        private DateTime m_hashingStartTime, m_hashingLastTime;
+        private DateTime m_hashingStartTime;
 
         private int m_storedTabIndex;
 
@@ -60,8 +60,6 @@ namespace AniDBmini
 
         public MainWindow(AniDBAPI api)
         {
-            //MessageBox.Show(DateTime.Parse("02.08.2011 12:14:20", System.Globalization.CultureInfo.CreateSpecificCulture("en-GB")).ToString(WindowsLocale.LocalDateFormat()));
-
             aniDB = api;
             AniDBAPI.AppendDebugLine("Welcome to AniDBmini, connected to: " + aniDB.APIServer);
 
@@ -75,6 +73,8 @@ namespace AniDBmini
 
             animeTabList.OnCountChanged += new CountChangedHandler(animeTabList_OnCountChanged);
             aniDB.FileHashingProgress += new FileHashingProgressHandler(OnFileHashingProgress);
+            aniDB.OnAnimeTabFetched += new AnimeTabFetchedHandler(OnAnimeTabFetched);
+            aniDB.OnFileInfoFetched += new FileInfoFetchedHandler(OnFileInfoFetched);
         }
 
         #endregion Constructor
@@ -97,7 +97,7 @@ namespace AniDBmini
                 if (text != "x")
                 {
                     if (i == 3)
-                        value = (Math.Round((stat / 1024f) / (stat > 1048576 ? 1024f : 1), 2)).ToString() + (stat > 1048576 ? "TB" : "GB");
+                        value = ((double)stat).ToFormatedBytes();
                     else if (i == 16)
                     {
                         int days = (int)Math.Floor((stat / 60f) / 24f);
@@ -193,8 +193,21 @@ namespace AniDBmini
             m_HashWorker.DoWork += new DoWorkEventHandler(OnHashWorkerDoWork);
             m_HashWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(OnHashWorkerCompleted);
 
-            m_hashingStartTime = m_hashingLastTime = DateTime.Now;
+            m_hashingStartTime = DateTime.Now;
             m_HashWorker.RunWorkerAsync();
+        }
+
+        private void FinishHash(HashItem item)
+        {
+            ppSize += item.Size;
+
+            if (addToMyListCheckBox.IsChecked == true)
+            {
+                item.Viewed = watchedCheckBox.IsChecked == true ? 1 : 0;
+                item.State = stateComboBox.SelectedIndex;
+
+                aniDB.MyListAdd(item);
+            }
         }
 
         #endregion Hashing
@@ -215,22 +228,27 @@ namespace AniDBmini
             }
         }
 
-        private void SetDetailsVisibility(DataGridRow row)
+        public void MylistToggleEntry(DependencyObject src)
         {
-            if (row == null)
-                return;
+            DataGridRow row = src.FindAncestor<DataGridRow>();
 
-            Button btn = row.FindChild<Button>();
+            if (row != null)
+            {
+                if (row.Item is EpisodeEntry && ((EpisodeEntry)row.Item).genericOnly)
+                    return;
 
-            if (row.DetailsVisibility == Visibility.Collapsed)
-            {
-                btn.Style = (Style)FindResource("MylistContractButtonStyle");
-                row.DetailsVisibility = Visibility.Visible;
-            }
-            else if (row.DetailsVisibility == Visibility.Visible)
-            {
-                btn.Style = (Style)FindResource("MylistExpandButtonStyle");
-                row.DetailsVisibility = Visibility.Collapsed;
+                Button btn = row.FindChild<Button>();
+
+                if (row.DetailsVisibility == Visibility.Collapsed)
+                {
+                    btn.Style = (Style)FindResource("MylistContractButtonStyle");
+                    row.DetailsVisibility = Visibility.Visible;
+                }
+                else if (row.DetailsVisibility == Visibility.Visible)
+                {
+                    btn.Style = (Style)FindResource("MylistExpandButtonStyle");
+                    row.DetailsVisibility = Visibility.Collapsed;
+                }
             }
         }
 
@@ -284,7 +302,7 @@ namespace AniDBmini
             ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
             {
                 item = aniDB.ed2kHash(item);
-                aniDB.AddToMyList(item);
+                aniDB.MyListAdd(item);
 
                 if (ConfigFile.Read("mpcShowOSD").ToBoolean())
                     mpcApi.ShowWatchedOSD();
@@ -302,26 +320,17 @@ namespace AniDBmini
         private void randomAnimeLabelContextMenuItem_Click(object sender, RoutedEventArgs e)
         {
             MenuItem mi = (MenuItem)sender;
-            this.Cursor = Cursors.Wait;
+            aniDB.RandomAnime(int.Parse(mi.Tag.ToString()));
+        }
 
-            ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
-            {
-                int aid = 0;
-                AnimeTab aTab = null;
+        private void OnAnimeTabFetched(AnimeTab aTab)
+        {
+            animeTabList.Add(aTab);
+        }
 
-                m_Dispatcher.Invoke(new Action(delegate { aniDB.RandomAnime(int.Parse(mi.Tag.ToString()), out aid); }), TimeSpan.FromSeconds(1), null);
-
-                if (aid != 0)
-                {
-                    Thread.Sleep(2000); // Flood prevention.
-                    m_Dispatcher.Invoke(new Action(delegate { aniDB.Anime(aid, out aTab); }), TimeSpan.FromSeconds(1), null);
-
-                    if (aTab != null)
-                        animeTabList.Add(aTab);
-                }
-
-                this.Dispatcher.BeginInvoke(new Action(delegate { this.Cursor = Cursors.Arrow; }), null);
-            }));
+        private void OnFileInfoFetched(FileInfoFetchedArgs e)
+        {
+            m_myList.InsertFileInfo(e);
         }
 
         private void mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -431,7 +440,7 @@ namespace AniDBmini
 
                 HashItem _temp = aniDB.ed2kHash(hashFileList[0]);
 
-                if (isHashing && _temp != null) // if we have not aborted remove item from queue and process
+                if (isHashing && _temp != null) // if we did not abort remove item from queue and process
                 {
                     hashFileList[0] = _temp;
                     m_Dispatcher.BeginInvoke(new Action<HashItem>(FinishHash), hashFileList[0]);
@@ -446,7 +455,7 @@ namespace AniDBmini
             hashingStopButton.IsEnabled = isHashing = false;
             fileProgressBar.Value = totalProgressBar.Value = ppSize = 0;
             hashingStartButton.IsEnabled = hashFileList.Count > 0;
-            timeRemainingTextBlock.Text = String.Empty;
+            timeRemainingTextBlock.Text = timeElapsedTextBlock.Text = totalBytesTextBlock.Text = String.Empty;
 
             m_HashWorker.Dispose();
         }
@@ -482,6 +491,7 @@ namespace AniDBmini
                     foreach (string _file in Directory.GetFiles(dlg.SelectedPath, "*.*")
                                                       .Where(s => allowedVideoFiles.Contains("*" + Path.GetExtension(s).ToLower())))
                         addRowToHashTable(_file);
+
                     foreach (string dir in Directory.GetDirectories(dlg.SelectedPath))
                         try
                         {
@@ -498,39 +508,22 @@ namespace AniDBmini
         {
             double fileProg = e.ProcessedSize / e.TotalSize * 100;
             double totalProg = (e.ProcessedSize + ppSize) / totalQueueSize * 100;
-            string remainingString = String.Empty;
 
-            if (DateTime.Now.Subtract(m_hashingLastTime).TotalMilliseconds >= 1000)
-            {
-                TimeSpan remainingSpan = TimeSpan.FromSeconds((DateTime.Now.Subtract(m_hashingStartTime).TotalSeconds / (ppSize + e.ProcessedSize)) * (totalQueueSize - (ppSize + e.ProcessedSize)));
-                remainingString = String.Format("Estimated time remaining: {0}h {1}m {2}s", Math.Round(remainingSpan.TotalHours), remainingSpan.Minutes, remainingSpan.Seconds);
-                m_hashingLastTime = DateTime.Now;
-            }
+            TimeSpan totalTimeElapsed = DateTime.Now - m_hashingStartTime;
+            TimeSpan remainingSpan = TimeSpan.FromSeconds(totalQueueSize * (totalTimeElapsed.TotalSeconds / (ppSize + e.ProcessedSize)) - totalTimeElapsed.TotalSeconds - 0.5);
 
             m_Dispatcher.BeginInvoke(new Action(delegate
             {
                 if (isHashing)
                 {
-                    if (remainingString != string.Empty)
-                        timeRemainingTextBlock.Text = remainingString;
+                    timeElapsedTextBlock.Text = String.Format("Elapsed: {0}", totalTimeElapsed.ToFormatedString());
+                    timeRemainingTextBlock.Text = String.Format("ETA: {0}", remainingSpan.ToFormatedString());
+                    totalBytesTextBlock.Text = String.Format("Bytes: {0} / {1}", (e.ProcessedSize + ppSize).ToFormatedBytes("GB"), totalQueueSize.ToFormatedBytes("GB"));
 
                     fileProgressBar.Value = fileProg;
                     totalProgressBar.Value = totalProg;
                 }
             }));
-        }
-
-        private void FinishHash(HashItem item)
-        {
-            ppSize += item.Size;
-
-            if (addToMyListCheckBox.IsChecked == true)
-            {
-                item.Viewed = watchedCheckBox.IsChecked == true ? 1 : 0;
-                item.State = stateComboBox.SelectedIndex;
-
-                aniDB.AddToMyList(item);
-            }
         }
 
         #endregion Hashing Tab
@@ -546,12 +539,52 @@ namespace AniDBmini
                 SetMylistVisibility();
         }
 
-        private void MylistExpandButton_Click(object sender, RoutedEventArgs e)
+        private void ExpandExecuted(object sender, ExecutedRoutedEventArgs e)
         {
-            DataGridRow row = ((DependencyObject)e.OriginalSource).FindAncestor<DataGridRow>();
-            SetDetailsVisibility(row);
+            MylistToggleEntry((DependencyObject)e.OriginalSource);
+            e.Handled = true;
+        }
+
+        private void MylistExpand_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            DependencyObject src = (DependencyObject)e.OriginalSource;
+            if (src.FindAncestor<Button>() == null)
+                MylistToggleEntry(src);
 
             e.Handled = true;
+        }
+
+        /// <summary>
+        /// Fixes height bug.
+        /// </summary>
+        private void episodesDGRDVChanged(object sender, DataGridRowDetailsEventArgs e)
+        {
+            DataGrid dg = sender as DataGrid;
+            int visibleCount = 0;
+
+            if (dg != null && e.Row.DetailsVisibility == Visibility.Collapsed)
+            {
+                foreach (var item in dg.ItemsSource)
+                {
+                    var row = dg.ItemContainerGenerator.ContainerFromItem(item) as DataGridRow;
+                    if (null != row && row.DetailsVisibility == Visibility.Visible)
+                        visibleCount++;
+                }
+
+                if (visibleCount == 0)
+                    dg.Items.Refresh();
+            }
+        }
+
+        private void mylistDGRDVChanged(object sender, DataGridRowDetailsEventArgs e)
+        {
+            DataGrid dg = sender as DataGrid;
+            if (dg != null && e.Row.DetailsVisibility == Visibility.Collapsed)
+            {
+                DataGrid childDG = ((DependencyObject)e.Row).FindChild<DataGrid>();
+                if (childDG != null)
+                    childDG.UnselectAll();
+            }
         }
 
         #endregion Mylist Tab
@@ -608,5 +641,10 @@ namespace AniDBmini
 
         #endregion
 
+    }
+
+    public static class Command
+    {
+        public static readonly RoutedUICommand Expand = new RoutedUICommand("Expand Entry", "Expand", typeof(MainWindow));
     }
 }

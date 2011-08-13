@@ -20,6 +20,28 @@ using AniDBmini.HashAlgorithms;
 
 namespace AniDBmini
 {
+
+    #region Args & Delegates
+
+    public class FileInfoFetchedArgs : EventArgs
+    {
+        public MylistEntry Anime { get; private set; }
+        public EpisodeEntry Episode { get; private set; }
+        public FileEntry File { get; private set; }
+
+        public FileInfoFetchedArgs(MylistEntry anime, EpisodeEntry episode, FileEntry file)
+        {
+            Anime = anime;
+            Episode = episode;
+            File = file;
+        }
+    }
+
+    public delegate void FileInfoFetchedHandler(FileInfoFetchedArgs fInfo);
+    public delegate void AnimeTabFetchedHandler(AnimeTab aTab);
+
+    #endregion Args & Delegates
+
     public class AniDBAPI
     {
 
@@ -40,13 +62,11 @@ namespace AniDBmini
 
         private UdpClient conn = new UdpClient();
         private IPEndPoint apiserver;
+        private DateTime m_lastCommand;
 
         private byte[] data = new byte[1400];
         private bool isLoggedIn;
         private string sessionKey, user, pass;
-
-        private DispatcherTimer addTimer;
-        private List<HashItem> addToMyList = new List<HashItem>();
 
         private static TSObservableCollection<DebugLine> debugLog = new TSObservableCollection<DebugLine>();
 
@@ -62,37 +82,22 @@ namespace AniDBmini
                                              "x", "x",
                                              "Time wasted" };
 
+        public event FileInfoFetchedHandler OnFileInfoFetched;
+        public event AnimeTabFetchedHandler OnAnimeTabFetched;
+
 		#endregion Fields
 
 		#region Constructor
 
 		public AniDBAPI(string server, int port, int localPort)
         {
-#if !OFFLINE
+#if DEBUG
             apiserver = new IPEndPoint(IPAddress.Any, localPort);
             conn.Connect(server, port); //TODO: Check if connect was succesful or not
 #endif
-            InitializeAddTimer();
         }
 
         #endregion Constructor
-
-        #region Initialize
-
-        private void InitializeAddTimer()
-        {
-            addTimer = new DispatcherTimer();
-            addTimer.Interval = TimeSpan.FromSeconds(4);
-            addTimer.Tick += (s, e) =>
-            {
-                if (addToMyList.Count == 0)
-                    addTimer.Stop();
-                else
-                    MyListAdd(addToMyList[0]);
-            };
-        }
-
-        #endregion Initialize
 
         #region AUTH
 
@@ -102,7 +107,7 @@ namespace AniDBmini
 
             if (response.Code == 200 || response.Code == 201) // successful login
             {
-#if !OFFLINE
+#if DEBUG
                 sessionKey = response.Message.Split(' ')[1];
 #endif
                 isLoggedIn = true;
@@ -120,7 +125,7 @@ namespace AniDBmini
 
         public void Logout()
         {
-            Execute("LOGOUT", true);
+            Execute("LOGOUT");
         }
 
         #endregion AUTH
@@ -128,100 +133,134 @@ namespace AniDBmini
         #region DATA
 
         /// <summary>
-        /// Anime command to create a anime tab from a 
-        /// anime ID on mylist.
+        /// Anime command to create a anime tab from an anime ID.
         /// </summary>
-        public AnimeTab Anime(int animeID)
+        private void Anime(int animeID)
         {
-            APIResponse response = Execute("ANIME aid=" + animeID + "&amask=b2e05efe400080");
+            APIResponse response = Execute(String.Format("ANIME aid={0}&amask=b2e05efe400080", animeID));
 
             if (response.Code == 230)
-                return new AnimeTab(Regex.Split(response.Message, "\n")[1]);
+                OnAnimeTabFetched(new AnimeTab(Regex.Split(response.Message, "\n")[1]));
             else
-                return null;
+                return;
         }
 
-        /// <summary>
-        /// Anime command to create a anime tab from a 
-        /// RANDOMANIME command.
-        /// </summary>
-        /// <param name="animeID">Anime ID to query.</param>
-        /// <param name="aTab">Tab item to return.</param>
-        public void Anime(int animeID, out AnimeTab aTab)
-        {            
-            APIResponse response = Execute("ANIME aid=" + animeID + "&amask=b2e05efe400080");
+        private void File(HashItem item)
+        {
+            Action fileInfo = new Action(delegate
+            {
+                APIResponse response = Execute(String.Format("FILE size={0}&ed2k={1}&fmask=7800682810&amask=70e0f0c0", item.Size, item.Hash));
 
-            if (response.Code == 230)
-                aTab = new AnimeTab(Regex.Split(response.Message, "\n")[1]);
-            else
-                aTab = null;
+                if (response.Code == 220)
+                {
+                    string[] info = Regex.Split(response.Message, "\n")[1].Split('|');
+
+                    MylistEntry anime = new MylistEntry();
+                    EpisodeEntry episode = new EpisodeEntry();
+                    FileEntry file = new FileEntry(item);
+
+                    anime.aid = int.Parse(info[1]);
+                    episode.eid = int.Parse(info[2]);
+
+                    file.gid = int.Parse(info[3]);
+                    file.lid = int.Parse(info[4]);
+                    file.source = info[5].formatNullable();
+                    file.acodec = info[6].Contains("'") ? info[6].Split('\'')[0] : info[6].formatNullable();
+                    file.vcodec = info[7];
+                    file.vres = info[8].formatNullable();
+                    file.length = int.Parse(info[9]);
+                    episode.airdate = info[10];
+                    file.watcheddate = info[11];
+
+                    anime.eps_total = int.Parse(info[12]);
+                    anime.year = info[13];
+                    anime.type = info[14];
+                    anime.title = info[15];
+                    anime.nihongo = info[16].formatNullable();
+                    anime.english = info[17].formatNullable();
+
+                    episode.epno = int.Parse(info[18]);
+                    episode.english = info[19];
+                    episode.romaji = info[20].formatNullable();
+                    episode.nihongo = info[21].formatNullable();
+
+                    file.group_name = info[22];
+                    file.group_abbr = info[23];
+
+                    OnFileInfoFetched(new FileInfoFetchedArgs(anime, episode, file));
+                    System.Diagnostics.Debug.WriteLine(response.Message);
+                }
+            });
+
+            LowPriorityCommand(fileInfo);               
         }
 
         #endregion DATA
 
         #region MYLIST
 
-        public void AddToMyList(HashItem item)
+        public void MyListAdd(HashItem item)
         {
-            if (!addToMyList.Contains(item))
+            Action addToList = new Action(delegate
             {
-                addToMyList.Add(item);
-
-                if (!addTimer.IsEnabled)
-                {
-                    MyListAdd(addToMyList[0]);
-                    addTimer.Start();
-                }
-            }
-        }
-
-        private void MyListAdd(HashItem item)
-        {
-            string r_msg = String.Empty;
-            APIResponse response = Execute("MYLISTADD size=" + item.Size +
+                string r_msg = String.Empty;
+                APIResponse response = Execute("MYLISTADD size=" + item.Size +
                                                         "&ed2k=" + item.Hash +
                                                         "&viewed=" + item.Viewed +
                                                         "&state=" + item.State + (item.Edit ? "&edit=1" : null));
-            switch (response.Code)
-            {
-                case 210:
-                    r_msg = "Added " + item.Name + " to mylist.";
-                    break;
-                case 310:
-                    addToMyList[0].Edit = true;
-                    return;
-                case 311:
-                    r_msg = "Edited mylist entry for " + item.Name + ".";
-                    break;
-                case 320:
-                    r_msg = "Error! File not in database.";
-                    break;
-                case 330:
-                    r_msg = "Error! Anime not in database.";
-                    break;
-                case 350:
-                    r_msg = "Error! Group not in database.";
-                    break;
-                case 411:
-                    r_msg = "Error! Mylist entry not found.";
-                    break;
-            }
+                switch (response.Code)
+                {
+                    case 210:
+                        File(item);
+                        r_msg = "Added " + item.Name + " to mylist.";
+                        break;
+                    case 310:
+                        item.Edit = true;
+                        MyListAdd(item);
+                        return;
+                    case 311:
+                        File(item);
+                        r_msg = "Edited mylist entry for " + item.Name + ".";
+                        break;
+                    case 320:
+                        r_msg = "Error! File not in database.";
+                        break;
+                    case 330:
+                        r_msg = "Error! Anime not in database.";
+                        break;
+                    case 350:
+                        r_msg = "Error! Group not in database.";
+                        break;
+                    case 411:
+                        r_msg = "Error! Mylist entry not found.";
+                        break;
+                }
 
-            AppendDebugLine(r_msg);
+                AppendDebugLine(r_msg);
+            });
 
-            addToMyList.Remove(item);
+            LowPriorityCommand(addToList);
         }
 
         public int[] MyListStats()
         {
-            string r_msg = Execute("MYLISTSTATS", true).Message;
+            string r_msg = Execute("MYLISTSTATS").Message;
             return Array.ConvertAll<string, int>(Regex.Split(r_msg, "\n")[1].Split('|'), delegate(string s) { return int.Parse(s); });
         }
 
-        public void RandomAnime(int type, out int aid)
+        public void RandomAnime(int type)
         {
-            string r_msg = Execute("RANDOMANIME type=" + type).Message;
-            aid = int.Parse(Regex.Split(r_msg, "\n")[1].Split('|')[0]);
+            Action random = new Action(delegate
+            {
+                APIResponse response = Execute(String.Format("RANDOMANIME type={0}", type));
+                if (response.Code == 230)
+                {
+                    Action anime = new Action(delegate { Anime(int.Parse(Regex.Split(response.Message, "\n")[1].Split('|')[0])); });
+                    LowPriorityCommand(anime);
+                }
+            });
+
+            LowPriorityCommand(random);
         }
 
         #endregion MYLIST
@@ -233,7 +272,7 @@ namespace AniDBmini
         /// </summary>
         private bool Uptime()
         {
-            return Execute("UPTIME", true).Code == 501 ? false : true;
+            return Execute("UPTIME").Code == 501 ? false : true;
         }
 
         #endregion NOTIFY
@@ -274,27 +313,46 @@ namespace AniDBmini
 
 		#region Private Methods
 
-        public static void AppendDebugLine(string line)
+        /// <summary>
+        /// Executes an action after a certain amount of time has passed
+        /// since the previous command was sent to the server.
+        /// </summary>
+        /// <param name="todo"></param>
+        private void LowPriorityCommand(Action todoCommand)
         {
-            debugLog.Add(new DebugLine(DateTime.Now.ToLongTimeString(), line.ToString()));
+            ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+            {
+                double secondsSince = DateTime.Now.Subtract(m_lastCommand).TotalSeconds;
+
+                if (secondsSince < 4)
+                    Thread.Sleep(TimeSpan.FromSeconds(4 - secondsSince));
+
+                todoCommand();
+            }));
         }
 
         /// <summary>
-        /// Executes the current command.
+        /// Executes a given command.
+        /// And returns a response.
         /// </summary>
         /// <returns>Response from server.</returns>
-        private APIResponse Execute(string cmd, bool isSingleCMD = false)
+        private APIResponse Execute(string cmd)
         {
-#if !OFFLINE
+#if DEBUG
             string e_cmd = cmd;
             string e_response = String.Empty;
 
             if (isLoggedIn)
-                e_cmd += (isSingleCMD ? " " : "&") + "s=" + sessionKey;
+                e_cmd += (e_cmd.Contains("&") ? "&" : " ") + "s=" + sessionKey;
 
             data = Encoding.UTF8.GetBytes(e_cmd);
             conn.Send(data, data.Length);
             data = conn.Receive(ref apiserver);
+
+            m_lastCommand = DateTime.Now;
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine(String.Format("Executed: {0} @ {1}", cmd, m_lastCommand.ToShortTimeString()));
+#endif
 
             e_response = Encoding.UTF8.GetString(data, 0, data.Length);
             int e_code = int.Parse(e_response.Substring(0, 3));
@@ -306,7 +364,7 @@ namespace AniDBmini
                 case 506:
                     isLoggedIn = false;
                     if (Login(user, pass))
-                        return Execute(cmd, isSingleCMD);
+                        return Execute(cmd);
                     else
                     {
                         var login = new LoginWindow();
@@ -314,17 +372,23 @@ namespace AniDBmini
                         mainWindow.Close();
                         return new APIResponse();
                     }
-                default:
+                default:                    
                     return new APIResponse { Message = e_response, Code = e_code };
             }
 #else
+            m_lastCommand = DateTime.Now;
             return new APIResponse { Message = "\n1|2", Code = 200 };
 #endif
         }
 
         #endregion Private Methods
 
-        #region Properties
+        #region Properties & Static Methods
+
+        public static void AppendDebugLine(string line)
+        {
+            debugLog.Add(new DebugLine(DateTime.Now.ToLongTimeString(), line.ToString()));
+        }
 
         public MainWindow MainWindow
         {

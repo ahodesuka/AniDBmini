@@ -7,7 +7,6 @@ using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Media3D;
 
 using AniDBmini.Collections;
 
@@ -18,6 +17,8 @@ namespace AniDBmini
     public static class ExtensionMethods
     {
         private static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        private static readonly string[] units = { "B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
 
         public static TSObservableCollection<T> RemoveAll<T>(this TSObservableCollection<T> coll, Func<T, bool> condition)
         {
@@ -33,6 +34,63 @@ namespace AniDBmini
         {
             double seconds = double.Parse(text, CultureInfo.InvariantCulture);
             return Epoch.AddSeconds(seconds);
+        }
+
+        public static double DateTimeToUnixTime(DateTime date)
+        {
+            TimeSpan span = date - Epoch;
+            return span.TotalSeconds;
+        }
+
+        public static string ToFormatedString(this TimeSpan ts)
+        {
+            return String.Format("{0}h {1}m {2}s", (int)ts.TotalHours, ts.Minutes.ToString("00"), ts.Seconds.ToString("00"));
+        }
+
+        public static string ToFormatedStringSimple(this TimeSpan ts)
+        {
+            return String.Format("{0}h {1}m", (int)ts.TotalHours, ts.Minutes.ToString("00"));
+        }
+
+        public static string ToFormatedStringSimplify(this TimeSpan ts)
+        {
+            string time = String.Empty;
+
+            if ((int)ts.TotalHours > 0)
+                time += String.Format("{0}h ", (int)ts.TotalHours);
+
+            return String.Format("{0}{1}m", time, ts.Minutes.ToString("00"));
+        }
+
+        public static string ToFormatedBytes(this double size)
+        {
+            int unit = 0;
+
+            while (size >= 1024)
+            {
+                size /= 1024;
+                ++unit;
+            }
+
+            return String.Format("{0:0.#} {1}", size, units[unit]);
+        }
+
+        public static string ToFormatedBytes(this double size, string bUnit)
+        {
+            int unitIndex;
+
+            if ((unitIndex = Array.IndexOf(units, bUnit)) == -1)
+                return size.ToFormatedBytes();
+
+            for (int i = 0; i < unitIndex; ++i)
+                size /= 1024;
+            
+            return String.Format("{0:0.#} {1}", size, units[unitIndex]);
+        }
+
+        public static string formatNullable(this string str)
+        {
+            return string.IsNullOrWhiteSpace(str) || str == "unknown" || str == "0x0" ? null : str;
         }
 
         public static string Truncate(this string s, int length, bool atWord, bool addEllipsis)
@@ -61,96 +119,41 @@ namespace AniDBmini
 
         public static T FindAncestor<T>(this DependencyObject obj) where T : DependencyObject
         {
-            while (obj != null)
-            {
-                T o = obj as T;
-                if (o != null)
-                    return o;
+            return obj.FindAncestor(typeof(T)) as T;
+        }
 
-                obj = VisualTreeHelper.GetParent(obj);
+        public static DependencyObject FindAncestor(this DependencyObject obj, Type ancestorType)
+        {
+            if (obj is Visual)
+            {
+                var tmp = VisualTreeHelper.GetParent(obj);
+                while (tmp != null && !ancestorType.IsAssignableFrom(tmp.GetType()))
+                    tmp = VisualTreeHelper.GetParent(tmp);
+
+                return tmp;
             }
+
             return null;
         }
 
-        /// <summary>
-        /// Find the first child of the specified type (the child must exist)
-        /// by walking down the logical/visual trees
-        /// Will throw an exception if a matching child does not exist. If you're not sure, use the TryFindChild method instead.
-        /// </summary>
-        /// <typeparam name="T">The type of child you want to find</typeparam>
-        /// <param name="parent">The dependency object whose children you wish to scan</param>
-        /// <returns>The first descendant of the specified type</returns>
-        /// <remarks> usage: myWindow.FindChild<StackPanel>() </StackPanel></remarks>
         public static T FindChild<T>(this DependencyObject parent)
             where T : DependencyObject
         {
             return parent.FindChild<T>(child => true);
         }
 
-        /// <summary>
-        /// Find the first child of the specified type (the child must exist)
-        /// by walking down the logical/visual trees, which meets the specified criteria
-        /// Will throw an exception if a matching child does not exist. If you're not sure, use the TryFindChild method instead.
-        /// </summary>
-        /// <typeparam name="T">The type of child you want to find</typeparam>
-        /// <param name="parent">The dependency object whose children you wish to scan</param>
-        /// <param name="predicate">The child object is selected if the predicate evaluates to true</param>
-        /// <returns>The first matching descendant of the specified type</returns>
-        /// <remarks> usage: myWindow.FindChild<StackPanel>( child => child.Name == "myPanel" ) </StackPanel></remarks>
         public static T FindChild<T>(this DependencyObject parent, Func<T, bool> predicate)
             where T : DependencyObject
         {
             return parent.FindChildren<T>(predicate).First();
         }
 
-        /// <summary>
-        /// Use this overload if the child you're looking may not exist.
-        /// </summary>
-        /// <typeparam name="T">The type of child you're looking for</typeparam>
-        /// <param name="parent">The dependency object whose children you wish to scan</param>
-        /// <param name="foundChild">out param - the found child dependencyobject, null if the method returns false</param>
-        /// <returns>True if a child was found, else false</returns>
-        public static bool TryFindChild<T>(this DependencyObject parent, out T foundChild)
-            where T : DependencyObject
-        {
-            return parent.TryFindChild<T>(child => true, out foundChild);
-        }
-
-        /// <summary>
-        /// Use this overload if the child you're looking may not exist.
-        /// </summary>
-        /// <typeparam name="T">The type of child you're looking for</typeparam>
-        /// <param name="parent">The dependency object whose children you wish to scan</param>
-        /// <param name="predicate">The child object is selected if the predicate evaluates to true</param>
-        /// <param name="foundChild">out param - the found child dependencyobject, null if the method returns false</param>
-        /// <returns>True if a child was found, else false</returns>
-        public static bool TryFindChild<T>(this DependencyObject parent, Func<T, bool> predicate, out T foundChild)
-            where T : DependencyObject
-        {
-            foundChild = null;
-            var results = parent.FindChildren<T>(predicate);
-            if (results.Count() == 0)
-                return false;
-
-            foundChild = results.First();
-            return true;
-        }
-
-        /// <summary>
-        /// Get a list of descendant dependencyobjects of the specified type and which meet the criteria
-        /// as specified by the predicate
-        /// </summary>
-        /// <typeparam name="T">The type of child you want to find</typeparam>
-        /// <param name="parent">The dependency object whose children you wish to scan</param>
-        /// <param name="predicate">The child object is selected if the predicate evaluates to true</param>
-        /// <returns>The first matching descendant of the specified type</returns>
-        /// <remarks> usage: myWindow.FindChildren<StackPanel>( child => child.Name == "myPanel" ) </StackPanel></remarks>
         public static IEnumerable<T> FindChildren<T>(this DependencyObject parent, Func<T, bool> predicate)
             where T : DependencyObject
         {
             var children = new List<DependencyObject>();
 
-            if ((parent is Visual) || (parent is Visual3D))
+            if (parent is Visual)
             {
                 var visualChildrenCount = VisualTreeHelper.GetChildrenCount(parent);
                 for (int childIndex = 0; childIndex < visualChildrenCount; childIndex++)

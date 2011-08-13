@@ -45,11 +45,6 @@ namespace AniDBmini
 
         #region Private Methods
 
-        private string formatNullable(string str)
-        {
-            return string.IsNullOrWhiteSpace(str) || str == "unknown" ? null : str;
-        }
-
         private double formatSize(string size)
         {
             return double.Parse(size.Replace(".", null));
@@ -87,6 +82,9 @@ namespace AniDBmini
                     if (isBackup)
                         File.Delete(MylistLocal.dbPath + ".bak");
 
+                    m_myList.Entries.Clear();
+                    m_myList.PopulateEntries();
+
                     this.DialogResult = true;
                 }
             };
@@ -96,8 +94,13 @@ namespace AniDBmini
                                     MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
                 {
                     m_myList.Close();
-                    File.Move(MylistLocal.dbPath, MylistLocal.dbPath + ".bak");
-                    isBackup = true;
+                    try
+                    {
+                        File.Move(MylistLocal.dbPath, MylistLocal.dbPath + ".bak");
+                        isBackup = true;
+                    }
+                    catch (IOException) { }
+                    finally { File.Delete(MylistLocal.dbPath); }
                 }
                 else
                     return;
@@ -121,6 +124,7 @@ namespace AniDBmini
             using (XmlReader reader = XmlReader.Create(xmlPath))
             {
                 reader.ReadToFollowing("mylist");
+                // <anime>
                 while (reader.ReadToFollowing("anime"))
                 {
                     while (closePending) { Thread.Sleep(500); }
@@ -129,40 +133,28 @@ namespace AniDBmini
 
                     entry.aid = int.Parse(reader["aid"]);
                     entry.type = reader["type"];
+                    entry.year = reader["year"];
 
-                    reader.ReadToFollowing("default"); // <titles>
+                    // <titles>
+                    reader.ReadToFollowing("default");
                     entry.title = reader.ReadElementContentAsString();
                     uiDispatcher.BeginInvoke(new Action<string>(str => { importFilePath.Text = str; }), "Importing: " + entry.title);
 
                     reader.ReadToFollowing("nihongo");
-                    entry.nihongo = reader.ReadElementContentAsString();
-                    entry.nihongo = string.IsNullOrWhiteSpace(entry.nihongo) ? null : entry.nihongo;
+                    entry.nihongo = reader.ReadElementContentAsString().formatNullable();
 
                     reader.ReadToFollowing("english");
-                    entry.english = reader.ReadElementContentAsString();
-                    entry.english = string.IsNullOrWhiteSpace(entry.english) ? null : entry.english;
+                    entry.english = reader.ReadElementContentAsString().formatNullable();
+                    // </titles>
 
-                    reader.Read();
-                    reader.ReadToFollowing("date"); // <date/>
-                    entry.startdate = reader["start"];
-                    entry.enddate = reader["end"] == "?" ? null : reader["end"];
-
-                    reader.ReadToFollowing("eps"); // <eps/>
-                    entry.eps_total = int.Parse(reader["total"]);
-                    entry.eps_my = int.Parse(reader["my"]);
-                    entry.eps_watched = int.Parse(reader["watched"]);
-
-                    reader.ReadToFollowing("status"); // <status/>
-                    entry.complete = Convert.ToBoolean(int.Parse(reader["complete"]));
-                    entry.watched = Convert.ToBoolean(int.Parse(reader["watched"]));
-                    entry.size = formatSize(reader["size"]);
-
-                    entry.Episodes = new List<EpisodeEntry>();
-
-                    if (!reader.ReadToFollowing("episodes")) // <episodes>
+                    // <episodes>
+                    if (!reader.ReadToFollowing("episodes"))
                         goto Finish;
 
+                    entry.eps_total = int.Parse(reader["total"]);
+
                     XmlReader episodesReader = reader.ReadSubtree();
+                    // <episode>
                     while (episodesReader.ReadToFollowing("episode"))
                     {
                         while (closePending) { Thread.Sleep(500); }
@@ -171,36 +163,32 @@ namespace AniDBmini
 
                         episode.eid = int.Parse(episodesReader["eid"]);
                         if (Regex.IsMatch(episodesReader["epno"].Substring(0, 1), @"\D"))
-                        {
-                            episode.epno = int.Parse(episodesReader["epno"].Substring(1));
-                            episode.type = episodesReader["epno"].Substring(0, 1);
-                        }
+                            continue;
                         else
                             episode.epno = int.Parse(episodesReader["epno"]);
 
-                        episodesReader.ReadToDescendant("english"); // <titles>
+                        episode.airdate = episodesReader["aired"] == "-" ? null :
+                                          ExtensionMethods.DateTimeToUnixTime(DateTime.Parse(episodesReader["aired"],
+                                                                                             System.Globalization.CultureInfo.CreateSpecificCulture("en-GB"))).ToString();
+                        episode.watched = Convert.ToBoolean(int.Parse(episodesReader["watched"]));
+
+                        // <titles>
+                        episodesReader.ReadToDescendant("english");
                         episode.english = episodesReader.ReadElementContentAsString();
 
                         episodesReader.ReadToFollowing("nihongo");
-                        episode.nihongo = episodesReader.ReadElementContentAsString();
-                        episode.nihongo = string.IsNullOrWhiteSpace(episode.nihongo) ? null : episode.nihongo;
+                        episode.nihongo = episodesReader.ReadElementContentAsString().formatNullable();
 
                         episodesReader.ReadToFollowing("romaji");
-                        episode.romaji = episodesReader.ReadElementContentAsString();
-                        episode.romaji = string.IsNullOrWhiteSpace(episode.romaji) ? null : episode.romaji;
+                        episode.romaji = episodesReader.ReadElementContentAsString().formatNullable();
+                        // </titles>                        
 
-                        episodesReader.ReadToFollowing("date"); // <date/>
-                        episode.airdate = episodesReader["aired"] == "-" ? null : episodesReader["aired"];
-
-                        episodesReader.ReadToFollowing("status"); // <status/>
-                        episode.watched = Convert.ToBoolean(int.Parse(episodesReader["watched"]));
-
-                        episode.Files = new List<FileEntry>();
-
-                        if (!episodesReader.ReadToFollowing("files")) // <files>
+                        // <files>
+                        if (!episodesReader.ReadToFollowing("files"))
                             goto Finish;
 
                         XmlReader filesReader = episodesReader.ReadSubtree();
+                        // <file>
                         while (filesReader.ReadToFollowing("file"))
                         {
                             while (closePending) { Thread.Sleep(500); }
@@ -208,10 +196,11 @@ namespace AniDBmini
                             FileEntry file = new FileEntry();
 
                             file.lid = int.Parse(filesReader["lid"]);
-                            file.addeddate = filesReader["added"];
-                            file.watcheddate = filesReader["watched"] == "-" ? null : filesReader["watched"];
+                            file.watcheddate = filesReader["watched"] == "-" ? null :
+                                               ExtensionMethods.DateTimeToUnixTime(DateTime.Parse(episodesReader["watched"],
+                                                                                                  System.Globalization.CultureInfo.CreateSpecificCulture("en-GB"))).ToString();
                             file.watched = file.watcheddate != null;
-                            file.generic = episodesReader["generic"] == null ? false : true;
+                            file.generic = episodesReader["generic"] != null;
 
                             if (!file.generic) // generic entries do not have this information
                             {
@@ -221,22 +210,29 @@ namespace AniDBmini
                                 file.ed2k = filesReader["ed2k"];
                                 file.length = int.Parse(filesReader["length"]);
                                 file.size = int.Parse(filesReader["size"]);
-                                file.source = formatNullable(filesReader["source"]);
-                                file.vcodec = formatNullable(filesReader["vcodec"]);
-                                file.acodec = formatNullable(filesReader["acodec"]);
-
-                                if (file.gid != 0 && !m_groupList.Contains(file.gid)) // add the group if it has not been added yet
+                                file.source = filesReader["source"].formatNullable();
+                                file.acodec = filesReader["acodec"].formatNullable();
+                                file.vcodec = filesReader["vcodec"].formatNullable();
+                                file.vres = filesReader["vres"].formatNullable();
+                                
+                                if (file.gid != 0 && !m_groupList.Contains(file.gid))
                                 {
+                                    // <group_name>
                                     filesReader.ReadToFollowing("group_name");
                                     string group_name = filesReader.ReadElementContentAsString();
+                                    // </group_name>
 
+                                    // <group_abbr>
                                     filesReader.ReadToFollowing("group_abbr");
                                     string group_abbr = filesReader.ReadElementContentAsString();
+                                    // </group_abbr>
 
                                     m_myList.InsertGroup(file.gid, group_name, group_abbr);
                                     m_groupList.Add(file.gid);
                                 }
                             }
+
+                            entry.size += file.size;
 
                             episode.Files.Add(file);
                             totalProcessedFiles++;
@@ -244,17 +240,25 @@ namespace AniDBmini
                             {
                                 importProgressBar.Value = Math.Ceiling(processed / total * 100);
                             }), totalFiles, totalProcessedFiles);
+                        // </file>
                         }
-
+                        // </files>
                         filesReader.Close();
                         entry.Episodes.Add(episode);
-                    }
 
+                        entry.eps_have++;
+                        if (episode.watched)
+                            entry.eps_watched++;
+                    // </episode>
+                    }                    
+                    // </episodes>
                     episodesReader.Close();
 
                 Finish:
-                    m_myList.InsertMylistEntry(entry);
+                    m_myList.InsertMylistEntryFromImport(entry);
+                // </anime>
                 }
+             // </mylist>
             }
         }
 
@@ -297,6 +301,8 @@ namespace AniDBmini
                 }
                 else if (File.Exists(MylistLocal.dbPath))
                 {
+                    m_myList.Entries.Clear();
+
                     File.Delete(MylistLocal.dbPath);
 
                     if (isBackup)

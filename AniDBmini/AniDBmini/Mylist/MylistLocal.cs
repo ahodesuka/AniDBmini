@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using System.IO;
+using System.Linq;
 
 using AniDBmini.Collections;
 
@@ -32,7 +33,7 @@ namespace AniDBmini
         public MylistLocal()
         {
             if (Initialize())
-                PopulateEntries();
+                SelectEntries();
         }
 
         #endregion Constructor
@@ -56,7 +57,20 @@ namespace AniDBmini
 
         #region Public Methods
 
-        public void PopulateEntries()
+        /// <summary>
+        /// Closes the currently open databaase.
+        /// </summary>
+        public void Close()
+        {
+            if (isSQLConnOpen)
+                SQLConn.Close();
+
+            isSQLConnOpen = false;
+        }
+
+        #region SELECT
+
+        public void SelectEntries()
         {
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
@@ -72,13 +86,47 @@ namespace AniDBmini
                     while (reader.Read())
                     {
                         MylistEntry entry = new MylistEntry(reader);
-                        entry.Episodes = this.PopulateEpisodes(entry);
+                        entry.Episodes = this.SelectEpisodes(entry);
                         Entries.Add(entry);
                     }
             }
         }
 
-        public TSObservableCollection<EpisodeEntry> PopulateEpisodes(MylistEntry m_entry)
+        public void SelectEntry(int aid)
+        {
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
+            {
+                cmd.CommandText = @"SELECT a.aid, a.type, a.title, a.nihongo, a.english, a.eps_total, a.year,
+                                           IFNULL(MIN(COUNT(e.watched), a.eps_total), 0) AS eps_have, IFNULL(MIN(SUM(e.watched), a.eps_total), 0) AS eps_watched, IFNULL(SUM(f.size), 0) AS size
+                                      FROM anime AS a
+                                 LEFT JOIN episodes AS e ON e.aid = a.aid
+                                 LEFT JOIN files AS f ON f.eid = e.eid
+                                     WHERE a.aid = @aid
+                                  GROUP BY a.aid
+                                  ORDER BY a.title ASC;";
+                cmd.Parameters.AddWithValue("@aid", aid);
+
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
+                {
+                    MylistEntry entry = Entries.FirstOrDefault<MylistEntry>((x) => x.aid == aid);
+
+                    if (entry != null)
+                    {
+                        int index = Entries.IndexOf(entry);
+                        Entries[index] = new MylistEntry(reader);
+                        Entries[index].Episodes = this.SelectEpisodes(entry);
+                    }
+                    else
+                    {
+                        entry = new MylistEntry(reader);
+                        entry.Episodes = this.SelectEpisodes(entry);
+                        Entries.Add(entry);
+                    }
+                }
+            }
+        }
+
+        public TSObservableCollection<EpisodeEntry> SelectEpisodes(MylistEntry m_entry)
         {
             TSObservableCollection<EpisodeEntry> _temp = new TSObservableCollection<EpisodeEntry>();
 
@@ -98,7 +146,7 @@ namespace AniDBmini
                     {
                         m_entry.seconds += double.Parse(reader["seconds"].ToString());
                         EpisodeEntry e_entry = new EpisodeEntry(reader);
-                        e_entry.Files = this.PopulateFiles(e_entry);
+                        e_entry.Files = this.SelectFiles(e_entry);
                         _temp.Add(e_entry);
                     }
             }
@@ -106,7 +154,7 @@ namespace AniDBmini
             return _temp;
         }
 
-        public TSObservableCollection<FileEntry> PopulateFiles(EpisodeEntry e_entry)
+        public TSObservableCollection<FileEntry> SelectFiles(EpisodeEntry e_entry)
         {
             TSObservableCollection<FileEntry> _temp = new TSObservableCollection<FileEntry>();
 
@@ -126,16 +174,9 @@ namespace AniDBmini
             return _temp;
         }
 
-        /// <summary>
-        /// Closes the currently open databaase.
-        /// </summary>
-        public void Close()
-        {
-            if (isSQLConnOpen)
-                SQLConn.Close();
+        #endregion SELECT
 
-            isSQLConnOpen = false;
-        }
+        #region CREATE
 
         /// <summary>
         /// Creates an empty database with correct table structures.
@@ -160,6 +201,10 @@ namespace AniDBmini
                 cmd.ExecuteNonQuery();
             }
         }
+
+        #endregion CREATE
+
+        #region INSERT
 
         /// <summary>
         /// Inserts or updates a recently added file and
@@ -347,6 +392,8 @@ namespace AniDBmini
                 }
             }
         }
+
+        #endregion INSERT
 
         #endregion Public Methods
 

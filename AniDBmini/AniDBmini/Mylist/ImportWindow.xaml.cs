@@ -83,7 +83,7 @@ namespace AniDBmini
                         File.Delete(MylistLocal.dbPath + ".bak");
 
                     m_myList.Entries.Clear();
-                    m_myList.PopulateEntries();
+                    m_myList.SelectEntries();
 
                     this.DialogResult = true;
                 }
@@ -127,7 +127,7 @@ namespace AniDBmini
                 // <anime>
                 while (reader.ReadToFollowing("anime"))
                 {
-                    while (closePending) { Thread.Sleep(500); }
+                    while (closePending) Thread.Sleep(500);
 
                     MylistEntry entry = new MylistEntry();
 
@@ -157,7 +157,7 @@ namespace AniDBmini
                     // <episode>
                     while (episodesReader.ReadToFollowing("episode"))
                     {
-                        while (closePending) { Thread.Sleep(500); }
+                        while (closePending) Thread.Sleep(500);
 
                         EpisodeEntry episode = new EpisodeEntry();
 
@@ -191,7 +191,7 @@ namespace AniDBmini
                         // <file>
                         while (filesReader.ReadToFollowing("file"))
                         {
-                            while (closePending) { Thread.Sleep(500); }
+                            while (closePending) Thread.Sleep(500);
 
                             FileEntry file = new FileEntry();
 

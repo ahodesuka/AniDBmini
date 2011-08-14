@@ -35,7 +35,6 @@ namespace AniDBmini
         private WindowState m_storedWindowState = WindowState.Normal;
 
         private BackgroundWorker m_HashWorker;
-        private Dispatcher m_Dispatcher = Dispatcher.CurrentDispatcher;
 
         private AniDBAPI aniDB;
         private MPCAPI mpcApi;
@@ -45,7 +44,7 @@ namespace AniDBmini
 
         private int m_storedTabIndex;
 
-        private bool isHashing;
+        private bool isHashing, isAddingItems;
         private double totalQueueSize, ppSize;
 
         private string[] allowedVideoFiles = { "*.avi", "*.mkv", "*.mov", "*.mp4", "*.mpeg", "*.mpg", "*.ogm" };
@@ -72,7 +71,8 @@ namespace AniDBmini
             animeTabControl.ItemsSource = animeTabList;
 
             animeTabList.OnCountChanged += new CountChangedHandler(animeTabList_OnCountChanged);
-            aniDB.FileHashingProgress += new FileHashingProgressHandler(OnFileHashingProgress);
+
+            aniDB.OnFileHashingProgress += new FileHashingProgressHandler(OnFileHashingProgress);
             aniDB.OnAnimeTabFetched += new AnimeTabFetchedHandler(OnAnimeTabFetched);
             aniDB.OnFileInfoFetched += new FileInfoFetchedHandler(OnFileInfoFetched);
         }
@@ -154,23 +154,26 @@ namespace AniDBmini
             HashItem item = new HashItem(path);
             hashFileList.Add(item);
 
-            m_Dispatcher.BeginInvoke(new Action(delegate
-            {
-                if (!isHashing && !hashingStartButton.IsEnabled)
-                    hashingStartButton.IsEnabled = true;
-                else if (isHashing)
-                    totalQueueSize += item.Size;
-            }));
+            if (isHashing)
+                totalQueueSize += item.Size;
+            else if (!isHashing)
+                Dispatcher.BeginInvoke(new Action(delegate { hashingStartButton.IsEnabled = true; }));
         }
 
-        private void removeRowFromHashTable(HashItem item, bool _e = false)
+        private void removeRowFromHashTable(HashItem item, bool userRemoved = false)
         {
-            if (isHashing && _e)
+            if (isHashing && userRemoved)
                 totalQueueSize -= item.Size;
+
+            while (isAddingItems)
+            {
+                OnFileHashingProgress(this, new FileHashingProgressArgs(1000, 1000));
+                Thread.Sleep(100);
+            }
 
             hashFileList.Remove(item);
 
-            m_Dispatcher.BeginInvoke(new Action(delegate
+            Dispatcher.BeginInvoke(new Action(delegate
             {
                 if (hashFileList.Count == 0)
                     hashingStartButton.IsEnabled = hashingStopButton.IsEnabled = false;
@@ -267,7 +270,7 @@ namespace AniDBmini
             mylistDataGrid.DataContext = 
             mylistDataGrid.ItemsSource = m_myList.Entries;
 
-            InitializeStats();
+            //InitializeStats();
             InitializeNotifyIcon();
         }
 
@@ -331,6 +334,12 @@ namespace AniDBmini
         private void OnFileInfoFetched(FileInfoFetchedArgs e)
         {
             m_myList.InsertFileInfo(e);
+
+            Dispatcher.BeginInvoke(new Action(delegate
+            {
+                m_myList.SelectEntry(e.Anime.aid);
+                mylistDataGrid.Items.SortDescriptions.Add(new SortDescription("title", ListSortDirection.Ascending));
+            }));
         }
 
         private void mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -358,7 +367,9 @@ namespace AniDBmini
             if (ConfigFile.Read("mpcClose").ToBoolean() && mpcApi.isHooked)
                 mpcApi.CloseMPC();
 
+            m_myList.Close();
             aniDB.Logout();
+
             m_notifyIcon.Dispose();
             m_notifyIcon = null;
         }
@@ -389,13 +400,17 @@ namespace AniDBmini
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 Array.Sort(files);
 
+                isAddingItems = true;
+
                 for (int i = 0; i < files.Length; i++)
                 {
                     FileInfo fi = new FileInfo(files[i]);
 
-                    if (allowedVideoFiles.Contains<string>("*" + fi.Extension))
+                    if (allowedVideoFiles.Contains<string>("*" + fi.Extension.ToLower()))
                         addRowToHashTable(fi.FullName);
                 }
+
+                isAddingItems = false;
             }
         }
 
@@ -443,8 +458,7 @@ namespace AniDBmini
                 if (isHashing && _temp != null) // if we did not abort remove item from queue and process
                 {
                     hashFileList[0] = _temp;
-                    m_Dispatcher.BeginInvoke(new Action<HashItem>(FinishHash), hashFileList[0]);
-
+                    Dispatcher.BeginInvoke(new Action<HashItem>(FinishHash), hashFileList[0]);
                     removeRowFromHashTable(hashFileList[0]);
                 }
             }
@@ -472,8 +486,12 @@ namespace AniDBmini
             {
                 ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
                 {
+                    isAddingItems = true;
+
                     for (int i = 0; i < dlg.FileNames.Length; i++)
                         addRowToHashTable(dlg.FileNames[i]);
+
+                    isAddingItems = false;
                 }));
             }
         }
@@ -488,6 +506,8 @@ namespace AniDBmini
             {
                 ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
                 {
+                    isAddingItems = true;
+
                     foreach (string _file in Directory.GetFiles(dlg.SelectedPath, "*.*")
                                                       .Where(s => allowedVideoFiles.Contains("*" + Path.GetExtension(s).ToLower())))
                         addRowToHashTable(_file);
@@ -500,6 +520,8 @@ namespace AniDBmini
                                 addRowToHashTable(_file);
                         }
                         catch (UnauthorizedAccessException) { }
+
+                    isAddingItems = false;
                 }));
             }
         }
@@ -512,7 +534,7 @@ namespace AniDBmini
             TimeSpan totalTimeElapsed = DateTime.Now - m_hashingStartTime;
             TimeSpan remainingSpan = TimeSpan.FromSeconds(totalQueueSize * (totalTimeElapsed.TotalSeconds / (ppSize + e.ProcessedSize)) - totalTimeElapsed.TotalSeconds - 0.5);
 
-            m_Dispatcher.BeginInvoke(new Action(delegate
+            Dispatcher.BeginInvoke(new Action(delegate
             {
                 if (isHashing)
                 {
@@ -553,9 +575,21 @@ namespace AniDBmini
 
             e.Handled = true;
         }
+        
+        private void EntryViewDetails_Click(object sender, RoutedEventArgs e)
+        {
+            aniDB.Anime(int.Parse(((MenuItem)sender).Tag.ToString()));
+        }
+
+        private void MarkWatched_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem item = (MenuItem)sender;
+            var row = ((ContextMenu)item.Parent).PlacementTarget as DataGridRow;
+            System.Diagnostics.Debug.WriteLine(row);
+        }
 
         /// <summary>
-        /// Fixes height bug.
+        /// Fixes height bug. Well kind of..
         /// </summary>
         private void episodesDGRDVChanged(object sender, DataGridRowDetailsEventArgs e)
         {

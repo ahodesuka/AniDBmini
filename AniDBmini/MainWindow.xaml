@@ -142,6 +142,13 @@
             <Setter Property="ContextMenu" Value="{StaticResource hashingListBoxItemContextMenu}"/>
         </Style>
 
+        <ContextMenu x:Key="EntryContextMenu">
+            <MenuItem Header="View Details" Click="EntryViewDetails_Click" Tag="{Binding aid}" />
+        </ContextMenu>
+        <ContextMenu x:Key="FileContextMenu">
+            <MenuItem Header="Watched" Click="MarkWatched_Click" />
+        </ContextMenu>
+
         <Style TargetType="{x:Type DataGridCell}">
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Template">
@@ -509,10 +516,11 @@
                         <ColumnDefinition Width="175" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="265*" />
+                        <RowDefinition Height="*" />
                         <RowDefinition Height="80" />
                     </Grid.RowDefinitions>
-                    <ListBox x:Name="hashingListBox" Margin="5,5,5,0" Drop="hashingListBox_Drop" AllowDrop="True" SelectionMode="Extended" ItemContainerStyle="{StaticResource hashingListBoxItemStyle}" Grid.ColumnSpan="3" HorizontalContentAlignment="Stretch" KeyUp="hashingListBox_KeyUp">
+                    <ListBox x:Name="hashingListBox" Grid.ColumnSpan="3" Margin="5,5,5,0" Drop="hashingListBox_Drop" AllowDrop="True" SelectionMode="Extended" Width="800"
+                             HorizontalAlignment="Center" HorizontalContentAlignment="Stretch"  KeyUp="hashingListBox_KeyUp" ItemContainerStyle="{StaticResource hashingListBoxItemStyle}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
@@ -577,6 +585,7 @@
                                 </DataGrid.OpacityMask>
                                 <DataGrid.RowStyle>
                                     <Style TargetType="DataGridRow">
+                                        <Setter Property="ContextMenu" Value="{StaticResource EntryContextMenu}" />
                                         <Style.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
                                                 <Setter Property="Background" Value="#FEEE" />
@@ -634,7 +643,7 @@
                                     <DataTemplate>
                                         <Border Background="#FEEE">
                                             <Border BorderBrush="LightGray" BorderThickness="1,0,0,0" Margin="15,0,0,5">
-                                            <DataGrid ItemsSource="{Binding Episodes}" AutoGenerateColumns="False" CanUserResizeRows="False" IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow"
+                                            <DataGrid ItemsSource="{Binding Episodes}" AutoGenerateColumns="False" CanUserResizeRows="False" IsReadOnly="True" SelectionUnit="FullRow"
                                                       HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" FontFamily="Segoe UI" RowDetailsVisibilityMode="Collapsed"
                                                       HeadersVisibility="Column" BorderThickness="0" RowHeight="20" Background="Transparent" HorizontalScrollBarVisibility="Disabled"
                                                       VerticalScrollBarVisibility="Disabled" RowDetailsVisibilityChanged="episodesDGRDVChanged">
@@ -643,7 +652,8 @@
                                                 </i:Interaction.Behaviors>
                                                 <DataGrid.RowStyle>
                                                     <Style TargetType="DataGridRow">
-                                                        <Style.Triggers>
+                                                            <Setter Property="ContextMenu" Value="{StaticResource FileContextMenu}" />
+                                                            <Style.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
                                                                 <Setter Property="Background" Value="#FEEE" />
                                                             </Trigger>
@@ -679,7 +689,7 @@
                                                         <ItemsControl Background="#FEEE" ItemsSource="{Binding Files}" Padding="5,2.5,0,2.5">
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate>
-                                                                    <Border Background="#FEEE" BorderBrush="LightGray" BorderThickness="1,1,0,1" Margin="0,2.5,0,2.5">
+                                                                    <Border Background="#FEEE" BorderBrush="LightGray" BorderThickness="1,1,0,1" Margin="0,2.5,0,2.5" ContextMenu="{StaticResource FileContextMenu}">
                                                                         <StackPanel Background="#FFFF">
                                                                             <TextBlock Padding="5,2">
                                                                                 Group: [<TextBlock Text="{Binding group_abbr}" />] - <TextBlock Text="{Binding group_name}" />

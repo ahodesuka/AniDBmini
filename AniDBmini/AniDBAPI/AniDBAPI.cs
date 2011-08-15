@@ -101,8 +101,9 @@ namespace AniDBmini
 
         private UdpClient conn = new UdpClient();
         private IPEndPoint apiserver;
-        private DateTime m_lastCommand;
+        private DateTime m_lastCommand, m_lastQueue;
 
+        private Object queueLock = new Object();
         private List<DateTime> queryLog = new List<DateTime>();
 
         private byte[] data = new byte[1400];
@@ -347,18 +348,24 @@ namespace AniDBmini
         /// Executes an action after a certain amount of time has passed
         /// since the previous command was sent to the server.
         /// </summary>
-        /// <param name="todo"></param>
+        /// <param name="todo">Action that will be executed after waiting.</param>
         private void PrioritizedCommand(Action Command)
         {
             ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
             {
-                double secondsSince = DateTime.Now.Subtract(m_lastCommand).TotalSeconds;
-                int timeout = CalculatedTimeout();
+                lock (queueLock)
+                {
+                    double secondsSince = DateTime.Now.Subtract(m_lastCommand).TotalSeconds;
+                    int timeout = CalculatedTimeout();
+                    m_lastQueue = m_lastCommand;
 
-                if (secondsSince < timeout)
-                    Thread.Sleep(TimeSpan.FromSeconds(timeout - secondsSince));
+                    System.Diagnostics.Debug.WriteLine(String.Format("Last CMD: {0}, seconds since: {1}", m_lastCommand.ToLongTimeString(), secondsSince));
 
-                Command();
+                    if (secondsSince < timeout)
+                        Thread.Sleep(TimeSpan.FromSeconds(timeout - secondsSince));
+
+                    Command();
+                }
             }));
         }
 
@@ -371,11 +378,13 @@ namespace AniDBmini
         {
             queryLog.RemoveAll(x => DateTime.Now.Subtract(x).TotalSeconds > 60); // remove old timestamps
 
-            if (queryLog.Count < 15) // < 15 commands in the last minute (1 per 4s)
-                return 2;            // A Client MUST NOT send more than 0.5 packets per second
-            else if (queryLog.Count < 20) // < 20 commands in the last minute (1 per 3s)
+            // A Client MUST NOT send more than 0.5 packets per second (that's one packet every two seconds, not two packets a second!)
+            // A Client MUST NOT send more than one packet every four seconds over an extended amount of time.
+            if (queryLog.Count < 10)
+                return 2;
+            else if (queryLog.Count < 15)
                 return 3;
-            else // A Client MUST NOT send more than one packet every four seconds over an extended amount of time.
+            else
                 return 4;
         }
 
@@ -426,9 +435,10 @@ namespace AniDBmini
             }
 #else
             m_lastCommand = DateTime.Now;
+            queryLog.Add(m_lastCommand);
             APIResponse response = new APIResponse { Message = "\n934579|8348|130525|5654|114128304|HDTV|AAC|H264/AVC|1280x720|1446|1309478400|1312500297|10|2011|TV Series|Blood-C|BLOOD-C||01|O Ye Winds of Heaven|Amatsu Kase|あまつかせ|Underwater|Underwater", Code = (RETURN_CODE)200 };
             System.Diagnostics.Debug.WriteLine(String.Format("Executed: {0} @ {1}", cmd, m_lastCommand.ToLongTimeString()));
-            System.Diagnostics.Debug.WriteLine(String.Format("Response: {0}", response.Message));
+            //System.Diagnostics.Debug.WriteLine(String.Format("Response: {0}", response.Message));
             return response;
 #endif
         }

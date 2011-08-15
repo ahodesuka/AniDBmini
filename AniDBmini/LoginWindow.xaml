@@ -7,7 +7,7 @@
         <Label Content="Username" Height="20" HorizontalAlignment="Left" Margin="30,5,0,0" Name="usernameLabel" VerticalAlignment="Top" Width="100" VerticalContentAlignment="Bottom" Padding="0,5" />
         <TextBox Height="32" Margin="30,25,30,0" Name="usernameTextBox" VerticalAlignment="Top" FontSize="18" VerticalContentAlignment="Center" Padding="3" />
         <Label Content="Password" Height="20" HorizontalAlignment="Left" Margin="30,55,0,0" Name="passwordLabel" VerticalAlignment="Top" VerticalContentAlignment="Bottom" Width="100" Padding="0,5" />
-        <PasswordBox FontSize="18" Height="32" Margin="30,75,30,0" Name="passwordPasswordBox" VerticalAlignment="Top" VerticalContentAlignment="Center" BorderThickness="1" BorderBrush="#FFD1D1D1" />
+        <PasswordBox FontSize="18" Height="32" Margin="30,75,30,0" Name="passwordPasswordBox" VerticalAlignment="Top" VerticalContentAlignment="Center" />
         <ComboBox HorizontalAlignment="Left" Margin="30,125,0,0" Name="serverComboBox" Width="200" FontSize="18" BorderBrush="DarkGray" BorderThickness="1" Padding="1" Height="32" VerticalAlignment="Top" SelectedValuePath="Tag">
             <ComboBoxItem Tag="api.anidb.net:9000" IsSelected="True">api.anidb.net:9000</ComboBoxItem>
         </ComboBox>

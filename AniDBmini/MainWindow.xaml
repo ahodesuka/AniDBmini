@@ -132,21 +132,25 @@
         </LinearGradientBrush>
 
         <DropShadowEffect x:Key="AnimeSmallTextEffect" ShadowDepth="1" RenderingBias="Quality" Opacity="0.8" />
-        
+
         <!-- #endregion AnimeTab Resources -->
 
         <ContextMenu x:Key="hashingListBoxItemContextMenu">
+            <MenuItem Header="Select All" Command="ApplicationCommands.SelectAll" />
             <MenuItem Header="Remove Selected" Click="removeSelectedItems" />
         </ContextMenu>
         <Style x:Key="hashingListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
-            <Setter Property="ContextMenu" Value="{StaticResource hashingListBoxItemContextMenu}"/>
+            <Setter Property="ContextMenu" Value="{StaticResource hashingListBoxItemContextMenu}" />
         </Style>
 
         <ContextMenu x:Key="EntryContextMenu">
-            <MenuItem Header="View Details" Click="EntryViewDetails_Click" Tag="{Binding aid}" />
+            <MenuItem Header="Show anime details" Click="EntryViewDetails_Click" Tag="{Binding aid}" />
+            <Separator />
+            <MenuItem Header="Remove from mylist" Click="EntryViewDetails_Click" Tag="{Binding aid}" />
         </ContextMenu>
         <ContextMenu x:Key="FileContextMenu">
-            <MenuItem Header="Watched" Click="MarkWatched_Click" />
+            <MenuItem Header="Mark Watched" Click="MarkWatched_Click" />
+            <MenuItem Header="Mark Unwatched" Click="MarkUnwatched_Click" />
         </ContextMenu>
 
         <Style TargetType="{x:Type DataGridCell}">
@@ -519,7 +523,7 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="80" />
                     </Grid.RowDefinitions>
-                    <ListBox x:Name="hashingListBox" Grid.ColumnSpan="3" Margin="5,5,5,0" Drop="hashingListBox_Drop" AllowDrop="True" SelectionMode="Extended" Width="800"
+                    <ListBox x:Name="hashingListBox" Grid.ColumnSpan="3" Margin="5,5,5,0" Drop="hashingListBox_Drop" AllowDrop="True" SelectionMode="Extended" Width="800" VirtualizingStackPanel.VirtualizationMode="Recycling"
                              HorizontalAlignment="Center" HorizontalContentAlignment="Stretch"  KeyUp="hashingListBox_KeyUp" ItemContainerStyle="{StaticResource hashingListBoxItemStyle}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>

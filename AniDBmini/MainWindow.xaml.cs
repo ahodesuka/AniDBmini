@@ -41,10 +41,10 @@ namespace AniDBmini
         private MylistLocal m_myList;
 
         private DateTime m_hashingStartTime;
+        private Object m_hashingLock = new Object();
 
         private int m_storedTabIndex;
-
-        private bool isHashing, isAddingItems;
+        private bool isHashing;
         private double totalQueueSize, ppSize;
 
         private string[] allowedVideoFiles = { "*.avi", "*.mkv", "*.mov", "*.mp4", "*.mpeg", "*.mpg", "*.ogm" };
@@ -152,7 +152,9 @@ namespace AniDBmini
         private void addRowToHashTable(string path)
         {
             HashItem item = new HashItem(path);
-            hashFileList.Add(item);
+
+            lock (m_hashingLock)
+                hashFileList.Add(item);
 
             if (isHashing)
                 totalQueueSize += item.Size;
@@ -163,15 +165,15 @@ namespace AniDBmini
         private void removeRowFromHashTable(HashItem item, bool userRemoved = false)
         {
             if (isHashing && userRemoved)
+            {
                 totalQueueSize -= item.Size;
 
-            while (isAddingItems)
-            {
-                OnFileHashingProgress(this, new FileHashingProgressArgs(1000, 1000));
-                Thread.Sleep(100);
+                if (item == hashFileList[0])
+                    aniDB.cancelHashing();
             }
 
-            hashFileList.Remove(item);
+            lock (m_hashingLock)
+                hashFileList.Remove(item);
 
             Dispatcher.BeginInvoke(new Action(delegate
             {
@@ -206,7 +208,7 @@ namespace AniDBmini
 
             if (addToMyListCheckBox.IsChecked == true)
             {
-                item.Viewed = watchedCheckBox.IsChecked == true ? 1 : 0;
+                item.Viewed = Convert.ToInt32(watchedCheckBox.IsChecked);
                 item.State = stateComboBox.SelectedIndex;
 
                 aniDB.MyListAdd(item);
@@ -267,7 +269,6 @@ namespace AniDBmini
         {
             m_myList = new MylistLocal();
 
-            mylistDataGrid.DataContext = 
             mylistDataGrid.ItemsSource = m_myList.Entries;
 
             //InitializeStats();
@@ -400,8 +401,6 @@ namespace AniDBmini
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 Array.Sort(files);
 
-                isAddingItems = true;
-
                 for (int i = 0; i < files.Length; i++)
                 {
                     FileInfo fi = new FileInfo(files[i]);
@@ -409,8 +408,6 @@ namespace AniDBmini
                     if (allowedVideoFiles.Contains<string>("*" + fi.Extension.ToLower()))
                         addRowToHashTable(fi.FullName);
                 }
-
-                isAddingItems = false;
             }
         }
 
@@ -486,12 +483,8 @@ namespace AniDBmini
             {
                 ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
                 {
-                    isAddingItems = true;
-
                     for (int i = 0; i < dlg.FileNames.Length; i++)
                         addRowToHashTable(dlg.FileNames[i]);
-
-                    isAddingItems = false;
                 }));
             }
         }
@@ -506,8 +499,6 @@ namespace AniDBmini
             {
                 ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
                 {
-                    isAddingItems = true;
-
                     foreach (string _file in Directory.GetFiles(dlg.SelectedPath, "*.*")
                                                       .Where(s => allowedVideoFiles.Contains("*" + Path.GetExtension(s).ToLower())))
                         addRowToHashTable(_file);
@@ -520,8 +511,6 @@ namespace AniDBmini
                                 addRowToHashTable(_file);
                         }
                         catch (UnauthorizedAccessException) { }
-
-                    isAddingItems = false;
                 }));
             }
         }
@@ -588,6 +577,13 @@ namespace AniDBmini
             System.Diagnostics.Debug.WriteLine(row);
         }
 
+        private void MarkUnwatched_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem item = (MenuItem)sender;
+            var row = ((ContextMenu)item.Parent).PlacementTarget as DataGridRow;
+            System.Diagnostics.Debug.WriteLine(row);
+        }
+
         /// <summary>
         /// Fixes height bug. Well kind of..
         /// </summary>
@@ -628,7 +624,7 @@ namespace AniDBmini
         private void OnTabCloseClick(object sender, RoutedEventArgs e)
         {
             Button s = (Button)sender;
-            animeTabList.RemoveAll((x) => x.AnimeID == int.Parse(s.Tag.ToString()));
+            animeTabList.RemoveAll(x => x.AnimeID == int.Parse(s.Tag.ToString()));
         }
 
         private void animeTabList_OnCountChanged(object sender, CountChangedArgs e)

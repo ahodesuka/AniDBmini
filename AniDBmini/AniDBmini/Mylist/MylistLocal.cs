@@ -108,7 +108,7 @@ namespace AniDBmini
 
                 using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
-                    MylistEntry entry = Entries.FirstOrDefault<MylistEntry>((x) => x.aid == aid);
+                    MylistEntry entry = Entries.FirstOrDefault<MylistEntry>(x => x.aid == aid);
 
                     if (entry != null)
                     {

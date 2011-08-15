@@ -112,7 +112,6 @@ namespace AniDBmini
         private void autoLoginCheckBox_Click(object sender, RoutedEventArgs e)
         {
             bool isChecked = (bool)autoLoginCheckBox.IsChecked;
-            rememberUserCheckBox.IsChecked = isChecked;
             rememberUserCheckBox.IsEnabled = !isChecked;
         }
 

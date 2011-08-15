@@ -9,6 +9,127 @@
                 <ResourceDictionary Source="/PresentationFramework.Aero;V3.0.0.0;31bf3856ad364e35;component\themes/aero.normalcolor.xaml" />
                 <ResourceDictionary Source="/ReuxablesLegacy;component/mercury.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            
+            <!-- #region Styles -->
+            
+            <Style x:Key="{x:Type ContextMenu}" TargetType="{x:Type ContextMenu}" BasedOn="{StaticResource {x:Type ContextMenu}}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ContextMenu}">
+                            <Border>
+                                <Border.Style>
+                                    <Style TargetType="{x:Type Border}">
+                                        <Setter Property="Tag" Value="{DynamicResource {x:Static SystemParameters.DropShadowKey}}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Padding" Value="0,0,5,5"/>
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="4" Opacity="0.6" ShadowDepth="1"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Border x:Name="Border" BorderBrush="#CCC" CornerRadius="2" BorderThickness="1" Padding="0,2">
+                                    <Border.Background>
+                                        <LinearGradientBrush EndPoint="0,1" StartPoint="0,0">
+                                            <GradientStop Color="#FFF" Offset="0" />
+                                            <GradientStop Color="#EEE" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
+                                </Border>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="{x:Type MenuItem}" TargetType="{x:Type MenuItem}">
+                <Setter Property="Foreground" Value="#333" />
+                <Setter Property="FontFamily" Value="Calibari" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Height" Value="24" />
+                <Setter Property="MinWidth" Value="125"/>
+                <Setter Property="Padding" Value="24,4,5,4" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate>
+                            <Border x:Name="miBorder" MinWidth="{TemplateBinding MinWidth}" RenderOptions.EdgeMode="Aliased" BorderThickness="0,1,0,1">
+                                <DockPanel>
+                                    <TextBlock Text="{Binding Path=Header, RelativeSource={RelativeSource TemplatedParent}}" FontFamily="{TemplateBinding FontFamily}" Foreground="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}" />
+                                    <Popup x:Name="SubMenuPopup" Placement="Bottom" IsOpen="{Binding Path=IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}" Focusable="false" >
+                                        <Border>
+                                            <ItemsPresenter Margin="1" KeyboardNavigation.DirectionalNavigation="Cycle" />
+                                        </Border>
+                                    </Popup>
+                                </DockPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="MenuItem.IsHighlighted" Value="True">
+                                    <Setter Property="Background" Value="{x:Static SystemColors.HighlightBrush}" TargetName="miBorder" />
+                                    <Setter Property="BorderBrush" Value="#CCC" TargetName="miBorder" />
+                                    <Setter Property="Foreground" Value="{x:Static SystemColors.HighlightTextBrush}" />
+                                </Trigger>
+                                <Trigger Property="MenuItem.IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="{x:Static SystemColors.GrayTextBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <ContextMenu x:Key="StandardContextMenu">
+                <MenuItem Header="Cut" Command="ApplicationCommands.Cut"/>
+                <MenuItem Header="Copy" Command="ApplicationCommands.Copy"/>
+                <MenuItem Header="Paste" Command="ApplicationCommands.Paste"/>
+            </ContextMenu>
+
+            <Style x:Key="{x:Type TextBox}" TargetType="{x:Type TextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
+                <Setter Property="ContextMenu" Value="{StaticResource StandardContextMenu}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type TextBoxBase}">
+                            <Border Name="Border" CornerRadius="2" Padding="2" Background="#FFF" BorderBrush="#CCC" BorderThickness="1">
+                                <ScrollViewer Margin="0" x:Name="PART_ContentHost" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Border" Property="Background" Value="#EEE"/>
+                                    <Setter TargetName="Border" Property="BorderBrush" Value="#EEE"/>
+                                    <Setter Property="Foreground" Value="#888" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="{x:Type PasswordBox}" TargetType="{x:Type PasswordBox}" BasedOn="{StaticResource {x:Type PasswordBox}}">
+                <Setter Property="ContextMenu" Value="{StaticResource StandardContextMenu}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type PasswordBox}">
+                            <Border Name="Border" CornerRadius="2" Padding="2" Background="#FFF" BorderBrush="#CCC" BorderThickness="1">
+                                <ScrollViewer Margin="0" x:Name="PART_ContentHost" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Border" Property="Background" Value="#EEE"/>
+                                    <Setter TargetName="Border" Property="BorderBrush" Value="#EEE"/>
+                                    <Setter Property="Foreground" Value="#888" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            
+            <!-- #endregion Styles -->
+            
         </ResourceDictionary>
     </Application.Resources>
 </Application>

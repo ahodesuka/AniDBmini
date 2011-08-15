@@ -132,7 +132,7 @@ namespace AniDBmini
 
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
-                cmd.CommandText = @"SELECT e.*, f.length AS seconds, f.generic,
+                cmd.CommandText = @"SELECT e.*, f.length AS length, f.generic,
                                            (SELECT CASE WHEN  generic < COUNT(eid) THEN 0 ELSE 1 END FROM files WHERE eid = e.eid) AS genericOnly
                                       FROM episodes AS e
                                  LEFT JOIN files AS f ON f.eid = e.eid
@@ -144,7 +144,7 @@ namespace AniDBmini
                 using (SQLiteDataReader reader = cmd.ExecuteReader())
                     while (reader.Read())
                     {
-                        m_entry.seconds += double.Parse(reader["seconds"].ToString());
+                        m_entry.length += double.Parse(reader["length"].ToString());
                         EpisodeEntry e_entry = new EpisodeEntry(reader);
                         e_entry.Files = this.SelectFiles(e_entry);
                         _temp.Add(e_entry);

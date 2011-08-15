@@ -411,16 +411,24 @@ namespace AniDBmini
             }
         }
 
-        private void removeSelectedItems(object sender, RoutedEventArgs e)
+        private void removeSelectedHashItems(object sender, RoutedEventArgs e)
         {
             while (hashingListBox.SelectedItems.Count > 0)
                 removeRowFromHashTable((HashItem)hashingListBox.SelectedItems[0], true);
         }
 
+        private void clearHashItems(object sender, RoutedEventArgs e)
+        {
+            if (isHashing)
+                hashingStopButton_Click(this, null);
+
+            hashFileList.Clear();
+        }
+
         private void hashingListBox_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Delete)
-                removeSelectedItems(sender, null);
+                removeSelectedHashItems(sender, null);
         }
 
         private void startHashingButton_Click(object sender, RoutedEventArgs e)
@@ -558,9 +566,13 @@ namespace AniDBmini
 
         private void MylistExpand_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            DependencyObject src = (DependencyObject)e.OriginalSource;
-            if (src.FindAncestor<Button>() == null)
-                MylistToggleEntry(src);
+            try
+            {
+                DependencyObject src = (DependencyObject)e.OriginalSource;
+                if (src.FindAncestor<Button>() == null && src.FindAncestor<DataGrid>().Name != "filesDataGrid")
+                    MylistToggleEntry(src);
+            }
+            catch (NullReferenceException) { }
 
             e.Handled = true;
         }

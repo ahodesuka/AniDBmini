@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 
 namespace AniDBmini
@@ -48,6 +49,54 @@ namespace AniDBmini
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             return (int)value == 0 ? "?" : value.ToString();
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [ValueConversion(typeof(bool), typeof(string))]
+    class BooleanToYesNo : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return (bool)value ? "Yes" : "No";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [ValueConversion(typeof(object), typeof(Visibility))]
+    class ZeroToVisibility : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return (int)value == 0 || value == null ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [ValueConversion(typeof(double), typeof(string))]
+    class SecondsToFormatedTime : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            TimeSpan ts = TimeSpan.FromSeconds((double)value);
+            string time = String.Empty;
+
+            if ((int)ts.TotalHours > 0 || (parameter != null && System.Convert.ToBoolean(parameter.ToString())))
+                time += String.Format("{0}h ", (int)ts.TotalHours);
+
+            return String.Format("{0}{1}m", time, ts.Minutes.ToString("00"));
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

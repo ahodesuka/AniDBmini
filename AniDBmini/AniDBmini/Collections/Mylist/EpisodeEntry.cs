@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
+using System.Linq;
 
 using AniDBmini;
 
@@ -13,13 +14,14 @@ namespace AniDBmini.Collections
 
         public int eid { get; set; }
         public int epno { get; set; }
-        public int seconds { get; set; }
+
+        public double length { get; set; }
+        public double size { get { return Files.Sum(x => x.size); } }
 
         public string english { get; set; }
         public string nihongo { get; set; }
         public string romaji { get; set; }
         public string airdate { get; set; }
-        public string length { get { return TimeSpan.FromSeconds(seconds).ToFormatedStringSimplify(); } }
 
         public bool watched { get; set; }
         public bool genericOnly { get; set; }
@@ -40,7 +42,7 @@ namespace AniDBmini.Collections
             eid = int.Parse(reader["eid"].ToString());
             epno = int.Parse(reader["epno"].ToString());
 
-            seconds = int.Parse(reader["seconds"].ToString());
+            length = int.Parse(reader["length"].ToString());
 
             english = reader["english"].ToString();
             nihongo = !string.IsNullOrEmpty(reader["nihongo"].ToString()) ?

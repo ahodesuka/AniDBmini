@@ -10,8 +10,8 @@ namespace AniDBmini.Collections
 
         public int lid { get; set; }
         public int gid { get; set; }
-        public int length { get; set; }
 
+        public double length { get; set; }
         public double size { get; set; }
 
         public string ed2k { get; set; }
@@ -75,7 +75,9 @@ namespace AniDBmini.Collections
             }
 
             watcheddate = !string.IsNullOrEmpty(reader["watcheddate"].ToString()) ?
-                          ExtensionMethods.UnixTimeToDateTime(reader["watcheddate"].ToString()).ToShortDateString() : null;
+                          ExtensionMethods.UnixTimeToDateTime(reader["watcheddate"].ToString()).ToShortDateString() + " " +
+                          ExtensionMethods.UnixTimeToDateTime(reader["watcheddate"].ToString()).ToShortTimeString() : null;
+
             watched = watcheddate != null;
         }
 

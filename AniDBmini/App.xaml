@@ -53,15 +53,16 @@
                 <Setter Property="FontFamily" Value="Calibari" />
                 <Setter Property="FontSize" Value="12" />
                 <Setter Property="Height" Value="24" />
-                <Setter Property="MinWidth" Value="125"/>
-                <Setter Property="Padding" Value="24,4,5,4" />
+                <Setter Property="Padding" Value="24,4,60,4" />
                 <Setter Property="Template">
                     <Setter.Value>
-                        <ControlTemplate>
-                            <Border x:Name="miBorder" MinWidth="{TemplateBinding MinWidth}" RenderOptions.EdgeMode="Aliased" BorderThickness="0,1,0,1">
-                                <DockPanel>
-                                    <TextBlock Text="{Binding Path=Header, RelativeSource={RelativeSource TemplatedParent}}" FontFamily="{TemplateBinding FontFamily}" Foreground="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}" />
-                                    <Popup x:Name="SubMenuPopup" Placement="Bottom" IsOpen="{Binding Path=IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}" Focusable="false" >
+                        <ControlTemplate TargetType="MenuItem">
+                            <Border x:Name="miBorder" MinWidth="{TemplateBinding MinWidth}" Background="Transparent" BorderThickness="0,1,0,1">
+                                <DockPanel HorizontalAlignment="Stretch">
+                                    <TextBlock x:Name="Header" Text="{Binding Path=Header, RelativeSource={RelativeSource TemplatedParent}}" FontFamily="{TemplateBinding FontFamily}"
+                                               Foreground="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}" />
+                                    <TextBlock x:Name="InputGestureText" FontSize="10" Text="{TemplateBinding InputGestureText}" Margin="5,2,2,2" Padding="0,3,16,3" DockPanel.Dock="Right" />
+                                    <Popup x:Name="SubMenuPopup" Placement="Bottom" IsOpen="{Binding Path=IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}" Focusable="false">
                                         <Border>
                                             <ItemsPresenter Margin="1" KeyboardNavigation.DirectionalNavigation="Cycle" />
                                         </Border>
@@ -73,11 +74,33 @@
                                     <Setter Property="Background" Value="{x:Static SystemColors.HighlightBrush}" TargetName="miBorder" />
                                     <Setter Property="BorderBrush" Value="#CCC" TargetName="miBorder" />
                                     <Setter Property="Foreground" Value="{x:Static SystemColors.HighlightTextBrush}" />
+                                    <Setter Property="Effect" TargetName="Header">
+                                        <Setter.Value>
+                                            <DropShadowEffect BlurRadius="5" ShadowDepth="0" />
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="Effect" TargetName="InputGestureText">
+                                        <Setter.Value>
+                                            <DropShadowEffect BlurRadius="5" ShadowDepth="0" />
+                                        </Setter.Value>
+                                    </Setter>
                                 </Trigger>
                                 <Trigger Property="MenuItem.IsEnabled" Value="False">
                                     <Setter Property="Foreground" Value="{x:Static SystemColors.GrayTextBrush}" />
                                 </Trigger>
                             </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="{x:Type Separator}" BasedOn="{StaticResource {x:Type Separator}}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Separator}">
+                            <Border BorderBrush="#CCC" BorderThickness="0,1,0,0" Margin="20,2,28,2" Padding="1,0,0,0">
+                                <Rectangle Height="1" Fill="#FFF" />
+                            </Border>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
@@ -108,6 +131,7 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+            
             <Style x:Key="{x:Type PasswordBox}" TargetType="{x:Type PasswordBox}" BasedOn="{StaticResource {x:Type PasswordBox}}">
                 <Setter Property="ContextMenu" Value="{StaticResource StandardContextMenu}" />
                 <Setter Property="Template">

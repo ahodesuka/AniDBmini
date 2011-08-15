@@ -101,7 +101,7 @@ namespace AniDBmini
 
         private UdpClient conn = new UdpClient();
         private IPEndPoint apiserver;
-        private DateTime m_lastCommand, m_lastQueue;
+        private DateTime m_lastCommand;
 
         private Object queueLock = new Object();
         private List<DateTime> queryLog = new List<DateTime>();
@@ -251,7 +251,6 @@ namespace AniDBmini
                                                         "&ed2k=" + item.Hash +
                                                         "&viewed=" + item.Viewed +
                                                         "&state=" + item.State + (item.Edit ? "&edit=1" : null));
-                File(item);
                 switch (response.Code)
                 {
                     case RETURN_CODE.MYLIST_ENTRY_ADDED:
@@ -262,11 +261,11 @@ namespace AniDBmini
                         File(item);
                         r_msg = "Edited mylist entry for " + item.Name + ".";
                         break;
-                    case RETURN_CODE.FILE_ALREADY_IN_MYLIST:
+                    case RETURN_CODE.FILE_ALREADY_IN_MYLIST: // TODO: add auto edit to options.
                         item.Edit = true;
                         MyListAdd(item);
                         return;
-                    case RETURN_CODE.NO_SUCH_FILE:
+                    case RETURN_CODE.NO_SUCH_FILE: // TODO: autocreq with AVDump2 (optional)
                         r_msg = "Error! File not in database.";
                         break;
                 }
@@ -357,9 +356,8 @@ namespace AniDBmini
                 {
                     double secondsSince = DateTime.Now.Subtract(m_lastCommand).TotalSeconds;
                     int timeout = CalculatedTimeout();
-                    m_lastQueue = m_lastCommand;
 
-                    System.Diagnostics.Debug.WriteLine(String.Format("Last CMD: {0}, seconds since: {1}", m_lastCommand.ToLongTimeString(), secondsSince));
+                    // TODO: announce task to user.
 
                     if (secondsSince < timeout)
                         Thread.Sleep(TimeSpan.FromSeconds(timeout - secondsSince));

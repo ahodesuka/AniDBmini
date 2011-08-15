@@ -14,7 +14,7 @@ namespace AniDBmini.Collections
         public int eps_have { get; set; }
         public int eps_watched { get; set; }
 
-        public double seconds { get; set; }
+        public double length { get; set; }
         public double size { get; set; }
 
         public string type { get; set; }
@@ -22,7 +22,6 @@ namespace AniDBmini.Collections
         public string nihongo { get; set; }
         public string english { get; set; }
         public string year { get; set; }
-        public string length { get { return TimeSpan.FromSeconds(seconds).ToFormatedStringSimple(); } }
 
         public bool complete { get; set; }
         public bool watched { get; set; }

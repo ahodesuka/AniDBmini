@@ -17,7 +17,6 @@ namespace AniDBmini
     public static class ExtensionMethods
     {
         private static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
         private static readonly string[] units = { "B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
 
         public static TSObservableCollection<T> RemoveAll<T>(this TSObservableCollection<T> coll, Func<T, bool> condition)
@@ -42,26 +41,17 @@ namespace AniDBmini
             return span.TotalSeconds;
         }
 
+        /// <summary>
+        /// Used for estimated time remaining.
+        /// </summary>
         public static string ToFormatedString(this TimeSpan ts)
         {
             return String.Format("{0}h {1}m {2}s", (int)ts.TotalHours, ts.Minutes.ToString("00"), ts.Seconds.ToString("00"));
         }
 
-        public static string ToFormatedStringSimple(this TimeSpan ts)
-        {
-            return String.Format("{0}h {1}m", (int)ts.TotalHours, ts.Minutes.ToString("00"));
-        }
-
-        public static string ToFormatedStringSimplify(this TimeSpan ts)
-        {
-            string time = String.Empty;
-
-            if ((int)ts.TotalHours > 0)
-                time += String.Format("{0}h ", (int)ts.TotalHours);
-
-            return String.Format("{0}{1}m", time, ts.Minutes.ToString("00"));
-        }
-
+        /// <summary>
+        /// Simplifies an amount of bytes to the smallest unit.
+        /// </summary>
         public static string ToFormatedBytes(this double size)
         {
             int unit = 0;
@@ -75,6 +65,9 @@ namespace AniDBmini
             return String.Format("{0:0.#} {1}", size, units[unit]);
         }
 
+        /// <summary>
+        /// Convert bytes to a specific unit.
+        /// </summary>
         public static string ToFormatedBytes(this double size, string bUnit)
         {
             int unitIndex;
@@ -117,6 +110,8 @@ namespace AniDBmini
             return s2;
         }
 
+        #region VisualTree Traversing
+
         public static T FindAncestor<T>(this DependencyObject obj) where T : DependencyObject
         {
             return obj.FindAncestor(typeof(T)) as T;
@@ -136,20 +131,17 @@ namespace AniDBmini
             return null;
         }
 
-        public static T FindChild<T>(this DependencyObject parent)
-            where T : DependencyObject
+        public static T FindChild<T>(this DependencyObject parent) where T : DependencyObject
         {
             return parent.FindChild<T>(child => true);
         }
 
-        public static T FindChild<T>(this DependencyObject parent, Func<T, bool> predicate)
-            where T : DependencyObject
+        public static T FindChild<T>(this DependencyObject parent, Func<T, bool> predicate) where T : DependencyObject
         {
             return parent.FindChildren<T>(predicate).First();
         }
 
-        public static IEnumerable<T> FindChildren<T>(this DependencyObject parent, Func<T, bool> predicate)
-            where T : DependencyObject
+        public static IEnumerable<T> FindChildren<T>(this DependencyObject parent, Func<T, bool> predicate) where T : DependencyObject
         {
             var children = new List<DependencyObject>();
 
@@ -174,5 +166,8 @@ namespace AniDBmini
             }
             yield break;
         }
+
+        #endregion VisualTree Traversing
+
     }
 }

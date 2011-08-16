@@ -72,11 +72,11 @@ namespace AniDBmini
     }
 
     [ValueConversion(typeof(object), typeof(Visibility))]
-    class ZeroToVisibility : IValueConverter
+    class ZeroNullToVisibility : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return (int)value == 0 || value == null ? Visibility.Collapsed : Visibility.Visible;
+            return value == null || (value is int && (int)value == 0) ? Visibility.Collapsed : Visibility.Visible;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

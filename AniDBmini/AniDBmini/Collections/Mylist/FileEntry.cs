@@ -1,12 +1,17 @@
-﻿using System;
+﻿
+#region Using Statements
+
+using System;
 using System.Data.SQLite;
+
+#endregion Using Statements
 
 namespace AniDBmini.Collections
 {
     public class FileEntry : IEquatable<FileEntry>
     {
 
-        #region Fields
+        #region Properties
 
         public int lid { get; set; }
         public int gid { get; set; }
@@ -27,7 +32,7 @@ namespace AniDBmini.Collections
         public bool watched { get; set; }
         public bool generic { get; set; }
 
-        #endregion Fields
+        #endregion Properties
 
         #region Constructors
 

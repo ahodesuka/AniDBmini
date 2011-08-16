@@ -141,10 +141,10 @@ namespace AniDBmini
                     uiDispatcher.BeginInvoke(new Action<string>(str => { importFilePath.Text = str; }), "Importing: " + entry.title);
 
                     reader.ReadToFollowing("nihongo");
-                    entry.nihongo = reader.ReadElementContentAsString().formatNullable();
+                    entry.nihongo = reader.ReadElementContentAsString().FormatNullable();
 
                     reader.ReadToFollowing("english");
-                    entry.english = reader.ReadElementContentAsString().formatNullable();
+                    entry.english = reader.ReadElementContentAsString().FormatNullable();
                     // </titles>
 
                     // <episodes>
@@ -162,25 +162,38 @@ namespace AniDBmini
                         EpisodeEntry episode = new EpisodeEntry();
 
                         episode.eid = int.Parse(episodesReader["eid"]);
-                        if (Regex.IsMatch(episodesReader["epno"].Substring(0, 1), @"\D"))
-                            continue;
-                        else
-                            episode.epno = int.Parse(episodesReader["epno"]);
 
                         episode.airdate = episodesReader["aired"] == "-" ? null :
                                           ExtensionMethods.DateTimeToUnixTime(DateTime.Parse(episodesReader["aired"],
                                                                                              System.Globalization.CultureInfo.CreateSpecificCulture("en-GB"))).ToString();
                         episode.watched = Convert.ToBoolean(int.Parse(episodesReader["watched"]));
 
+                        if (Regex.IsMatch(episodesReader["epno"].Substring(0, 1), @"\D"))
+                        {
+                            episode.spl_epno = episodesReader["epno"];
+
+                            entry.spl_have++;
+                            if (episode.watched)
+                                entry.spl_watched++;
+                        }
+                        else
+                        {
+                            episode.epno = int.Parse(episodesReader["epno"]);
+
+                            entry.eps_have++;
+                            if (episode.watched)
+                                entry.eps_watched++;
+                        }
+
                         // <titles>
                         episodesReader.ReadToDescendant("english");
                         episode.english = episodesReader.ReadElementContentAsString();
 
                         episodesReader.ReadToFollowing("nihongo");
-                        episode.nihongo = episodesReader.ReadElementContentAsString().formatNullable();
+                        episode.nihongo = episodesReader.ReadElementContentAsString().FormatNullable();
 
                         episodesReader.ReadToFollowing("romaji");
-                        episode.romaji = episodesReader.ReadElementContentAsString().formatNullable();
+                        episode.romaji = episodesReader.ReadElementContentAsString().FormatNullable();
                         // </titles>                        
 
                         // <files>
@@ -210,10 +223,10 @@ namespace AniDBmini
                                 file.ed2k = filesReader["ed2k"];
                                 file.length = int.Parse(filesReader["length"]);
                                 file.size = int.Parse(filesReader["size"]);
-                                file.source = filesReader["source"].formatNullable();
-                                file.acodec = filesReader["acodec"].formatNullable();
-                                file.vcodec = filesReader["vcodec"].formatNullable();
-                                file.vres = filesReader["vres"].formatNullable();
+                                file.source = filesReader["source"].FormatNullable();
+                                file.acodec = filesReader["acodec"].FormatNullable();
+                                file.vcodec = filesReader["vcodec"].FormatNullable();
+                                file.vres = filesReader["vres"].FormatNullable();
                                 
                                 if (file.gid != 0 && !m_groupList.Contains(file.gid))
                                 {
@@ -245,10 +258,6 @@ namespace AniDBmini
                         // </files>
                         filesReader.Close();
                         entry.Episodes.Add(episode);
-
-                        entry.eps_have++;
-                        if (episode.watched)
-                            entry.eps_watched++;
                     // </episode>
                     }                    
                     // </episodes>

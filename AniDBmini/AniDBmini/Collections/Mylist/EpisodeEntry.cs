@@ -1,16 +1,21 @@
-﻿using System;
+﻿
+#region Using Statements
+
+using System;
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
 using System.Linq;
 
 using AniDBmini;
 
+#endregion Using Statements
+
 namespace AniDBmini.Collections
 {
     public class EpisodeEntry : IEquatable<EpisodeEntry>
     {
 
-        #region Fields
+        #region Properties
 
         public int eid { get; set; }
         public int epno { get; set; }
@@ -18,6 +23,7 @@ namespace AniDBmini.Collections
         public double length { get; set; }
         public double size { get { return Files.Sum(x => x.size); } }
 
+        public string spl_epno { get; set; }
         public string english { get; set; }
         public string nihongo { get; set; }
         public string romaji { get; set; }
@@ -28,7 +34,7 @@ namespace AniDBmini.Collections
 
         public ObservableCollection<FileEntry> Files { get; set; }
 
-        #endregion Fields
+        #endregion Properties
 
         #region Constructors
 
@@ -40,7 +46,9 @@ namespace AniDBmini.Collections
         public EpisodeEntry(SQLiteDataReader reader)
         {
             eid = int.Parse(reader["eid"].ToString());
-            epno = int.Parse(reader["epno"].ToString());
+            
+            if ((spl_epno = reader["spl_epno"].ToString().FormatNullable()) == null)
+                epno = int.Parse(reader["epno"].ToString());
 
             length = int.Parse(reader["length"].ToString());
 

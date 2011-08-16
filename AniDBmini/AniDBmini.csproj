@@ -63,6 +63,7 @@
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup />
   <PropertyGroup>
@@ -164,6 +165,7 @@
     <Compile Include="AniDBmini\Collections\AnimeTab.cs" />
     <Compile Include="AniDBAPI\AniDBAPI.cs" />
     <Compile Include="AniDBmini\IgnoreMouseWheelBehavior.cs" />
+    <Compile Include="AniDBmini\Mylist\MylistSort.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>

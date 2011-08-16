@@ -81,7 +81,7 @@ namespace AniDBmini
             return String.Format("{0:0.#} {1}", size, units[unitIndex]);
         }
 
-        public static string formatNullable(this string str)
+        public static string FormatNullable(this string str)
         {
             return string.IsNullOrWhiteSpace(str) || str == "unknown" || str == "0x0" ? null : str;
         }

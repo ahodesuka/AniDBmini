@@ -53,7 +53,7 @@
                 <Setter Property="FontFamily" Value="Calibari" />
                 <Setter Property="FontSize" Value="12" />
                 <Setter Property="Height" Value="24" />
-                <Setter Property="Padding" Value="24,4,60,4" />
+                <Setter Property="Padding" Value="24,4,48,4" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="MenuItem">

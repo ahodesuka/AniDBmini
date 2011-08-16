@@ -256,8 +256,7 @@ namespace AniDBmini
 
             m_Source = HwndSource.FromHwnd(m_hWnd);
             m_Source.AddHook(WndProc);
-
-            isHooked = true;
+            
             AniDBAPI.AppendDebugLine("MPC-HC hook added.");
 
             using (Process MPC = new Process())
@@ -292,6 +291,7 @@ namespace AniDBmini
                     switch (nCmd)
                     {
                         case MPCAPI_COMMAND.CMD_CONNECT:
+                            isHooked = true;
                             m_hWndMPC = new IntPtr(int.Parse(mpcMSG));
                             break;
                         case MPCAPI_COMMAND.CMD_CURRENTPOSITION:
@@ -459,6 +459,11 @@ namespace AniDBmini
             m_ShowInFileTitle = ConfigFile.Read("mpcShowTitle").ToBoolean();
             m_OSDMSGPos = (OSD_MESSAGEPOS)ConfigFile.Read("mpcOSDPos").ToInt32();
             m_OSDMSGDur = ConfigFile.Read("mpcOSDDurMS").ToInt32();
+        }
+
+        public void OpenFile(string path)
+        {
+            SendData(MPCAPI_SENDCOMMAND.CMD_OPENFILE, path);
         }
 
         public void ShowWatchedOSD()

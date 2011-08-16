@@ -207,10 +207,10 @@ namespace AniDBmini
 
                     file.gid = int.Parse(info[3]);
                     file.lid = int.Parse(info[4]);
-                    file.source = info[5].formatNullable();
-                    file.acodec = info[6].Contains("'") ? info[6].Split('\'')[0] : info[6].formatNullable();
+                    file.source = info[5].FormatNullable();
+                    file.acodec = info[6].Contains("'") ? info[6].Split('\'')[0] : info[6].FormatNullable();
                     file.vcodec = info[7];
-                    file.vres = info[8].formatNullable();
+                    file.vres = info[8].FormatNullable();
                     file.length = int.Parse(info[9]);
                     episode.airdate = info[10];
                     file.watcheddate = info[11] == "0" ? null : info[11];
@@ -220,13 +220,17 @@ namespace AniDBmini
                                 (info[13].Split('-')[0] != info[13].Split('-')[1] ? info[13] : info[13].Split('-')[0]) : info[13];
                     anime.type = info[14];
                     anime.title = info[15];
-                    anime.nihongo = info[16].formatNullable();
-                    anime.english = info[17].formatNullable();
+                    anime.nihongo = info[16].FormatNullable();
+                    anime.english = info[17].FormatNullable();
 
-                    episode.epno = int.Parse(info[18]);
+                    if (Regex.IsMatch(info[18].Substring(0, 1), @"\D"))
+                        episode.spl_epno = info[18];
+                    else
+                        episode.epno = int.Parse(info[18]);
+
                     episode.english = info[19];
-                    episode.romaji = info[20].formatNullable();
-                    episode.nihongo = info[21].formatNullable();
+                    episode.romaji = info[20].FormatNullable();
+                    episode.nihongo = info[21].FormatNullable();
 
                     file.group_name = info[22];
                     file.group_abbr = info[23];
@@ -410,9 +414,6 @@ namespace AniDBmini
             e_response = Encoding.UTF8.GetString(data, 0, data.Length);
             RETURN_CODE e_code = (RETURN_CODE)int.Parse(e_response.Substring(0, 3));
 
-            System.Diagnostics.Debug.WriteLine(String.Format("Executed: {0} @ {1}", cmd, m_lastCommand.ToLongTimeString()));
-            System.Diagnostics.Debug.WriteLine(String.Format("Response: {0}", e_response));
-
             switch (e_code)
             {
                 case RETURN_CODE.LOGIN_FIRST:
@@ -432,12 +433,7 @@ namespace AniDBmini
                     return new APIResponse { Message = e_response, Code = e_code };
             }
 #else
-            m_lastCommand = DateTime.Now;
-            queryLog.Add(m_lastCommand);
-            APIResponse response = new APIResponse { Message = "\n934579|8348|130525|5654|114128304|HDTV|AAC|H264/AVC|1280x720|1446|1309478400|1312500297|10|2011|TV Series|Blood-C|BLOOD-C||01|O Ye Winds of Heaven|Amatsu Kase|あまつかせ|Underwater|Underwater", Code = (RETURN_CODE)200 };
-            System.Diagnostics.Debug.WriteLine(String.Format("Executed: {0} @ {1}", cmd, m_lastCommand.ToLongTimeString()));
-            //System.Diagnostics.Debug.WriteLine(String.Format("Response: {0}", response.Message));
-            return response;
+            return new APIResponse { Message = "\n934579|8348|130525|5654|114128304", Code = (RETURN_CODE)200 };
 #endif
         }
 

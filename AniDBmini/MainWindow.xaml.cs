@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using Forms = System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -27,6 +28,8 @@ namespace AniDBmini
     {
 
         #region Fields
+
+        private const string AniDBaLink = @"http://anidb.net/perl-bin/animedb.pl?show=anime&aid=";
 
         public static string m_AppName = Application.ResourceAssembly.GetName().Name;
 
@@ -82,7 +85,7 @@ namespace AniDBmini
         #region Initialize
 
         /// <summary>
-        /// Retrieve, format, and draw stats.
+        /// Retrieves and formats mylist stats.
         /// </summary>
         private void InitializeStats()
         {
@@ -117,7 +120,10 @@ namespace AniDBmini
             }
         }
 
-        private void InitializeNotifyIcon()
+        /// <summary>
+        /// Initializes the tray icon.
+        /// </summary>
+        private void InitializeNotifyIcon() // TODO: add options (minimize on close, disable tray icon, always show, etc.)
         {
             m_notifyIcon = new Forms.NotifyIcon();
             m_notifyIcon.Text = this.Title;
@@ -149,6 +155,10 @@ namespace AniDBmini
 
         #region Hashing
 
+        /// <summary>
+        /// Creates a entry and adds it to the hash list.
+        /// </summary>
+        /// <param name="path">Path to file.</param>
         private void addRowToHashTable(string path)
         {
             HashItem item = new HashItem(path);
@@ -162,6 +172,11 @@ namespace AniDBmini
                 Dispatcher.BeginInvoke(new Action(delegate { hashingStartButton.IsEnabled = true; }));
         }
 
+        /// <summary>
+        /// Removes a hash entry from the list.
+        /// </summary>
+        /// <param name="item">Item to remove.</param>
+        /// <param name="userRemoved">True if removed by user.</param>
         private void removeRowFromHashTable(HashItem item, bool userRemoved = false)
         {
             if (isHashing && userRemoved)
@@ -182,6 +197,9 @@ namespace AniDBmini
             }));
         }
 
+        /// <summary>
+        /// Initializes the hashing background worker.
+        /// </summary>
         private void beginHashing()
         {
             hashingStartButton.IsEnabled = false;
@@ -202,6 +220,9 @@ namespace AniDBmini
             m_HashWorker.RunWorkerAsync();
         }
 
+        /// <summary>
+        /// Adds completed hash item to mylist.
+        /// </summary>
         private void FinishHash(HashItem item)
         {
             ppSize += item.Size;
@@ -219,9 +240,12 @@ namespace AniDBmini
 
         #region Mylist
 
+        /// <summary>
+        /// Sets mylist visibility based on sql connection.
+        /// </summary>
         private void SetMylistVisibility()
         {
-            if (m_myList.Entries.Count > 0)
+            if (m_myList.isSQLConnOpen)
             {
                 mylistImortButton.Visibility = Visibility.Collapsed;
                 mylistDataGrid.IsEnabled = true;
@@ -233,6 +257,9 @@ namespace AniDBmini
             }
         }
 
+        /// <summary>
+        /// Expands or contracts a datagridrow's details.
+        /// </summary>
         public void MylistToggleEntry(DependencyObject src)
         {
             DataGridRow row = src.FindAncestor<DataGridRow>();
@@ -271,7 +298,7 @@ namespace AniDBmini
 
             mylistDataGrid.ItemsSource = m_myList.Entries;
 
-            //InitializeStats();
+            InitializeStats();
             InitializeNotifyIcon();
         }
 
@@ -279,10 +306,12 @@ namespace AniDBmini
         {
             OptionsWindow options = new OptionsWindow();
             options.Owner = this;
-            if (options.ShowDialog() == true && mpcApi != null)
-                mpcApi.LoadConfig();
+            if (options.ShowDialog() == true && mpcApi != null) mpcApi.LoadConfig();
         }
 
+        /// <summary>
+        /// Launches or focuses MPC-HC.
+        /// </summary>
         private void mpchcLaunch(object sender, RoutedEventArgs e)
         {
             if (mpcApi == null || !mpcApi.isHooked || !mpcApi.FocusMPC())
@@ -290,11 +319,11 @@ namespace AniDBmini
                 if (File.Exists(ConfigFile.Read("mpcPath").ToString()))
                 {
                     mpcApi = new MPCAPI(this);
-                    mpcApi.OnFileWatched += new FileWatchedHandler(OnFileWatched);
+                    mpcApi.OnFileWatched += new FileWatchedHandler(OnFileWatched);                    
                 }
                 else
                     MessageBox.Show("Media Player Classic - Home Cinema not found!\n" +
-                                    "Please ensure you have selected the mpc-hc executable inside the options.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    "Please ensure you have located the mpc-hc executable inside the options.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -308,7 +337,7 @@ namespace AniDBmini
                 item = aniDB.ed2kHash(item);
                 aniDB.MyListAdd(item);
 
-                if (ConfigFile.Read("mpcShowOSD").ToBoolean())
+                if (ConfigFile.Read("mpcShowOSD").ToBoolean() && mpcApi != null && mpcApi.isHooked)
                     mpcApi.ShowWatchedOSD();
             }));
         }
@@ -334,6 +363,12 @@ namespace AniDBmini
 
         private void OnFileInfoFetched(FileInfoFetchedArgs e)
         {
+            if (!m_myList.isSQLConnOpen)
+            {
+                Dispatcher.Invoke(new Action(m_myList.Create));
+                Dispatcher.BeginInvoke(new Action(SetMylistVisibility));
+            }
+
             m_myList.InsertFileInfo(e);
 
             Dispatcher.BeginInvoke(new Action(delegate
@@ -365,7 +400,7 @@ namespace AniDBmini
 
         private void OnClose(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (ConfigFile.Read("mpcClose").ToBoolean() && mpcApi.isHooked)
+            if (ConfigFile.Read("mpcClose").ToBoolean() && mpcApi != null && mpcApi.isHooked)
                 mpcApi.CloseMPC();
 
             m_myList.Close();
@@ -554,8 +589,22 @@ namespace AniDBmini
             ImportWindow import = new ImportWindow(m_myList);
             import.Owner = this;
 
-            if (import.ShowDialog() == true)
-                SetMylistVisibility();
+            mylistImortButton.Visibility = Visibility.Collapsed;
+
+            import.ShowDialog();
+            SetMylistVisibility();
+        }
+
+        private void mylistDataGridSorting(object sender, DataGridSortingEventArgs e)
+        {
+            e.Handled = true;
+
+            ListSortDirection direction = (e.Column.SortDirection != ListSortDirection.Ascending) ? ListSortDirection.Ascending : ListSortDirection.Descending;
+            e.Column.SortDirection = direction;
+
+            ListCollectionView lcv = (ListCollectionView)CollectionViewSource.GetDefaultView(mylistDataGrid.ItemsSource);
+            MylistSort mylistSort = new MylistSort(direction, e.Column);
+            lcv.CustomSort = mylistSort;
         }
 
         private void ExpandExecuted(object sender, ExecutedRoutedEventArgs e)
@@ -576,10 +625,27 @@ namespace AniDBmini
 
             e.Handled = true;
         }
+
+        private void OpenADBPage_Click(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(AniDBaLink + ((MenuItem)sender).Tag.ToString());
+        }
         
         private void EntryViewDetails_Click(object sender, RoutedEventArgs e)
         {
             aniDB.Anime(int.Parse(((MenuItem)sender).Tag.ToString()));
+        }
+
+        private void OpenFileWithMPCHC_Click(object sender, RoutedEventArgs e)
+        {
+            string filePath = ((MenuItem)sender).Tag.ToString();
+            mpchcLaunch(this, null);
+
+            ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+            {
+                while (!mpcApi.isHooked) Thread.Sleep(200);
+                mpcApi.OpenFile(filePath);
+            }));
         }
 
         private void MarkWatched_Click(object sender, RoutedEventArgs e)
@@ -594,6 +660,17 @@ namespace AniDBmini
             MenuItem item = (MenuItem)sender;
             var row = ((ContextMenu)item.Parent).PlacementTarget as DataGridRow;
             System.Diagnostics.Debug.WriteLine(row);
+        }
+
+        private void mylistDGRDVChanged(object sender, DataGridRowDetailsEventArgs e)
+        {
+            DataGrid dg = sender as DataGrid;
+            if (dg != null && e.Row.DetailsVisibility == Visibility.Collapsed)
+            {
+                DataGrid childDG = ((DependencyObject)e.Row).FindChild<DataGrid>();
+                if (childDG != null)
+                    childDG.UnselectAll();
+            }
         }
 
         /// <summary>
@@ -615,17 +692,6 @@ namespace AniDBmini
 
                 if (visibleCount == 0)
                     dg.Items.Refresh();
-            }
-        }
-
-        private void mylistDGRDVChanged(object sender, DataGridRowDetailsEventArgs e)
-        {
-            DataGrid dg = sender as DataGrid;
-            if (dg != null && e.Row.DetailsVisibility == Visibility.Collapsed)
-            {
-                DataGrid childDG = ((DependencyObject)e.Row).FindChild<DataGrid>();
-                if (childDG != null)
-                    childDG.UnselectAll();
             }
         }
 
@@ -685,8 +751,13 @@ namespace AniDBmini
 
     }
 
+    #region Custom Application Commands
+
     public static class Command
     {
         public static readonly RoutedUICommand Expand = new RoutedUICommand("Expand Entry", "Expand", typeof(MainWindow));
     }
+
+    #endregion Custom Application Commands
+
 }

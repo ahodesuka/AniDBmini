@@ -1,6 +1,11 @@
-﻿using System;
+﻿
+#region Using Statements
+
+using System;
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
+
+#endregion Using Statements
 
 namespace AniDBmini.Collections
 {
@@ -12,7 +17,9 @@ namespace AniDBmini.Collections
         public int aid { get; set; }
         public int eps_total { get; set; }
         public int eps_have { get; set; }
+        public int spl_have { get; set; }
         public int eps_watched { get; set; }
+        public int spl_watched { get; set; }
 
         public double length { get; set; }
         public double size { get; set; }
@@ -28,7 +35,7 @@ namespace AniDBmini.Collections
 
         public ObservableCollection<EpisodeEntry> Episodes { get; set; }
 
-        #endregion Fields
+        #endregion Properties
 
         #region Constructors
 
@@ -57,7 +64,9 @@ namespace AniDBmini.Collections
 
             eps_total = int.Parse(reader["eps_total"].ToString());
             eps_have = int.Parse(reader["eps_have"].ToString());
+            spl_have = int.Parse(reader["spl_have"].ToString());
             eps_watched = int.Parse(reader["eps_watched"].ToString());
+            spl_watched = int.Parse(reader["spl_watched"].ToString());
 
             size = double.Parse(reader["size"].ToString());
         }

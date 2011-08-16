@@ -21,9 +21,9 @@ namespace AniDBmini
 
         public const string dbPath = @".\data\local.db";
 
-        private bool isSQLConnOpen;
         private SQLiteConnection SQLConn;
 
+        public bool isSQLConnOpen;
         public TSObservableCollection<MylistEntry> Entries = new TSObservableCollection<MylistEntry>();
 
         #endregion Fields
@@ -75,6 +75,7 @@ namespace AniDBmini
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
                 cmd.CommandText = @"SELECT a.aid, a.type, a.title, a.nihongo, a.english, a.eps_total, a.year,
+                                           COUNT(e.spl_epno) AS spl_have, (SELECT COUNT(spl_epno) FROM episodes WHERE aid = a.aid AND watched = 1) AS spl_watched,
                                            IFNULL(MIN(COUNT(e.watched), a.eps_total), 0) AS eps_have, IFNULL(MIN(SUM(e.watched), a.eps_total), 0) AS eps_watched, IFNULL(SUM(f.size), 0) AS size
                                       FROM anime AS a
                                  LEFT JOIN episodes AS e ON e.aid = a.aid
@@ -97,6 +98,7 @@ namespace AniDBmini
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
                 cmd.CommandText = @"SELECT a.aid, a.type, a.title, a.nihongo, a.english, a.eps_total, a.year,
+                                           COUNT(e.spl_epno) AS spl_have, (SELECT COUNT(spl_epno) FROM episodes WHERE aid = a.aid AND watched = 1) AS spl_watched,
                                            IFNULL(MIN(COUNT(e.watched), a.eps_total), 0) AS eps_have, IFNULL(MIN(SUM(e.watched), a.eps_total), 0) AS eps_watched, IFNULL(SUM(f.size), 0) AS size
                                       FROM anime AS a
                                  LEFT JOIN episodes AS e ON e.aid = a.aid
@@ -138,7 +140,7 @@ namespace AniDBmini
                                  LEFT JOIN files AS f ON f.eid = e.eid
                                      WHERE aid = @aid
                                   GROUP BY e.eid
-                                  ORDER BY e.epno;";
+                                  ORDER BY IFNULL(e.epno, 'S'), spl_epno;";
                 cmd.Parameters.AddWithValue("@aid", m_entry.aid);
 
                 using (SQLiteDataReader reader = cmd.ExecuteReader())
@@ -191,7 +193,7 @@ namespace AniDBmini
                                                         'title' VARCHAR NOT NULL, 'nihongo' VARCHAR, 'english' VARCHAR,
                                                         'year' VARCHAR NOT NULL, 'eps_total' INTEGER);
 
-                                    CREATE TABLE episodes ('eid' INTEGER PRIMARY KEY, 'aid' INTEGER NOT NULL, 'epno' INTEGER NOT NULL,
+                                    CREATE TABLE episodes ('eid' INTEGER PRIMARY KEY, 'aid' INTEGER NOT NULL, 'epno' INTEGER, 'spl_epno' VARCHAR,
                                                            'english' VARCHAR NOT NULL, 'nihongo' VARCHAR, 'romaji' VARCHAR, 'airdate' INTEGER, 'watched' INTEGER);
 
                                     CREATE TABLE files ('lid' INTEGER PRIMARY KEY NOT NULL, 'eid' INTEGER, 'gid' INTEGER, 'ed2k' VARCHAR, 'watcheddate' INTEGER, 'length' INTEGER,
@@ -230,18 +232,23 @@ namespace AniDBmini
                 cmd.ExecuteNonQuery();
                 cmd.Parameters.Clear();
 
-                cmd.CommandText = @"INSERT OR REPLACE INTO episodes VALUES (@eid, @aid, @epno, @english, @nihongo, @romaji, @airdate, @watched);";
+                cmd.CommandText = @"INSERT OR REPLACE INTO episodes VALUES (@eid, @aid, @epno, @spl_epno, @english, @nihongo, @romaji, @airdate, @watched);";
 
                 SQLiteParameter[] eParams = { new SQLiteParameter("@eid", e.Episode.eid),
                                               new SQLiteParameter("@aid", e.Anime.aid),
                                               new SQLiteParameter("@epno", e.Episode.epno),
+                                              new SQLiteParameter("@spl_epno", e.Episode.spl_epno),
                                               new SQLiteParameter("@english", e.Episode.english),
                                               new SQLiteParameter("@nihongo", e.Episode.nihongo),
                                               new SQLiteParameter("@romaji", e.Episode.romaji),
                                               new SQLiteParameter("@airdate", e.Episode.airdate),
                                               new SQLiteParameter("@watched", e.Episode.watched) };
 
-                eParams[4].IsNullable = eParams[5].IsNullable = true;
+                eParams[2].IsNullable = eParams[3].IsNullable = eParams[4].IsNullable = eParams[5].IsNullable = true;
+
+                if (e.Episode.epno == 0)
+                    eParams[2].Value = null;
+
                 cmd.Parameters.AddRange(eParams);
 
                 cmd.ExecuteNonQuery();
@@ -317,18 +324,20 @@ namespace AniDBmini
 
                     cmd.ExecuteNonQuery();
 
-                    cmd.CommandText = @"INSERT INTO episodes VALUES (@eid, @aid, @epno, @english, @nihongo, @romaji, @airdate, @watched);";
+                    cmd.CommandText = @"INSERT INTO episodes VALUES (@eid, @aid, @epno, @spl_epno, @english, @nihongo, @romaji, @airdate, @watched);";
 
                     SQLiteParameter[] eParams = { new SQLiteParameter("@eid"),
                                                   new SQLiteParameter("@aid", entry.aid),
                                                   new SQLiteParameter("@epno"),
+                                                  new SQLiteParameter("@spl_epno"),
                                                   new SQLiteParameter("@english"),
                                                   new SQLiteParameter("@nihongo"),
                                                   new SQLiteParameter("@romaji"),
                                                   new SQLiteParameter("@airdate"),
                                                   new SQLiteParameter("@watched") };
 
-                    eParams[2].IsNullable = eParams[5].IsNullable = eParams[7].IsNullable = true;
+                    eParams[2].IsNullable = eParams[3].IsNullable =
+                    eParams[5].IsNullable = eParams[6].IsNullable = eParams[8].IsNullable = true;
                     cmd.Parameters.AddRange(eParams);
 
                     using (SQLiteCommand fileCmd = SQLConn.CreateCommand())
@@ -357,12 +366,13 @@ namespace AniDBmini
                         foreach (EpisodeEntry ep in entry.Episodes)
                         {
                             eParams[0].Value = ep.eid;
-                            eParams[2].Value = ep.epno;
-                            eParams[3].Value = ep.english;
-                            eParams[4].Value = ep.nihongo;
-                            eParams[5].Value = ep.romaji;
-                            eParams[6].Value = ep.airdate;
-                            eParams[7].Value = ep.watched;
+                            if (ep.epno != 0) eParams[2].Value = ep.epno;
+                            else eParams[3].Value = ep.spl_epno;
+                            eParams[4].Value = ep.english;
+                            eParams[5].Value = ep.nihongo;
+                            eParams[6].Value = ep.romaji;
+                            eParams[7].Value = ep.airdate;
+                            eParams[8].Value = ep.watched;
 
                             cmd.ExecuteNonQuery();
 

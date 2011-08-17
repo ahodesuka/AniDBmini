@@ -166,6 +166,7 @@
     <Compile Include="AniDBAPI\AniDBAPI.cs" />
     <Compile Include="AniDBmini\IgnoreMouseWheelBehavior.cs" />
     <Compile Include="AniDBmini\Mylist\MylistSort.cs" />
+    <Compile Include="AniDBmini\TabControlEx.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -201,7 +202,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AniDBmini\Collections\Mylist\MylistEntry.cs" />
-    <Compile Include="AniDBmini\Mylist\MylistLocal.cs" />
+    <Compile Include="AniDBmini\Mylist\MylistDB.cs" />
     <Compile Include="OptionsWindow.xaml.cs">
       <DependentUpon>OptionsWindow.xaml</DependentUpon>
     </Compile>

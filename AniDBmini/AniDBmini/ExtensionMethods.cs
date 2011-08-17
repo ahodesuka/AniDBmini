@@ -16,8 +16,20 @@ namespace AniDBmini
 {
     public static class ExtensionMethods
     {
+        public enum BYTE_UNIT
+        {
+            B,
+            KB,
+            MB,
+            GB,
+            TB,
+            PB,
+            EB,
+            ZB,
+            YB
+        };
+
         private static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        private static readonly string[] units = { "B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
 
         public static TSObservableCollection<T> RemoveAll<T>(this TSObservableCollection<T> coll, Func<T, bool> condition)
         {
@@ -32,13 +44,12 @@ namespace AniDBmini
         public static DateTime UnixTimeToDateTime(string text)
         {
             double seconds = double.Parse(text, CultureInfo.InvariantCulture);
-            return Epoch.AddSeconds(seconds);
+            return Epoch.AddSeconds(seconds).ToLocalTime();
         }
 
         public static double DateTimeToUnixTime(DateTime date)
         {
-            TimeSpan span = date - Epoch;
-            return span.TotalSeconds;
+            return (date - Epoch).TotalSeconds;
         }
 
         /// <summary>
@@ -62,23 +73,34 @@ namespace AniDBmini
                 ++unit;
             }
 
-            return String.Format("{0:0.#} {1}", size, units[unit]);
+            return String.Format("{0:0.#} {1}", size, (BYTE_UNIT)unit);
         }
 
         /// <summary>
         /// Convert bytes to a specific unit.
         /// </summary>
-        public static string ToFormatedBytes(this double size, string bUnit)
+        public static string ToFormatedBytes(this double size, BYTE_UNIT outUnit)
         {
-            int unitIndex;
-
-            if ((unitIndex = Array.IndexOf(units, bUnit)) == -1)
-                return size.ToFormatedBytes();
+            int unitIndex = (int)outUnit;
 
             for (int i = 0; i < unitIndex; ++i)
                 size /= 1024;
-            
-            return String.Format("{0:0.#} {1}", size, units[unitIndex]);
+
+            return String.Format("{0:0.#} {1}", size, outUnit);
+        }
+
+        /// <summary>
+        /// Convert from a certain unit to another.
+        /// </summary>
+        public static string ToFormatedBytes(this double size, BYTE_UNIT inUnit, BYTE_UNIT outUnit)
+        {
+            int unitIndex = ((int)outUnit > (int)inUnit) ?
+                            (int)outUnit - (int)inUnit : (int)inUnit - (int)outUnit;
+
+            for (int i = 0; i < unitIndex; ++i)
+                size /= 1024;
+
+            return String.Format("{0:0.##} {1}", size, outUnit);
         }
 
         public static string FormatNullable(this string str)

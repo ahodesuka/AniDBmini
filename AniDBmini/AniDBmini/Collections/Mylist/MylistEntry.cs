@@ -3,14 +3,16 @@
 
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Data.SQLite;
 
 #endregion Using Statements
 
 namespace AniDBmini.Collections
 {
-    public class MylistEntry : IEquatable<MylistEntry>
-    {
+    public class MylistEntry : IEquatable<MylistEntry>,
+                               INotifyPropertyChanged
+	{
 
         #region Properties
 
@@ -33,7 +35,47 @@ namespace AniDBmini.Collections
         public bool complete { get; set; }
         public bool watched { get; set; }
 
-        public ObservableCollection<EpisodeEntry> Episodes { get; set; }
+        private bool isExpanded;
+        public bool IsExpanded
+        {
+            get { return isExpanded; }
+            set
+            {
+                if (isExpanded != value)
+                {
+                    isExpanded = value;
+                    RaisePropertyChanged("IsExpanded");
+                }
+            }
+        }
+
+        private bool isFetched;
+        public bool IsFetched
+        {
+            get { return isFetched; }
+            set
+            {
+                if (isFetched != value)
+                {
+                    isFetched = value;
+                    RaisePropertyChanged("IsFetched");
+                }
+            }
+        }
+
+        private ObservableCollection<EpisodeEntry> episodes = new ObservableCollection<EpisodeEntry>();
+        public ObservableCollection<EpisodeEntry> Episodes
+        {
+            get { return episodes; }
+            set
+            {
+                if (episodes != value)
+                {
+                    episodes = value;
+                    RaisePropertyChanged("Episodes");
+                }
+            }
+        }
 
         #endregion Properties
 
@@ -42,10 +84,7 @@ namespace AniDBmini.Collections
         /// <summary>
         /// Create an empty entry, used while importing.
         /// </summary>
-        public MylistEntry()
-        {
-            Episodes = new ObservableCollection<EpisodeEntry>();
-        }
+        public MylistEntry() { }
 
         /// <summary>
         /// Create a mylistentry from a SQLiteDataReader.
@@ -55,6 +94,9 @@ namespace AniDBmini.Collections
         {
             aid = int.Parse(reader["aid"].ToString());
             type = reader["type"].ToString();
+
+            length = double.Parse(reader["length"].ToString());
+            size = double.Parse(reader["size"].ToString());
 
             title = reader["title"].ToString();
             nihongo = reader["nihongo"].ToString();
@@ -67,8 +109,6 @@ namespace AniDBmini.Collections
             spl_have = int.Parse(reader["spl_have"].ToString());
             eps_watched = int.Parse(reader["eps_watched"].ToString());
             spl_watched = int.Parse(reader["spl_watched"].ToString());
-
-            size = double.Parse(reader["size"].ToString());
         }
 
         #endregion Constructors
@@ -81,6 +121,27 @@ namespace AniDBmini.Collections
         }
 
         #endregion IEquatable
+
+        #region INotifyPropertyChanged
+
+        /// <summary>
+        /// event for INotifyPropertyChanged.PropertyChanged
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// raise the PropertyChanged event
+        /// </summary>
+        /// <param name="propName"></param>
+        protected void RaisePropertyChanged(string propName)
+        {
+            if (this.PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propName));
+            }
+        }
+
+        #endregion
 
     }
 }

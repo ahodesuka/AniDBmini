@@ -24,18 +24,18 @@ namespace AniDBmini
 
         #region Fields
 
-        private BackgroundWorker XmlWorker;
+        private BackgroundWorker xmlWorker;
         private string xmlPath;
         private bool closePending, isBackup, isWorking;
 
-        private MylistLocal m_myList;
+        private MylistDB m_myList;
         private Dispatcher uiDispatcher = Dispatcher.CurrentDispatcher;
 
         #endregion Fields
 
         #region Constructor
 
-        public ImportWindow(MylistLocal myList)
+        public ImportWindow(MylistDB myList)
         {
             m_myList = myList;
             InitializeComponent();
@@ -71,41 +71,44 @@ namespace AniDBmini
         private void StartOnClick(object sender, RoutedEventArgs e)
         {
             xmlPath = importFilePath.Text;
-            XmlWorker = new BackgroundWorker();
+            xmlWorker = new BackgroundWorker();
+            xmlWorker.WorkerSupportsCancellation = true;
 
-            XmlWorker.DoWork += new DoWorkEventHandler(DoWork);
-            XmlWorker.RunWorkerCompleted += (s, _e) =>
+            xmlWorker.DoWork += new DoWorkEventHandler(DoWork);
+            xmlWorker.RunWorkerCompleted += (s, _e) =>
             {
                 isWorking = false;
-                if (MessageBox.Show("Importing finised!", "Status", MessageBoxButton.OK, MessageBoxImage.Information) == MessageBoxResult.OK)
+                if (!_e.Cancelled && MessageBox.Show("Importing finised!", "Status", MessageBoxButton.OK, MessageBoxImage.Information) == MessageBoxResult.OK)
                 {
                     if (isBackup)
-                        File.Delete(MylistLocal.dbPath + ".bak");
+                        File.Delete(MylistDB.dbPath + ".bak");
 
                     m_myList.Entries.Clear();
                     m_myList.SelectEntries();
 
                     this.DialogResult = true;
                 }
+                else
+                    importStart.IsEnabled = true;
             };
 
-            if (File.Exists(MylistLocal.dbPath))
+            if (File.Exists(MylistDB.dbPath))
                 if (MessageBox.Show("A mylist database file already exists.\nDo you wish to overwrite it?", "Confirm",
                                     MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
                 {
                     m_myList.Close();
                     try
                     {
-                        File.Move(MylistLocal.dbPath, MylistLocal.dbPath + ".bak");
+                        File.Move(MylistDB.dbPath, MylistDB.dbPath + ".bak");
                         isBackup = true;
                     }
                     catch (IOException) { }
-                    finally { File.Delete(MylistLocal.dbPath); }
+                    finally { File.Delete(MylistDB.dbPath); }
                 }
                 else
                     return;
 
-            XmlWorker.RunWorkerAsync();
+            xmlWorker.RunWorkerAsync();
 
             isWorking = true;
             importStart.IsEnabled = false;
@@ -113,17 +116,28 @@ namespace AniDBmini
 
         private void DoWork(object sender, DoWorkEventArgs e)
         {
-            m_myList.Create();
-
-            List<int> m_groupList = new List<int>();
-            List<MylistEntry> m_list = new List<MylistEntry>();
-
             int totalProcessedFiles = 0,
-                totalFiles = int.Parse(new XPathDocument(xmlPath).CreateNavigator().Evaluate("count(//file)").ToString());
+            totalFiles = int.Parse(new XPathDocument(xmlPath).CreateNavigator().Evaluate("count(//file)").ToString());
 
             using (XmlReader reader = XmlReader.Create(xmlPath))
             {
                 reader.ReadToFollowing("mylist");
+                if (reader["template"] != "mini")
+                {
+                    Dispatcher.Invoke(new Action(delegate
+                    {
+                        MessageBox.Show("Please ensure you selected a mylist export file that used the xml-mini template.", "Invalid xml template!", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }));
+
+                    xmlWorker.CancelAsync();
+                    return;
+                }
+
+                m_myList.Create();
+
+                List<int> m_groupList = new List<int>();
+                List<MylistEntry> m_list = new List<MylistEntry>();
+
                 // <anime>
                 while (reader.ReadToFollowing("anime"))
                 {
@@ -208,6 +222,7 @@ namespace AniDBmini
 
                             FileEntry file = new FileEntry();
 
+                            file.fid = int.Parse(filesReader["fid"]);
                             file.lid = int.Parse(filesReader["lid"]);
                             file.watcheddate = filesReader["watched"] == "-" ? null :
                                                ExtensionMethods.DateTimeToUnixTime(DateTime.Parse(episodesReader["watched"],
@@ -221,8 +236,8 @@ namespace AniDBmini
                                     file.gid = int.Parse(filesReader["gid"]);
 
                                 file.ed2k = filesReader["ed2k"];
-                                file.length = int.Parse(filesReader["length"]);
-                                file.size = int.Parse(filesReader["size"]);
+                                file.length = double.Parse(filesReader["length"]);
+                                file.size = double.Parse(filesReader["size"]);
                                 file.source = filesReader["source"].FormatNullable();
                                 file.acodec = filesReader["acodec"].FormatNullable();
                                 file.vcodec = filesReader["vcodec"].FormatNullable();
@@ -244,8 +259,6 @@ namespace AniDBmini
                                     m_groupList.Add(file.gid);
                                 }
                             }
-
-                            entry.size += file.size;
 
                             episode.Files.Add(file);
                             totalProcessedFiles++;
@@ -308,14 +321,14 @@ namespace AniDBmini
                     closePending = false;
                     e.Cancel = true;
                 }
-                else if (File.Exists(MylistLocal.dbPath))
+                else if (File.Exists(MylistDB.dbPath))
                 {
                     m_myList.Entries.Clear();
 
-                    File.Delete(MylistLocal.dbPath);
+                    File.Delete(MylistDB.dbPath);
 
                     if (isBackup)
-                        File.Delete(MylistLocal.dbPath + ".bak");
+                        File.Delete(MylistDB.dbPath + ".bak");
                 }
             }
         }

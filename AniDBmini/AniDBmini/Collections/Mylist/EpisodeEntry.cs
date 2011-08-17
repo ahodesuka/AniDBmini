@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Data.SQLite;
 using System.Linq;
 
@@ -12,8 +13,9 @@ using AniDBmini;
 
 namespace AniDBmini.Collections
 {
-    public class EpisodeEntry : IEquatable<EpisodeEntry>
-    {
+    public class EpisodeEntry : IEquatable<EpisodeEntry>,
+                               INotifyPropertyChanged
+	{
 
         #region Properties
 
@@ -21,7 +23,7 @@ namespace AniDBmini.Collections
         public int epno { get; set; }
 
         public double length { get; set; }
-        public double size { get { return Files.Sum(x => x.size); } }
+        public double size { get; set; }
 
         public string spl_epno { get; set; }
         public string english { get; set; }
@@ -31,6 +33,34 @@ namespace AniDBmini.Collections
 
         public bool watched { get; set; }
         public bool genericOnly { get; set; }
+
+        private bool isExpanded;
+        public bool IsExpanded
+        {
+            get { return isExpanded; }
+            set
+            {
+                if (isExpanded != value)
+                {
+                    isExpanded = value;
+                    RaisePropertyChanged("IsExpanded");
+                }
+            }
+        }
+
+        private bool isFetched;
+        public bool IsFetched
+        {
+            get { return isFetched; }
+            set
+            {
+                if (isFetched != value)
+                {
+                    isFetched = value;
+                    RaisePropertyChanged("IsFetched");
+                }
+            }
+        }
 
         public ObservableCollection<FileEntry> Files { get; set; }
 
@@ -50,7 +80,8 @@ namespace AniDBmini.Collections
             if ((spl_epno = reader["spl_epno"].ToString().FormatNullable()) == null)
                 epno = int.Parse(reader["epno"].ToString());
 
-            length = int.Parse(reader["length"].ToString());
+            length = double.Parse(reader["length"].ToString());
+            size = double.Parse(reader["size"].ToString());
 
             english = reader["english"].ToString();
             nihongo = !string.IsNullOrEmpty(reader["nihongo"].ToString()) ?
@@ -75,6 +106,27 @@ namespace AniDBmini.Collections
         }
 
         #endregion IEquatable
+
+        #region INotifyPropertyChanged
+
+        /// <summary>
+        /// event for INotifyPropertyChanged.PropertyChanged
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// raise the PropertyChanged event
+        /// </summary>
+        /// <param name="propName"></param>
+        protected void RaisePropertyChanged(string propName)
+        {
+            if (this.PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propName));
+            }
+        }
+
+        #endregion
 
     }
 }

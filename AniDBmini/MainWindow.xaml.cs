@@ -41,7 +41,7 @@ namespace AniDBmini
 
         private AniDBAPI aniDB;
         private MPCAPI mpcApi;
-        private MylistLocal m_myList;
+        private MylistDB m_myList;
 
         private DateTime m_hashingStartTime;
         private Object m_hashingLock = new Object();
@@ -100,7 +100,7 @@ namespace AniDBmini
                 if (text != "x")
                 {
                     if (i == 3)
-                        value = ((double)stat).ToFormatedBytes();
+                        value = ((double)stat).ToFormatedBytes(ExtensionMethods.BYTE_UNIT.MB, ExtensionMethods.BYTE_UNIT.GB);
                     else if (i == 16)
                     {
                         int days = (int)Math.Floor((stat / 60f) / 24f);
@@ -247,13 +247,13 @@ namespace AniDBmini
         {
             if (m_myList.isSQLConnOpen)
             {
-                mylistImortButton.Visibility = Visibility.Collapsed;
-                mylistDataGrid.IsEnabled = true;
+                MylistImortButton.Visibility = Visibility.Collapsed;
+                MylistDataGrid.IsEnabled = true;
             }
             else
             {
-                mylistImortButton.Visibility = Visibility.Visible;
-                mylistDataGrid.IsEnabled = false;
+                MylistImortButton.Visibility = Visibility.Visible;
+                MylistDataGrid.IsEnabled = false;
             }
         }
 
@@ -266,20 +266,30 @@ namespace AniDBmini
 
             if (row != null)
             {
-                if (row.Item is EpisodeEntry && ((EpisodeEntry)row.Item).genericOnly)
-                    return;
-
-                Button btn = row.FindChild<Button>();
-
-                if (row.DetailsVisibility == Visibility.Collapsed)
+                if (row.Item is MylistEntry)
                 {
-                    btn.Style = (Style)FindResource("MylistContractButtonStyle");
-                    row.DetailsVisibility = Visibility.Visible;
+                    MylistEntry entry = (MylistEntry)row.Item;
+                    entry.IsExpanded = !entry.IsExpanded;
+                    if (entry.IsExpanded && !entry.IsFetched)
+                    {
+                        entry.Episodes = m_myList.SelectEpisodes(entry);
+                        entry.IsFetched = true;
+                    }
                 }
-                else if (row.DetailsVisibility == Visibility.Visible)
+                else if (row.Item is EpisodeEntry)
                 {
-                    btn.Style = (Style)FindResource("MylistExpandButtonStyle");
-                    row.DetailsVisibility = Visibility.Collapsed;
+                    EpisodeEntry entry = (EpisodeEntry)row.Item;
+                    if (entry.genericOnly)
+                        return;
+                    else
+                    {
+                        entry.IsExpanded = !entry.IsExpanded;
+                        if (entry.IsExpanded && !entry.IsFetched)
+                        {
+                            entry.Files = m_myList.SelectFiles(entry);
+                            entry.IsFetched = true;
+                        }
+                    }
                 }
             }
         }
@@ -294,9 +304,8 @@ namespace AniDBmini
 
         private void OnInitialized(object sender, EventArgs e)
         {
-            m_myList = new MylistLocal();
-
-            mylistDataGrid.ItemsSource = m_myList.Entries;
+            m_myList = new MylistDB();
+            MylistDataGrid.ItemsSource = m_myList.Entries;
 
             InitializeStats();
             InitializeNotifyIcon();
@@ -374,7 +383,7 @@ namespace AniDBmini
             Dispatcher.BeginInvoke(new Action(delegate
             {
                 m_myList.SelectEntry(e.Anime.aid);
-                mylistDataGrid.Items.SortDescriptions.Add(new SortDescription("title", ListSortDirection.Ascending));
+                MylistDataGrid.Items.SortDescriptions.Add(new SortDescription("title", ListSortDirection.Ascending));
             }));
         }
 
@@ -572,7 +581,8 @@ namespace AniDBmini
                 {
                     timeElapsedTextBlock.Text = String.Format("Elapsed: {0}", totalTimeElapsed.ToFormatedString());
                     timeRemainingTextBlock.Text = String.Format("ETA: {0}", remainingSpan.ToFormatedString());
-                    totalBytesTextBlock.Text = String.Format("Bytes: {0} / {1}", (e.ProcessedSize + ppSize).ToFormatedBytes("GB"), totalQueueSize.ToFormatedBytes("GB"));
+                    totalBytesTextBlock.Text = String.Format("Bytes: {0} / {1}", (e.ProcessedSize + ppSize).ToFormatedBytes(ExtensionMethods.BYTE_UNIT.GB),
+                                                                                 totalQueueSize.ToFormatedBytes(ExtensionMethods.BYTE_UNIT.GB));
 
                     fileProgressBar.Value = fileProg;
                     totalProgressBar.Value = totalProg;
@@ -589,22 +599,24 @@ namespace AniDBmini
             ImportWindow import = new ImportWindow(m_myList);
             import.Owner = this;
 
-            mylistImortButton.Visibility = Visibility.Collapsed;
+            MylistImortButton.Visibility = Visibility.Collapsed;
 
             import.ShowDialog();
             SetMylistVisibility();
         }
 
-        private void mylistDataGridSorting(object sender, DataGridSortingEventArgs e)
+        private void MylistDataGridSorting(object sender, DataGridSortingEventArgs e)
         {
             e.Handled = true;
 
+            MylistDataGrid.EnableRowVirtualization = true;
             ListSortDirection direction = (e.Column.SortDirection != ListSortDirection.Ascending) ? ListSortDirection.Ascending : ListSortDirection.Descending;
             e.Column.SortDirection = direction;
 
-            ListCollectionView lcv = (ListCollectionView)CollectionViewSource.GetDefaultView(mylistDataGrid.ItemsSource);
+            ListCollectionView lcv = (ListCollectionView)CollectionViewSource.GetDefaultView(MylistDataGrid.ItemsSource);
             MylistSort mylistSort = new MylistSort(direction, e.Column);
             lcv.CustomSort = mylistSort;
+            MylistDataGrid.EnableRowVirtualization = false;
         }
 
         private void ExpandExecuted(object sender, ExecutedRoutedEventArgs e)
@@ -638,14 +650,19 @@ namespace AniDBmini
 
         private void OpenFileWithMPCHC_Click(object sender, RoutedEventArgs e)
         {
-            string filePath = ((MenuItem)sender).Tag.ToString();
-            mpchcLaunch(this, null);
+            MenuItem item = (MenuItem)sender;
 
-            ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+            if (item.Tag != null)
             {
-                while (!mpcApi.isHooked) Thread.Sleep(200);
-                mpcApi.OpenFile(filePath);
-            }));
+                string filePath = item.Tag.ToString();
+                mpchcLaunch(this, null);
+
+                ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+                {
+                    while (!mpcApi.isHooked) Thread.Sleep(200);
+                    mpcApi.OpenFile(filePath);
+                }));
+            }
         }
 
         private void MarkWatched_Click(object sender, RoutedEventArgs e)
@@ -662,9 +679,9 @@ namespace AniDBmini
             System.Diagnostics.Debug.WriteLine(row);
         }
 
-        private void mylistDGRDVChanged(object sender, DataGridRowDetailsEventArgs e)
+        private void MylistDGRDVChanged(object sender, DataGridRowDetailsEventArgs e)
         {
-            DataGrid dg = sender as DataGrid;
+            DataGrid dg = (DataGrid)sender;
             if (dg != null && e.Row.DetailsVisibility == Visibility.Collapsed)
             {
                 DataGrid childDG = ((DependencyObject)e.Row).FindChild<DataGrid>();
@@ -674,25 +691,12 @@ namespace AniDBmini
         }
 
         /// <summary>
-        /// Fixes height bug. Well kind of..
+        /// Fixes height bug.
         /// </summary>
         private void episodesDGRDVChanged(object sender, DataGridRowDetailsEventArgs e)
         {
             DataGrid dg = sender as DataGrid;
-            int visibleCount = 0;
-
-            if (dg != null && e.Row.DetailsVisibility == Visibility.Collapsed)
-            {
-                foreach (var item in dg.ItemsSource)
-                {
-                    var row = dg.ItemContainerGenerator.ContainerFromItem(item) as DataGridRow;
-                    if (null != row && row.DetailsVisibility == Visibility.Visible)
-                        visibleCount++;
-                }
-
-                if (visibleCount == 0)
-                    dg.Items.Refresh();
-            }
+            if (dg != null && e.Row.DetailsVisibility == Visibility.Collapsed) dg.Items.Refresh();
         }
 
         #endregion Mylist Tab

@@ -20,45 +20,58 @@ namespace AniDBmini
         public MylistSort(ListSortDirection direction, DataGridColumn column)
         {
             int dir = (direction == ListSortDirection.Ascending) ? 1 : -1;
+            int result;
 
-            myCompare = (a, b) =>
+            switch ((string)column.Header)
             {
-                int result;
-                switch ((string)column.Header)
-                {
-                    case "Title":
-                        return a.title.CompareTo(b.title) * dir;
-                    case "Eps":
+                case "Title":
+                    myCompare = (a, b) => { return a.title.CompareTo(b.title) * dir; };
+                    break;
+                case "Eps":
+                    myCompare = (a, b) =>
+                    {
                         result = a.eps_have.CompareTo(b.eps_have);
                         if (result == 0) result = a.eps_total.CompareTo(b.eps_total);
                         if (result == 0) result = a.spl_have.CompareTo(b.spl_have);
-                        if (result == 0) goto Title;
+                        if (result == 0) result = a.title.CompareTo(b.title) * dir;
                         return result * dir;
-                    case "Watched":
+                    };
+                    break;
+                case "Watched":
+                    myCompare = (a, b) =>
+                    {
                         result = a.eps_watched.CompareTo(b.eps_watched);
                         if (result == 0) result = a.eps_total.CompareTo(b.eps_total);
                         if (result == 0) result = a.spl_watched.CompareTo(b.spl_watched);
-                        if (result == 0) goto Title;
+                        if (result == 0) result = a.title.CompareTo(b.title) * dir;
                         return result * dir;
-                    case "Year":
+                    };
+                    break;
+                case "Year":
+                    myCompare = (a, b) =>
+                    {
                         result = a.year.CompareTo(b.year);
-                        if (result == 0) goto Title;
+                        if (result == 0) result = a.title.CompareTo(b.title) * dir;
                         return result * dir;
-                    case "Length":
+                    };
+                    break;
+                case "Length":
+                    myCompare = (a, b) =>
+                    {
                         result = a.length.CompareTo(b.length);
-                        if (result == 0) goto Title;
+                        if (result == 0) result = a.title.CompareTo(b.title) * dir;
                         return result * dir;
-                    case "Size":
+                    };
+                    break;
+                case "Size":
+                    myCompare = (a, b) =>
+                    {
                         result = a.size.CompareTo(b.size);
-                        if (result == 0) goto Title;
+                        if (result == 0) result = a.title.CompareTo(b.title) * dir;
                         return result * dir;
-                    default:
-                        return 0;
-                }
-
-                Title:
-                    return a.title.CompareTo(b.title) * 1;
-            };
+                    };
+                    break;
+            }
         }
 
         int IComparer.Compare(object X, object Y)

@@ -1,7 +1,7 @@
 ﻿<Application x:Class="AniDBmini.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             
+             xmlns:l="clr-namespace:AniDBmini"
              StartupUri="LoginWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
@@ -11,6 +11,8 @@
             </ResourceDictionary.MergedDictionaries>
             
             <!-- #region Styles -->
+            
+            <Style x:Key="{x:Type l:TabControlEx}" TargetType="{x:Type l:TabControlEx}" BasedOn="{StaticResource {x:Type TabControl}}" />
             
             <Style x:Key="{x:Type ContextMenu}" TargetType="{x:Type ContextMenu}" BasedOn="{StaticResource {x:Type ContextMenu}}">
                 <Setter Property="Template">

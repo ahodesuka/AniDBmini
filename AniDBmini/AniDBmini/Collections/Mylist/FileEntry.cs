@@ -13,6 +13,7 @@ namespace AniDBmini.Collections
 
         #region Properties
 
+        public int fid { get; set; }
         public int lid { get; set; }
         public int gid { get; set; }
 
@@ -57,26 +58,27 @@ namespace AniDBmini.Collections
 
         public FileEntry(SQLiteDataReader reader)
         {
+            fid = int.Parse(reader["fid"].ToString());
             lid = int.Parse(reader["lid"].ToString());
+
             generic = Convert.ToBoolean(int.Parse(reader["generic"].ToString()));
 
             if (!generic)
             {
-                gid = int.Parse(reader["gid"].ToString());
+                if (!string.IsNullOrWhiteSpace(reader["gid"].ToString())) gid = int.Parse(reader["gid"].ToString());
+                group_name = reader["group_name"].ToString();
+                group_abbr = reader["group_abbr"].ToString();
 
                 ed2k = reader["ed2k"].ToString();
-
-                length = int.Parse(reader["length"].ToString());
+                length = double.Parse(reader["length"].ToString());
                 size = double.Parse(reader["size"].ToString());
 
                 source = reader["source"].ToString();
                 acodec = reader["acodec"].ToString();
                 vcodec = reader["vcodec"].ToString();
                 vres = reader["vres"].ToString();
-                group_name = reader["group_name"].ToString();
-                group_abbr = reader["group_abbr"].ToString();
-                path =  !string.IsNullOrEmpty(reader["path"].ToString()) ?
-                        reader["path"].ToString() : null;
+
+                path =  !string.IsNullOrEmpty(reader["path"].ToString()) ? reader["path"].ToString() : null;
             }
 
             watcheddate = !string.IsNullOrEmpty(reader["watcheddate"].ToString()) ?

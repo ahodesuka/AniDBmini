@@ -112,15 +112,15 @@ namespace AniDBmini
 
         private static TSObservableCollection<DebugLine> debugLog = new TSObservableCollection<DebugLine>();
 
-        public static string[] statsText = { "Total anime in mylist",
-                                             "Total eps in mylist",
-                                             "Total files in mylist",
-                                             "Size of mylist",
+        public static string[] statsText = { "Anime",
+                                             "Episodes",
+                                             "Files",
+                                             "Size",
                                              "x", "x", "x", "x", "x", "x",
                                              "AniDB watched",
                                              "AniDB in mylist",
                                              "Mylist watched",
-                                             "Eps watched",
+                                             "Episodes watched",
                                              "x", "x",
                                              "Time wasted" };
 
@@ -202,23 +202,28 @@ namespace AniDBmini
                     EpisodeEntry episode = new EpisodeEntry();
                     FileEntry file = new FileEntry(item);
 
+                    file.fid = int.Parse(info[0]);
                     anime.aid = int.Parse(info[1]);
                     episode.eid = int.Parse(info[2]);
-
                     file.gid = int.Parse(info[3]);
                     file.lid = int.Parse(info[4]);
+
                     file.source = info[5].FormatNullable();
                     file.acodec = info[6].Contains("'") ? info[6].Split('\'')[0] : info[6].FormatNullable();
-                    file.vcodec = info[7];
+                    file.vcodec = info[7].FormatNullable();
                     file.vres = info[8].FormatNullable();
-                    file.length = int.Parse(info[9]);
+
+                    file.length = double.Parse(info[9]);
                     episode.airdate = info[10];
+
                     file.watcheddate = info[11] == "0" ? null : info[11];
+                    episode.watched = file.watched;
 
                     anime.eps_total = int.Parse(info[12]);
                     anime.year = info[13].Contains('-') ?
                                 (info[13].Split('-')[0] != info[13].Split('-')[1] ? info[13] : info[13].Split('-')[0]) : info[13];
                     anime.type = info[14];
+
                     anime.title = info[15];
                     anime.nihongo = info[16].FormatNullable();
                     anime.english = info[17].FormatNullable();
@@ -433,7 +438,7 @@ namespace AniDBmini
                     return new APIResponse { Message = e_response, Code = e_code };
             }
 #else
-            return new APIResponse { Message = "\n934579|8348|130525|5654|114128304", Code = (RETURN_CODE)200 };
+            return new APIResponse { Message = "\n411|7562|7488|1928235|0|0|0|0|0|0|3|6|54|4117|0|0|94407", Code = (RETURN_CODE)200 };
 #endif
         }
 

@@ -14,7 +14,7 @@ namespace AniDBmini
 {
     public class MylistSort : IComparer
     {
-        private delegate int TwoArgDelegate(MylistEntry arg1, MylistEntry arg2);
+        private delegate int TwoArgDelegate(AnimeEntry arg1, AnimeEntry arg2);
         private TwoArgDelegate myCompare;
 
         public MylistSort(ListSortDirection direction, DataGridColumn column)
@@ -76,7 +76,7 @@ namespace AniDBmini
 
         int IComparer.Compare(object X, object Y)
         {
-            return myCompare((MylistEntry)X, (MylistEntry)Y);
+            return myCompare((AnimeEntry)X, (AnimeEntry)Y);
         }
     }
 }

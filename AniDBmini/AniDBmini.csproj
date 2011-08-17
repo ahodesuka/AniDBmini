@@ -161,10 +161,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Compile Include="AniDBmini\Collections\Mylist\Mylist0Entry.cs" />
     <Compile Include="AniDBmini\Converters.cs" />
     <Compile Include="AniDBmini\Collections\AnimeTab.cs" />
     <Compile Include="AniDBAPI\AniDBAPI.cs" />
     <Compile Include="AniDBmini\IgnoreMouseWheelBehavior.cs" />
+    <Compile Include="AniDBmini\Mylist\Mylist.cs" />
     <Compile Include="AniDBmini\Mylist\MylistSort.cs" />
     <Compile Include="AniDBmini\TabControlEx.cs" />
     <Compile Include="App.xaml.cs">
@@ -201,7 +203,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AniDBmini\Collections\Mylist\MylistEntry.cs" />
+    <Compile Include="AniDBmini\Collections\Mylist\AnimeEntry.cs" />
     <Compile Include="AniDBmini\Mylist\MylistDB.cs" />
     <Compile Include="OptionsWindow.xaml.cs">
       <DependentUpon>OptionsWindow.xaml</DependentUpon>

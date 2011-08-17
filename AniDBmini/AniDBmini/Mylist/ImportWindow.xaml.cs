@@ -136,14 +136,14 @@ namespace AniDBmini
                 m_myList.Create();
 
                 List<int> m_groupList = new List<int>();
-                List<MylistEntry> m_list = new List<MylistEntry>();
+                List<AnimeEntry> m_list = new List<AnimeEntry>();
 
                 // <anime>
                 while (reader.ReadToFollowing("anime"))
                 {
                     while (closePending) Thread.Sleep(500);
 
-                    MylistEntry entry = new MylistEntry();
+                    AnimeEntry entry = new AnimeEntry();
 
                     entry.aid = int.Parse(reader["aid"]);
                     entry.type = reader["type"];
@@ -277,7 +277,7 @@ namespace AniDBmini
                     episodesReader.Close();
 
                 Finish:
-                    m_myList.InsertMylistEntryFromImport(entry);
+                    m_myList.InsertAnimeEntryFromImport(entry);
                 // </anime>
                 }
              // </mylist>

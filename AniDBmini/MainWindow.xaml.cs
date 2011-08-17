@@ -266,9 +266,9 @@ namespace AniDBmini
 
             if (row != null)
             {
-                if (row.Item is MylistEntry)
+                if (row.Item is AnimeEntry)
                 {
-                    MylistEntry entry = (MylistEntry)row.Item;
+                    AnimeEntry entry = (AnimeEntry)row.Item;
                     entry.IsExpanded = !entry.IsExpanded;
                     if (entry.IsExpanded && !entry.IsFetched)
                     {

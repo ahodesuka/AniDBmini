@@ -25,11 +25,11 @@ namespace AniDBmini
 
     public class FileInfoFetchedArgs : EventArgs
     {
-        public MylistEntry Anime { get; private set; }
+        public AnimeEntry Anime { get; private set; }
         public EpisodeEntry Episode { get; private set; }
         public FileEntry File { get; private set; }
 
-        public FileInfoFetchedArgs(MylistEntry anime, EpisodeEntry episode, FileEntry file)
+        public FileInfoFetchedArgs(AnimeEntry anime, EpisodeEntry episode, FileEntry file)
         {
             Anime = anime;
             Episode = episode;
@@ -198,7 +198,7 @@ namespace AniDBmini
                 {
                     string[] info = Regex.Split(response.Message, "\n")[1].Split('|');
 
-                    MylistEntry anime = new MylistEntry();
+                    AnimeEntry anime = new AnimeEntry();
                     EpisodeEntry episode = new EpisodeEntry();
                     FileEntry file = new FileEntry(item);
 

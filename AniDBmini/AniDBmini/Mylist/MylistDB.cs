@@ -24,7 +24,7 @@ namespace AniDBmini
         private SQLiteConnection SQLConn;
 
         public bool isSQLConnOpen;
-        public TSObservableCollection<MylistEntry> Entries = new TSObservableCollection<MylistEntry>();
+        public TSObservableCollection<AnimeEntry> Entries = new TSObservableCollection<AnimeEntry>();
 
         #endregion Fields
 
@@ -90,7 +90,7 @@ namespace AniDBmini
                 using (SQLiteDataReader reader = cmd.ExecuteReader())
                     while (reader.Read())
                     {
-                        MylistEntry entry = new MylistEntry(reader);
+                        AnimeEntry entry = new AnimeEntry(reader);
                         entry.Episodes = this.SelectEpisodes(entry);
                         Entries.Add(entry);
                     }
@@ -114,17 +114,17 @@ namespace AniDBmini
 
                 using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
-                    MylistEntry entry = Entries.FirstOrDefault<MylistEntry>(x => x.aid == aid);
+                    AnimeEntry entry = Entries.FirstOrDefault<AnimeEntry>(x => x.aid == aid);
 
                     if (entry != null)
                     {
                         int index = Entries.IndexOf(entry);
-                        Entries[index] = new MylistEntry(reader);
+                        Entries[index] = new AnimeEntry(reader);
                         Entries[index].Episodes = this.SelectEpisodes(entry);
                     }
                     else
                     {
-                        entry = new MylistEntry(reader);
+                        entry = new AnimeEntry(reader);
                         entry.Episodes = this.SelectEpisodes(entry);
                         Entries.Add(entry);
                     }
@@ -132,7 +132,7 @@ namespace AniDBmini
             }
         }
 
-        public TSObservableCollection<EpisodeEntry> SelectEpisodes(MylistEntry m_entry)
+        public TSObservableCollection<EpisodeEntry> SelectEpisodes(AnimeEntry m_entry)
         {
             TSObservableCollection<EpisodeEntry> _temp = new TSObservableCollection<EpisodeEntry>();
 
@@ -310,7 +310,7 @@ namespace AniDBmini
         /// Insert a mylist entry into the database.
         /// Specifically for use when importing -- should not be used elsewhere. 
         /// </summary>
-        public void InsertMylistEntryFromImport(MylistEntry entry)
+        public void InsertAnimeEntryFromImport(AnimeEntry entry)
         {
             Entries.Add(entry);
 

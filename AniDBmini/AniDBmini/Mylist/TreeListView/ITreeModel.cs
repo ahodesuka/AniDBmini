@@ -4,12 +4,12 @@ using System.Windows.Controls;
 
 namespace AniDBmini
 {
-	public interface ITreeModel
-	{
-		/// <summary>
-		/// Get list of children of the specified parent
-		/// </summary>
-		IEnumerable GetChildren(object parent);
+    public interface ITreeModel
+    {
+        /// <summary>
+        /// Get list of children of the specified parent
+        /// </summary>
+        IEnumerable GetChildren(object parent);
 
         /// <summary>
         /// Retrives children.
@@ -30,5 +30,5 @@ namespace AniDBmini
         /// Sorts the model.
         /// </summary>
         ITreeModel Sort(ListSortDirection lsd, DataGridColumn column);
-	}
+    }
 }

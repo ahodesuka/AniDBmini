@@ -13,118 +13,118 @@ using System.Linq;
 
 namespace AniDBmini
 {
-	public sealed class TreeNode : DynamicObject,
+    public sealed class TreeNode : DynamicObject,
                                    INotifyPropertyChanged
-	{
+    {
 
-		#region NodeCollection
+        #region NodeCollection
 
-		private class NodeCollection : Collection<TreeNode>
-		{
-			private TreeNode _owner;
+        private class NodeCollection : Collection<TreeNode>
+        {
+            private TreeNode _owner;
 
-			public NodeCollection(TreeNode owner)
-			{
-				_owner = owner;
-			}
+            public NodeCollection(TreeNode owner)
+            {
+                _owner = owner;
+            }
 
-			protected override void ClearItems()
-			{
-				while (this.Count != 0)
-					this.RemoveAt(this.Count - 1);
-			}
+            protected override void ClearItems()
+            {
+                while (this.Count != 0)
+                    this.RemoveAt(this.Count - 1);
+            }
 
-			protected override void InsertItem(int index, TreeNode item)
-			{
-				if (item == null)
-					throw new ArgumentNullException("item");
+            protected override void InsertItem(int index, TreeNode item)
+            {
+                if (item == null)
+                    throw new ArgumentNullException("item");
 
-				if (item.Parent != _owner)
-				{
-					if (item.Parent != null)
-						item.Parent.Children.Remove(item);
-					item._parent = _owner;
-					item._index = index;
-					for (int i = index; i < Count; i++)
-						this[i]._index++;
-					base.InsertItem(index, item);
-				}
-			}
+                if (item.Parent != _owner)
+                {
+                    if (item.Parent != null)
+                        item.Parent.Children.Remove(item);
+                    item._parent = _owner;
+                    item._index = index;
+                    for (int i = index; i < Count; i++)
+                        this[i]._index++;
+                    base.InsertItem(index, item);
+                }
+            }
 
-			protected override void RemoveItem(int index)
-			{
-				TreeNode item = this[index];
-				item._parent = null;
-				item._index = -1;
-				for (int i = index + 1; i < Count; i++)
-					this[i]._index--;
-				base.RemoveItem(index);
-			}
+            protected override void RemoveItem(int index)
+            {
+                TreeNode item = this[index];
+                item._parent = null;
+                item._index = -1;
+                for (int i = index + 1; i < Count; i++)
+                    this[i]._index--;
+                base.RemoveItem(index);
+            }
 
-			protected override void SetItem(int index, TreeNode item)
-			{
-				if (item == null)
-					throw new ArgumentNullException("item");
-				RemoveAt(index);
-				InsertItem(index, item);
-			}
-		}
+            protected override void SetItem(int index, TreeNode item)
+            {
+                if (item == null)
+                    throw new ArgumentNullException("item");
+                RemoveAt(index);
+                InsertItem(index, item);
+            }
+        }
 
         #endregion NodeCollection
 
-		#region Properties
+        #region Properties
 
-		private TreeListView _tree;
+        private TreeListView _tree;
         internal TreeListView Tree
-		{
-			get { return _tree; }
-		}
+        {
+            get { return _tree; }
+        }
 
-		private INotifyCollectionChanged _childrenSource;
-		internal INotifyCollectionChanged ChildrenSource
-		{
-			get { return _childrenSource; }
-			set 
-			{
-				if (_childrenSource != null)
-					_childrenSource.CollectionChanged -= ChildrenChanged;
+        private INotifyCollectionChanged _childrenSource;
+        internal INotifyCollectionChanged ChildrenSource
+        {
+            get { return _childrenSource; }
+            set
+            {
+                if (_childrenSource != null)
+                    _childrenSource.CollectionChanged -= ChildrenChanged;
 
-				_childrenSource = value;
+                _childrenSource = value;
 
-				if (_childrenSource != null)
-					_childrenSource.CollectionChanged += ChildrenChanged;
-			}
-		}
+                if (_childrenSource != null)
+                    _childrenSource.CollectionChanged += ChildrenChanged;
+            }
+        }
 
-		private int _index = -1;
-		public int Index
-		{
-			get { return _index; }
-		}
+        private int _index = -1;
+        public int Index
+        {
+            get { return _index; }
+        }
 
-		/// <summary>
-		/// Returns true if all parent nodes of this node are expanded.
-		/// </summary>
-		internal bool IsVisible
-		{
-			get
-			{
-				TreeNode node = _parent;
-				while (node != null)
-				{
-					if (!node.IsExpanded)
-						return false;
-					node = node.Parent;
-				}
-				return true;
-			}
-		}
+        /// <summary>
+        /// Returns true if all parent nodes of this node are expanded.
+        /// </summary>
+        internal bool IsVisible
+        {
+            get
+            {
+                TreeNode node = _parent;
+                while (node != null)
+                {
+                    if (!node.IsExpanded)
+                        return false;
+                    node = node.Parent;
+                }
+                return true;
+            }
+        }
 
-		public bool HasChildren
-		{
-			get;
-			internal set;
-		}
+        public bool HasChildren
+        {
+            get;
+            internal set;
+        }
 
         public bool IsChildrenFetched
         {
@@ -132,199 +132,199 @@ namespace AniDBmini
             internal set;
         }
 
-		private bool _isExpanded;
-		public bool IsExpanded
-		{
-			get { return _isExpanded; }
-			set
-			{
-				if (value != IsExpanded)
-				{
-					Tree.SetIsExpanded(this, value);
-					OnPropertyChanged("IsExpanded");
-					OnPropertyChanged("IsExpandable");
-				}
-			}
-		}
+        private bool _isExpanded;
+        public bool IsExpanded
+        {
+            get { return _isExpanded; }
+            set
+            {
+                if (value != IsExpanded)
+                {
+                    Tree.SetIsExpanded(this, value);
+                    OnPropertyChanged("IsExpanded");
+                    OnPropertyChanged("IsExpandable");
+                }
+            }
+        }
 
-		internal void AssignIsExpanded(bool value)
-		{
-			_isExpanded = value;
-		}
+        internal void AssignIsExpanded(bool value)
+        {
+            _isExpanded = value;
+        }
 
-		public bool IsExpandable
-		{
-			get { return HasChildren; }
-		}
+        public bool IsExpandable
+        {
+            get { return HasChildren; }
+        }
 
-		private bool _isSelected;
-		public bool IsSelected
-		{
-			get { return _isSelected; }
-			set
-			{
-				if (value != _isSelected)
-				{
-					_isSelected = value;
-					OnPropertyChanged("IsSelected");
-				}
-			}
-		}
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get { return _isSelected; }
+            set
+            {
+                if (value != _isSelected)
+                {
+                    _isSelected = value;
+                    OnPropertyChanged("IsSelected");
+                }
+            }
+        }
 
 
-		private TreeNode _parent;
-		public TreeNode Parent
-		{
-			get { return _parent; }
-		}
+        private TreeNode _parent;
+        public TreeNode Parent
+        {
+            get { return _parent; }
+        }
 
-		public int Level
-		{
-			get
-			{
-				if (_parent == null)
-					return -1;
-				else
-					return _parent.Level + 1;
-			}
-		}
+        public int Level
+        {
+            get
+            {
+                if (_parent == null)
+                    return -1;
+                else
+                    return _parent.Level + 1;
+            }
+        }
 
-		public TreeNode PreviousNode
-		{
-			get
-			{
-				if (_parent != null)
-				{
-					int index = Index;
-					if (index > 0)
-						return _parent.Nodes[index - 1];
-				}
-				return null;
-			}
-		}
+        public TreeNode PreviousNode
+        {
+            get
+            {
+                if (_parent != null)
+                {
+                    int index = Index;
+                    if (index > 0)
+                        return _parent.Nodes[index - 1];
+                }
+                return null;
+            }
+        }
 
-		public TreeNode NextNode
-		{
-			get
-			{
-				if (_parent != null)
-				{
-					int index = Index;
-					if (index < _parent.Nodes.Count - 1)
-						return _parent.Nodes[index + 1];
-				}
-				return null;
-			}
-		}
+        public TreeNode NextNode
+        {
+            get
+            {
+                if (_parent != null)
+                {
+                    int index = Index;
+                    if (index < _parent.Nodes.Count - 1)
+                        return _parent.Nodes[index + 1];
+                }
+                return null;
+            }
+        }
 
-		internal TreeNode BottomNode
-		{
-			get
-			{
-				TreeNode parent = this.Parent;
-				if (parent != null)
-				{
-					if (parent.NextNode != null)
-						return parent.NextNode;
-					else
-						return parent.BottomNode;
-				}
-				return null;
-			}
-		}
+        internal TreeNode BottomNode
+        {
+            get
+            {
+                TreeNode parent = this.Parent;
+                if (parent != null)
+                {
+                    if (parent.NextNode != null)
+                        return parent.NextNode;
+                    else
+                        return parent.BottomNode;
+                }
+                return null;
+            }
+        }
 
-		internal TreeNode NextVisibleNode
-		{
-			get
-			{
-				if (IsExpanded && Nodes.Count > 0)
-					return Nodes[0];
-				else
-				{
-					TreeNode nn = NextNode;
-					if (nn != null)
-						return nn;
-					else
-						return BottomNode;
-				}
-			}
-		}
+        internal TreeNode NextVisibleNode
+        {
+            get
+            {
+                if (IsExpanded && Nodes.Count > 0)
+                    return Nodes[0];
+                else
+                {
+                    TreeNode nn = NextNode;
+                    if (nn != null)
+                        return nn;
+                    else
+                        return BottomNode;
+                }
+            }
+        }
 
-		public int VisibleChildrenCount
-		{
-			get { return AllVisibleChildren.Count(); }
-		}
+        public int VisibleChildrenCount
+        {
+            get { return AllVisibleChildren.Count(); }
+        }
 
-		public IEnumerable<TreeNode> AllVisibleChildren
-		{
-			get
-			{
-				int level = this.Level;
-				TreeNode node = this;
-				while (true)
-				{
-					node = node.NextVisibleNode;
-					if (node != null && node.Level > level)
-						yield return node;
-					else
-						break;
-				}
-			}
-		}
+        public IEnumerable<TreeNode> AllVisibleChildren
+        {
+            get
+            {
+                int level = this.Level;
+                TreeNode node = this;
+                while (true)
+                {
+                    node = node.NextVisibleNode;
+                    if (node != null && node.Level > level)
+                        yield return node;
+                    else
+                        break;
+                }
+            }
+        }
 
-		private object _tag;
-		public object Tag
-		{
-			get { return _tag; }
-		}
+        private object _tag;
+        public object Tag
+        {
+            get { return _tag; }
+        }
 
-		private Collection<TreeNode> _children;
-		internal Collection<TreeNode> Children
-		{
-			get { return _children; }
-		}
+        private Collection<TreeNode> _children;
+        internal Collection<TreeNode> Children
+        {
+            get { return _children; }
+        }
 
-		private ReadOnlyCollection<TreeNode> _nodes;
-		public ReadOnlyCollection<TreeNode> Nodes
-		{
-			get { return _nodes; }
-		}
+        private ReadOnlyCollection<TreeNode> _nodes;
+        public ReadOnlyCollection<TreeNode> Nodes
+        {
+            get { return _nodes; }
+        }
 
-		#endregion Properties
+        #endregion Properties
 
         #region Constructor
 
         internal TreeNode(TreeListView tree, object tag)
-		{
-			if (tree == null)
-				throw new ArgumentNullException("tree");
+        {
+            if (tree == null)
+                throw new ArgumentNullException("tree");
 
-			_tree = tree;
-			_children = new NodeCollection(this);
-			_nodes = new ReadOnlyCollection<TreeNode>(_children);
-			_tag = tag;
-		}
+            _tree = tree;
+            _children = new NodeCollection(this);
+            _nodes = new ReadOnlyCollection<TreeNode>(_children);
+            _tag = tag;
+        }
 
         #endregion Using Statements
 
         #region Private Methods
 
         private void RemoveChildAt(int index)
-		{
-			var child = Children[index];
+        {
+            var child = Children[index];
 
-			Tree.DropChildrenRows(child, true);
-			ClearChildrenSource(child);
-			Children.RemoveAt(index);
-		}
+            Tree.DropChildrenRows(child, true);
+            ClearChildrenSource(child);
+            Children.RemoveAt(index);
+        }
 
-		private void ClearChildrenSource(TreeNode node)
-		{
-			node.ChildrenSource = null;
+        private void ClearChildrenSource(TreeNode node)
+        {
+            node.ChildrenSource = null;
 
-			foreach (var n in node.Children)
-				ClearChildrenSource(n);
-		}
+            foreach (var n in node.Children)
+                ClearChildrenSource(n);
+        }
 
         #endregion Private Methods
 

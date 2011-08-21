@@ -20,24 +20,24 @@ using AniDBmini.Collections;
 
 namespace AniDBmini
 {
-	public class TreeListView : DataGrid
-	{
+    public class TreeListView : DataGrid
+    {
 
-		#region Properties
+        #region Properties
 
-		/// <summary>
-		/// Internal collection of rows representing visible nodes, actually displayed in the ListView
-		/// </summary>
-		internal ObservableCollectionAdv<TreeNode> Rows
-		{
-			get;
-			private set;
-		} 
+        /// <summary>
+        /// Internal collection of rows representing visible nodes, actually displayed in the ListView
+        /// </summary>
+        internal ObservableCollectionAdv<TreeNode> Rows
+        {
+            get;
+            private set;
+        }
 
 
-		private ITreeModel _model;
-		public ITreeModel Model
-		{
+        private ITreeModel _model;
+        public ITreeModel Model
+        {
             get { return _model; }
             set
             {
@@ -53,57 +53,57 @@ namespace AniDBmini
                     RestoreNodes();
                 }
             }
-		}
+        }
 
-		private TreeNode _root;
-		internal TreeNode Root
-		{
-			get { return _root; }
-		}
+        private TreeNode _root;
+        internal TreeNode Root
+        {
+            get { return _root; }
+        }
 
-		public ReadOnlyCollection<TreeNode> Nodes
-		{
-			get { return Root.Nodes; }
-		}
+        public ReadOnlyCollection<TreeNode> Nodes
+        {
+            get { return Root.Nodes; }
+        }
 
-		internal TreeNode PendingFocusNode
-		{
-			get;
-			set;
-		}
+        internal TreeNode PendingFocusNode
+        {
+            get;
+            set;
+        }
 
-		public ICollection<TreeNode> SelectedNodes
-		{
-			get { return SelectedItems.Cast<TreeNode>().ToArray(); }
-		}
+        public ICollection<TreeNode> SelectedNodes
+        {
+            get { return SelectedItems.Cast<TreeNode>().ToArray(); }
+        }
 
-		public TreeNode SelectedNode
-		{
-			get
-			{
-				if (SelectedItems.Count > 0)
-					return SelectedItems[0] as TreeNode;
-				else
-					return null;
-			}
+        public TreeNode SelectedNode
+        {
+            get
+            {
+                if (SelectedItems.Count > 0)
+                    return SelectedItems[0] as TreeNode;
+                else
+                    return null;
+            }
             set { SelectedItem = value; }
-		}
+        }
 
         private List<TreeNode> s_ExpandedNodes = new List<TreeNode>();
         private TreeNode s_SelectedNode;
 
-		#endregion
+        #endregion Properties
 
         #region Constructor
 
         public TreeListView()
-		{
-			Rows = new ObservableCollectionAdv<TreeNode>();
-			_root = new TreeNode(this, null);
-			_root.IsExpanded = true;
-			ItemsSource = Rows;
-			ItemContainerGenerator.StatusChanged += ItemContainerGeneratorStatusChanged;
-		}
+        {
+            Rows = new ObservableCollectionAdv<TreeNode>();
+            _root = new TreeNode(this, null);
+            _root.IsExpanded = true;
+            ItemsSource = Rows;
+            ItemContainerGenerator.StatusChanged += ItemContainerGeneratorStatusChanged;
+        }
 
         #endregion Constructor
 
@@ -129,7 +129,7 @@ namespace AniDBmini
             Nullable<ListSortDirection> currentSortDirection = eventArgs.Column.SortDirection;
 
             if (currentSortDirection.HasValue &&
-                currentSortDirection.Value == ListSortDirection.Ascending)
+            currentSortDirection.Value == ListSortDirection.Ascending)
                 sortDirection = ListSortDirection.Descending;
 
             foreach (DataGridColumn c in this.Columns)
@@ -152,14 +152,14 @@ namespace AniDBmini
         #region Private Methods
 
         private void ItemContainerGeneratorStatusChanged(object sender, EventArgs e)
-		{
-			if (ItemContainerGenerator.Status == GeneratorStatus.ContainersGenerated && PendingFocusNode != null)
-			{
-				var item = ItemContainerGenerator.ContainerFromItem(PendingFocusNode) as TreeListViewRow;
-				if (item != null) item.Focus();
-				PendingFocusNode = null;
-			}
-		}
+        {
+            if (ItemContainerGenerator.Status == GeneratorStatus.ContainersGenerated && PendingFocusNode != null)
+            {
+                var item = ItemContainerGenerator.ContainerFromItem(PendingFocusNode) as TreeListViewRow;
+                if (item != null) item.Focus();
+                PendingFocusNode = null;
+            }
+        }
 
         private IEnumerable GetChildren(TreeNode parent)
         {
@@ -201,17 +201,17 @@ namespace AniDBmini
             foreach (TreeNode node in s_ExpandedNodes)
             {
                 TreeNode tn = Rows.FirstOrDefault(x =>
-                    (x.Tag as MylistEntry).OriginalEntry.GetType() == (node.Tag as MylistEntry).OriginalEntry.GetType() &&
-                    (x.Tag as MylistEntry).ID == (node.Tag as MylistEntry).ID);
+                (x.Tag as MylistEntry).OriginalEntry.GetType() == (node.Tag as MylistEntry).OriginalEntry.GetType() &&
+                (x.Tag as MylistEntry).ID == (node.Tag as MylistEntry).ID);
 
                 if (tn != null)
                     SetIsExpanded(tn, true);
             }
 
             if (s_SelectedNode != null &&
-                (s_SelectedNode = Rows.FirstOrDefault(x =>
-                    (x.Tag as MylistEntry).OriginalEntry.GetType() == (s_SelectedNode.Tag as MylistEntry).OriginalEntry.GetType() &&
-                    (x.Tag as MylistEntry).ID == (s_SelectedNode.Tag as MylistEntry).ID)) != null)
+            (s_SelectedNode = Rows.FirstOrDefault(x =>
+            (x.Tag as MylistEntry).OriginalEntry.GetType() == (s_SelectedNode.Tag as MylistEntry).OriginalEntry.GetType() &&
+            (x.Tag as MylistEntry).ID == (s_SelectedNode.Tag as MylistEntry).ID)) != null)
                 ScrollIntoView(s_SelectedNode);
         }
 
@@ -238,36 +238,36 @@ namespace AniDBmini
                 tlItem.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
             }));
         }
-        
-		internal void SetIsExpanded(TreeNode node, bool value)
-		{
-			if (value)
-			{
-				if (!node.IsChildrenFetched && node != Root)
-				{
+
+        internal void SetIsExpanded(TreeNode node, bool value)
+        {
+            if (value)
+            {
+                if (!node.IsChildrenFetched && node != Root)
+                {
                     this.Model.FetchChildren(node.Tag);
                     node.IsChildrenFetched = true;
-					node.AssignIsExpanded(value);
+                    node.AssignIsExpanded(value);
 
-					CreateChildrenNodes(node);
+                    CreateChildrenNodes(node);
                     ScrollIntoView(node);
-				}
-				else
-				{
-					node.AssignIsExpanded(value);
-					CreateChildrenRows(node);
+                }
+                else
+                {
+                    node.AssignIsExpanded(value);
+                    CreateChildrenRows(node);
 
                     if (node != Root)
                         ScrollIntoView(node);
-				}
-			}
-			else
-			{
-				DropChildrenRows(node, false);
-				node.AssignIsExpanded(value);
+                }
+            }
+            else
+            {
+                DropChildrenRows(node, false);
+                node.AssignIsExpanded(value);
                 ScrollIntoView(node);
-			}
-		}
+            }
+        }
 
         internal void CreateChildrenNodes(TreeNode node)
         {
@@ -290,33 +290,33 @@ namespace AniDBmini
             node.HasChildren = HasChildren(node);
         }
 
-		internal void DropChildrenRows(TreeNode node, bool removeParent)
-		{
-			int start = Rows.IndexOf(node);
-			if (start >= 0 || node == _root) // ignore invisible nodes
-			{
-				int count = node.VisibleChildrenCount;
-				if (removeParent)
-					count++;
-				else
-					start++;
+        internal void DropChildrenRows(TreeNode node, bool removeParent)
+        {
+            int start = Rows.IndexOf(node);
+            if (start >= 0 || node == _root) // ignore invisible nodes
+            {
+                int count = node.VisibleChildrenCount;
+                if (removeParent)
+                    count++;
+                else
+                    start++;
 
-				Rows.RemoveRange(start, count);
-			}
-		}
+                Rows.RemoveRange(start, count);
+            }
+        }
 
-		internal void InsertNewNode(TreeNode parent, object tag, int rowIndex, int index)
-		{
-			TreeNode node = new TreeNode(this, tag);
-			if (index >= 0 && index < parent.Children.Count)
-				parent.Children.Insert(index, node);
-			else
-			{
-				index = parent.Children.Count;
-				parent.Children.Add(node);
-			}
+        internal void InsertNewNode(TreeNode parent, object tag, int rowIndex, int index)
+        {
+            TreeNode node = new TreeNode(this, tag);
+            if (index >= 0 && index < parent.Children.Count)
+                parent.Children.Insert(index, node);
+            else
+            {
+                index = parent.Children.Count;
+                parent.Children.Add(node);
+            }
 
-			Rows.Insert(rowIndex + index + 1, node);
+            Rows.Insert(rowIndex + index + 1, node);
         }
 
         #endregion Internal Methods

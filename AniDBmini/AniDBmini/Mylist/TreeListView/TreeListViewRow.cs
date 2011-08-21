@@ -16,85 +16,85 @@ using AniDBmini.Collections;
 namespace AniDBmini
 {
     public class TreeListViewRow : DataGridRow,
-                                INotifyPropertyChanged
-	{
+                                   INotifyPropertyChanged
+    {
 
-		#region Properties
+        #region Properties
 
-		private TreeNode _node;
-		public TreeNode Node
-		{
-			get { return _node; }
-			internal set
-			{
-				_node = value;
-				OnPropertyChanged("Node");
-			}
-		}
+        private TreeNode _node;
+        public TreeNode Node
+        {
+            get { return _node; }
+            internal set
+            {
+                _node = value;
+                OnPropertyChanged("Node");
+            }
+        }
 
-		#endregion
+        #endregion
 
         #region Protected Overrides
 
-		protected override void OnKeyDown(KeyEventArgs e)
-		{
-			if (Node != null)
-			{
-				switch (e.Key)
-				{
-					case Key.Right:
-						e.Handled = true;
-						if (!Node.IsExpanded)
-						{
-							Node.IsExpanded = true;
-							ChangeFocus(Node);
-						}
-						else if (Node.Children.Count > 0)
-							ChangeFocus(Node.Children[0]);
-						break;
-					case Key.Left:
-						e.Handled = true;
-						if (Node.IsExpanded && Node.IsExpandable)
-						{
-							Node.IsExpanded = false;
-							ChangeFocus(Node);
-						}
-						else
-							ChangeFocus(Node.Parent);
-						break;
-					case Key.Subtract:
-						e.Handled = true;
-						Node.IsExpanded = false;
-						ChangeFocus(Node);
-						break;
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Node != null)
+            {
+                switch (e.Key)
+                {
+                    case Key.Right:
+                        e.Handled = true;
+                        if (!Node.IsExpanded)
+                        {
+                            Node.IsExpanded = true;
+                            ChangeFocus(Node);
+                        }
+                        else if (Node.Children.Count > 0)
+                            ChangeFocus(Node.Children[0]);
+                        break;
+                    case Key.Left:
+                        e.Handled = true;
+                        if (Node.IsExpanded && Node.IsExpandable)
+                        {
+                            Node.IsExpanded = false;
+                            ChangeFocus(Node);
+                        }
+                        else
+                            ChangeFocus(Node.Parent);
+                        break;
+                    case Key.Subtract:
+                        e.Handled = true;
+                        Node.IsExpanded = false;
+                        ChangeFocus(Node);
+                        break;
 
-					case Key.Add:
-						e.Handled = true;
-						Node.IsExpanded = true;
-						ChangeFocus(Node);
-						break;
+                    case Key.Add:
+                        e.Handled = true;
+                        Node.IsExpanded = true;
+                        ChangeFocus(Node);
+                        break;
                     case Key.Multiply:
                         e.Handled = true;
                         ExpandAll(Node);
                         ChangeFocus(Node);
                         break;
-				}
+                }
 
                 if (!e.Handled)
                 {
                     TreeNode tn = Node.Parent.Children.FirstOrDefault(x =>
-                        (x.Tag as MylistEntry).Col0.StartsWith(new KeyConverter().ConvertToString(e.Key), StringComparison.CurrentCultureIgnoreCase));
+                    (x.Tag as MylistEntry).Col0.StartsWith(new KeyConverter().ConvertToString(e.Key), StringComparison.CurrentCultureIgnoreCase));
                     if (tn != null)
                     {
                         tn.Tree.ScrollIntoView(tn);
                         e.Handled = true;
                     }
                 }
-			}
- 
-			if (!e.Handled)
-				base.OnKeyDown(e);
-		}
+            }
+
+            if (!e.Handled)
+                base.OnKeyDown(e);
+        }
 
         protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
         {
@@ -115,19 +115,19 @@ namespace AniDBmini
                 ExpandAll(child);
         }
 
-		private void ChangeFocus(TreeNode node)
-		{
-			var tree = node.Tree;
-			if (tree != null)
-			{
-				var item = tree.ItemContainerGenerator.ContainerFromItem(node) as TreeListViewRow;
+        private void ChangeFocus(TreeNode node)
+        {
+            var tree = node.Tree;
+            if (tree != null)
+            {
+                var item = tree.ItemContainerGenerator.ContainerFromItem(node) as TreeListViewRow;
 
-				if (item != null)
+                if (item != null)
                     item.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
-				else
-					tree.PendingFocusNode = node;
-			}
-		}
+                else
+                    tree.PendingFocusNode = node;
+            }
+        }
 
         private static T FindAncestor<T>(DependencyObject current) where T : DependencyObject
         {
@@ -148,10 +148,10 @@ namespace AniDBmini
         #region INotifyPropertyChanged
 
         public event PropertyChangedEventHandler PropertyChanged;
-		private void OnPropertyChanged(string name)
-		{
-			if (PropertyChanged != null)
-				PropertyChanged(this, new PropertyChangedEventArgs(name));
+        private void OnPropertyChanged(string name)
+        {
+            if (PropertyChanged != null)
+                PropertyChanged(this, new PropertyChangedEventArgs(name));
         }
 
         #endregion INotifyPropertyChanged

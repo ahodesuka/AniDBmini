@@ -40,24 +40,24 @@ namespace AniDBmini
         #region Constructor
 
         public MylistModel(MylistDB myList)
-		{
+        {
             m_myList = myList;
 
             foreach (AnimeEntry a in m_myList.SelectEntries())
                 this.Root.Add(MylistEntry.FromAnime(a));
-		}
+        }
 
         #endregion Constructor
 
         #region ITreeModel
 
         public IEnumerable GetChildren(object parent)
-		{
+        {
             if (parent == null)
                 return Root;
             else
                 return (parent as MylistEntry).Children;
-		}
+        }
 
         public void FetchChildren(object parent)
         {
@@ -71,10 +71,10 @@ namespace AniDBmini
                     entry.Children.Add(MylistEntry.FromFile(f));
         }
 
-		public bool HasChildren(object parent)
-		{
+        public bool HasChildren(object parent)
+        {
             return (parent as MylistEntry).HasChildren;
-		}
+        }
 
         public ITreeModel Refresh()
         {

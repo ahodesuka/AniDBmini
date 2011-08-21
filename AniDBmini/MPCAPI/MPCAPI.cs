@@ -127,7 +127,7 @@ namespace AniDBmini
 
             /// <summary>
             /// Open new file
-            /// Par 1 : file path
+            /// <para>Par 1 : file path</para>
             /// </summary>
             CMD_OPENFILE = 0xA0000000,
 
@@ -148,7 +148,7 @@ namespace AniDBmini
 
             /// <summary>
             /// Add a new file to playlist (did not start playing)
-            /// Par 1 : file path
+            /// <para>Par 1 : file path</para>
             /// </summary>
             CMD_ADDTOPLAYLIST = 0xA0001000,
 
@@ -159,18 +159,19 @@ namespace AniDBmini
 
             /// <summary>
             /// Start playing playlist
+            /// </summary>
             CMD_STARTPLAYLIST = 0xA0001002,
 
             /// <summary>
             /// Cue current file to specific position
-            /// Par 1 : new position in seconds
+            /// <para>Par 1 : new position in seconds</para>
             /// </summary>
             CMD_SETPOSITION = 0xA0002000,
 
             /// <summary>
             /// Ask for the current playback position,
             /// see CMD_CURRENTPOSITION.
-            /// Par 1 : current position in seconds
+            /// <para>Par 1 : current position in seconds</para>
             /// </summary>
             CMD_GETCURRENTPOSITION = 0xA0003004,
 
@@ -460,15 +461,48 @@ namespace AniDBmini
             m_OSDMSGPos = (OSD_MESSAGEPOS)ConfigFile.Read("mpcOSDPos").ToInt32();
             m_OSDMSGDur = ConfigFile.Read("mpcOSDDurMS").ToInt32();
         }
-
+        
+        /// <summary>
+        /// Opens a file and starts playback.
+        /// </summary>
+        /// <param name="path">Absolute path of file</param>
         public void OpenFile(string path)
         {
             SendData(MPCAPI_SENDCOMMAND.CMD_OPENFILE, path);
         }
 
-        public void ShowWatchedOSD()
+        /// <summary>
+        /// Clear all files from the playlist.
+        /// </summary>
+        public void ClearPlaylist()
         {
-            SendData(MPCAPI_SENDCOMMAND.CMD_OSDSHOWMESSAGE, MainWindow.m_AppName + ": File marked as watched.");
+            SendData(MPCAPI_SENDCOMMAND.CMD_CLEARPLAYLIST, String.Empty);
+        }
+
+        /// <summary>
+        /// Adds a file to the playlist.
+        /// </summary>
+        /// <param name="path">Absolute path of file</param>
+        public void AddFileToPlaylist(string path)
+        {
+            SendData(MPCAPI_SENDCOMMAND.CMD_ADDTOPLAYLIST, path);
+        }
+
+        /// <summary>
+        /// Start playing the playlist.
+        /// </summary>
+        public void StartPlaylist()
+        {
+            SendData(MPCAPI_SENDCOMMAND.CMD_STARTPLAYLIST, String.Empty);
+        }
+
+        /// <summary>
+        /// Displays a message within MPC-HC.
+        /// </summary>
+        /// <param name="msg">Message to display</param>
+        public void OSDShowMessage(string msg)
+        {
+            SendData(MPCAPI_SENDCOMMAND.CMD_OSDSHOWMESSAGE, msg);
         }
 
         #endregion Public Methods

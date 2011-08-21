@@ -74,18 +74,18 @@ namespace AniDBmini.Collections
 
             Episodes = int.Parse(animeInfo[7]);
 
-            StartDate = ExtensionMethods.UnixTimeToDateTime(animeInfo[8]).Date.ToShortDateString();
-            EndDate = ExtensionMethods.UnixTimeToDateTime(animeInfo[9]).Date.ToShortDateString();
-            EndDateRowHeight = string.IsNullOrEmpty(animeInfo[9]) || StartDate == EndDate ? 0 : 42;
+            StartDate = new UnixTimestamp(double.Parse(animeInfo[8])).ToDateTime().ToShortDateString();
+            if (int.Parse(animeInfo[9]) != 0) EndDate = new UnixTimestamp(double.Parse(animeInfo[9])).ToDateTime().ToShortDateString();
+            EndDateRowHeight = (int.Parse(animeInfo[9]) == 0 || StartDate == EndDate) ? 0 : 42;
 
             Officialurl = animeInfo[10];
             AniDBurl = "http://anidb.net/perl-bin/animedb.pl?show=anime&aid=" + AnimeID;
             ANNurl = "http://www.animenewsnetwork.com/encyclopedia/anime.php?id=" + animeInfo[19];
             Image = new BitmapImage(new Uri("http://img7.anidb.net/pics/anime/" + animeInfo[11]));
 
-            RatingMean = !string.IsNullOrEmpty(animeInfo[12]) ?
+            RatingMean = double.Parse(animeInfo[12]) != 0 ?
                          double.Parse(animeInfo[12]) / 100 : double.Parse(animeInfo[14]) / 100;
-            RatingCount = !string.IsNullOrEmpty(animeInfo[13]) ?
+            RatingCount = int.Parse(animeInfo[13]) != 0 ?
                           int.Parse(animeInfo[13]) : int.Parse(animeInfo[15]);
 
             ReviewMean = double.Parse(animeInfo[16]) / 100;

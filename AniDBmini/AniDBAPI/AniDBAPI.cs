@@ -111,7 +111,7 @@ namespace AniDBmini
         private string sessionKey, user, pass;
 
         private static TSObservableCollection<DebugLine> debugLog = new TSObservableCollection<DebugLine>();
-
+        
         public static string[] statsText = { "Anime",
                                              "Episodes",
                                              "Files",
@@ -188,63 +188,87 @@ namespace AniDBmini
             }
         }
 
-        private void File(HashItem item)
+        public void File(HashItem item)
         {
             Action fileInfo = new Action(delegate
             {
                 APIResponse response = Execute(String.Format("FILE size={0}&ed2k={1}&fmask=78006A2810&amask=70E0F0C0", item.Size, item.Hash));
 
                 if (response.Code == RETURN_CODE.FILE)
-                {
-                    string[] info = Regex.Split(response.Message, "\n")[1].Split('|');
-
-                    AnimeEntry anime = new AnimeEntry();
-                    EpisodeEntry episode = new EpisodeEntry();
-                    FileEntry file = new FileEntry(item);
-
-                    file.fid = int.Parse(info[0]);
-                    anime.aid = int.Parse(info[1]);
-                    episode.eid = int.Parse(info[2]);
-                    file.gid = int.Parse(info[3]);
-                    file.lid = int.Parse(info[4]);
-
-                    file.source = info[5].FormatNullable();
-                    file.acodec = info[6].Contains("'") ? info[6].Split('\'')[0] : info[6].FormatNullable();
-                    file.vcodec = info[7].FormatNullable();
-                    file.vres = info[8].FormatNullable();
-
-                    file.length = double.Parse(info[9]);
-                    episode.airdate = info[10];
-
-                    file.watcheddate = info[11] == "0" ? null : info[11];
-                    episode.watched = file.watched;
-
-                    anime.eps_total = int.Parse(info[12]);
-                    anime.year = info[13].Contains('-') ?
-                                (info[13].Split('-')[0] != info[13].Split('-')[1] ? info[13] : info[13].Split('-')[0]) : info[13];
-                    anime.type = info[14];
-
-                    anime.title = info[15];
-                    anime.nihongo = info[16].FormatNullable();
-                    anime.english = info[17].FormatNullable();
-
-                    if (Regex.IsMatch(info[18].Substring(0, 1), @"\D"))
-                        episode.spl_epno = info[18];
-                    else
-                        episode.epno = int.Parse(info[18]);
-
-                    episode.english = info[19];
-                    episode.romaji = info[20].FormatNullable();
-                    episode.nihongo = info[21].FormatNullable();
-
-                    file.group_name = info[22];
-                    file.group_abbr = info[23];
-
-                    OnFileInfoFetched(new FileInfoFetchedArgs(anime, episode, file));
-                }
+                    ParseFileData(item, response.Message);
             });
 
-            PrioritizedCommand(fileInfo);               
+            PrioritizedCommand(fileInfo);
+        }
+
+        public void File(FileEntry entry)
+        {
+            Action fileInfo = new Action(delegate
+            {
+                APIResponse response = Execute(String.Format("FILE fid={0}&fmask=78006A2810&amask=70E0F0C0", entry.fid));
+
+                if (response.Code == RETURN_CODE.FILE)
+                    ParseFileData(entry, response.Message);
+            });
+
+            PrioritizedCommand(fileInfo);
+        }
+
+        private void ParseFileData(object item, string data)
+        {
+            string[] info = Regex.Split(data, "\n")[1].Split('|');
+
+            AnimeEntry anime = new AnimeEntry();
+            EpisodeEntry episode = new EpisodeEntry();
+            FileEntry file = (item is HashItem) ?
+                new FileEntry((HashItem)item) : (FileEntry)item;
+
+            file.fid = int.Parse(info[0]);
+            anime.aid = episode.aid = int.Parse(info[1]);
+            episode.eid = file.eid = int.Parse(info[2]);
+            int gid = int.Parse(info[3]);
+            file.lid = int.Parse(info[4]);
+
+            file.source = info[5].FormatNullable();
+            file.acodec = info[6].Contains("'") ? info[6].Split('\'')[0] : info[6].FormatNullable();
+            file.acodec = ExtensionMethods.FormatAudioCodec(file.acodec);
+            file.vcodec = ExtensionMethods.FormatVideoCodec(info[7].FormatNullable());
+            file.vres = info[8].FormatNullable();
+
+            file.length = double.Parse(info[9]);
+
+            if (!string.IsNullOrEmpty(info[10]) && int.Parse(info[10]) != 0) episode.airdate = double.Parse(info[10]);
+            if (!string.IsNullOrEmpty(info[11]) && int.Parse(info[11]) != 0) file.watcheddate = double.Parse(info[11]);
+
+            episode.watched = file.watched;
+
+            anime.eps_total = int.Parse(info[12]);
+            anime.year = info[13].Contains('-') ?
+                        (info[13].Split('-')[0] != info[13].Split('-')[1] ? info[13] : info[13].Split('-')[0]) : info[13];
+            anime.type = info[14];
+
+            anime.title = info[15];
+            anime.nihongo = info[16].FormatNullable();
+            anime.english = info[17].FormatNullable();
+
+            if (Regex.IsMatch(info[18].Substring(0, 1), @"\D"))
+                episode.spl_epno = info[18];
+            else
+                episode.epno = int.Parse(info[18]);
+
+            episode.english = info[19];
+            episode.romaji = info[20].FormatNullable();
+            episode.nihongo = info[21].FormatNullable();
+
+            if (gid != 0)
+                file.Group = new GroupEntry
+                {
+                    gid = gid,
+                    group_name = info[22],
+                    group_abbr = info[23]
+                };
+
+            OnFileInfoFetched(new FileInfoFetchedArgs(anime, episode, file));
         }
 
         #endregion DATA
@@ -260,6 +284,7 @@ namespace AniDBmini
                                                         "&ed2k=" + item.Hash +
                                                         "&viewed=" + item.Viewed +
                                                         "&state=" + item.State + (item.Edit ? "&edit=1" : null));
+
                 switch (response.Code)
                 {
                     case RETURN_CODE.MYLIST_ENTRY_ADDED:
@@ -274,7 +299,7 @@ namespace AniDBmini
                         item.Edit = true;
                         MyListAdd(item);
                         return;
-                    case RETURN_CODE.NO_SUCH_FILE: // TODO: autocreq with AVDump2 (optional)
+                    case RETURN_CODE.NO_SUCH_FILE:
                         r_msg = "Error! File not in database.";
                         break;
                 }
@@ -359,6 +384,7 @@ namespace AniDBmini
         /// <param name="todo">Action that will be executed after waiting.</param>
         private void PrioritizedCommand(Action Command)
         {
+            ++mainWindow.m_pendingTasks;
             ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
             {
                 lock (queueLock)
@@ -366,12 +392,11 @@ namespace AniDBmini
                     double secondsSince = DateTime.Now.Subtract(m_lastCommand).TotalSeconds;
                     int timeout = CalculatedTimeout();
 
-                    // TODO: announce task to user.
-
                     if (secondsSince < timeout)
                         Thread.Sleep(TimeSpan.FromSeconds(timeout - secondsSince));
 
                     Command();
+                    --mainWindow.m_pendingTasks;                    
                 }
             }));
         }
@@ -438,7 +463,10 @@ namespace AniDBmini
                     return new APIResponse { Message = e_response, Code = e_code };
             }
 #else
-            return new APIResponse { Message = "\n411|7562|7488|1928235|0|0|0|0|0|0|3|6|54|4117|0|0|94407", Code = (RETURN_CODE)200 };
+            m_lastCommand = DateTime.Now;
+            queryLog.Add(m_lastCommand);
+            System.Diagnostics.Debug.WriteLine(String.Format("Executed: {0} @ {1}", cmd, m_lastCommand.ToLongTimeString()));
+            return new APIResponse { Message = "\n411|7562|7488|1928235|0|0|0|0|0|0|3|6|54|4117|0|0|94407", Code = (RETURN_CODE)200 }; 
 #endif
         }
 

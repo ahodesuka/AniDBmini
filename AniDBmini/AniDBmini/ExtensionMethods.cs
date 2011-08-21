@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
@@ -29,8 +29,6 @@ namespace AniDBmini
             YB
         };
 
-        private static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
         public static TSObservableCollection<T> RemoveAll<T>(this TSObservableCollection<T> coll, Func<T, bool> condition)
         {
             var itemsToRemove = coll.Where(condition).ToList();
@@ -41,23 +39,18 @@ namespace AniDBmini
             return coll;
         }
 
-        public static DateTime UnixTimeToDateTime(string text)
-        {
-            double seconds = double.Parse(text, CultureInfo.InvariantCulture);
-            return Epoch.AddSeconds(seconds).ToLocalTime();
-        }
-
-        public static double DateTimeToUnixTime(DateTime date)
-        {
-            return (date - Epoch).TotalSeconds;
-        }
-
         /// <summary>
         /// Used for estimated time remaining.
         /// </summary>
-        public static string ToFormatedString(this TimeSpan ts)
+        public static string ToHMS(this TimeSpan ts)
         {
             return String.Format("{0}h {1}m {2}s", (int)ts.TotalHours, ts.Minutes.ToString("00"), ts.Seconds.ToString("00"));
+        }
+
+        public static string ToFormatedLength(this TimeSpan ts)
+        {
+            return String.Format("{0}{1}m", ((int)ts.TotalHours > 0) ? String.Format("{0}h ", (int)ts.TotalHours) : null,
+                                            ts.Minutes.ToString("00"));
         }
 
         /// <summary>
@@ -132,64 +125,37 @@ namespace AniDBmini
             return s2;
         }
 
-        #region VisualTree Traversing
-
-        public static T FindAncestor<T>(this DependencyObject obj) where T : DependencyObject
+        public static string FormatAudioCodec(string ac)
         {
-            return obj.FindAncestor(typeof(T)) as T;
-        }
-
-        public static DependencyObject FindAncestor(this DependencyObject obj, Type ancestorType)
-        {
-            if (obj is Visual)
+            switch (ac)
             {
-                var tmp = VisualTreeHelper.GetParent(obj);
-                while (tmp != null && !ancestorType.IsAssignableFrom(tmp.GetType()))
-                    tmp = VisualTreeHelper.GetParent(tmp);
-
-                return tmp;
+                case "WMA (also DivX Audio)":
+                    return "WMA";
+                case "Vorbis (Ogg Vorbis)":
+                    return "Vorbis";
+                default:
+                    return ac;
             }
-
-            return null;
         }
 
-        public static T FindChild<T>(this DependencyObject parent) where T : DependencyObject
+        public static string FormatVideoCodec(string vc)
         {
-            return parent.FindChild<T>(child => true);
-        }
-
-        public static T FindChild<T>(this DependencyObject parent, Func<T, bool> predicate) where T : DependencyObject
-        {
-            return parent.FindChildren<T>(predicate).First();
-        }
-
-        public static IEnumerable<T> FindChildren<T>(this DependencyObject parent, Func<T, bool> predicate) where T : DependencyObject
-        {
-            var children = new List<DependencyObject>();
-
-            if (parent is Visual)
+            switch (vc)
             {
-                var visualChildrenCount = VisualTreeHelper.GetChildrenCount(parent);
-                for (int childIndex = 0; childIndex < visualChildrenCount; childIndex++)
-                    children.Add(VisualTreeHelper.GetChild(parent, childIndex));
+                case "DivX UNK":
+                    return "DivX";
+                case "DivX5 (also DivX6)":
+                    return "DivX5/6";
+                case "RealVideo Other":
+                case "RealVideo 9/10 (also RV40)":
+                    return "RealVideo";
+                case "MS MP4x (also WMV1/2)":
+                    return "MS MP4x";
+                case "WMV9 (also WMV3)":
+                    return "WMV9";
+                default:
+                    return vc;
             }
-            foreach (var logicalChild in LogicalTreeHelper.GetChildren(parent).OfType<DependencyObject>())
-                if (!children.Contains(logicalChild))
-                    children.Add(logicalChild);
-
-            foreach (var child in children)
-            {
-                var typedChild = child as T;
-                if ((typedChild != null) && predicate.Invoke(typedChild))
-                    yield return typedChild;
-
-                foreach (var foundDescendant in FindChildren(child, predicate))
-                    yield return foundDescendant;
-            }
-            yield break;
         }
-
-        #endregion VisualTree Traversing
-
     }
 }

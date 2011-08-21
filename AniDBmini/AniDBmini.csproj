@@ -55,7 +55,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <PlatformTarget>x86</PlatformTarget>
-    <DebugType>none</DebugType>
+    <DebugType>full</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release_x86\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -63,7 +63,7 @@
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugSymbols>false</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup />
   <PropertyGroup>
@@ -128,10 +128,6 @@
     </Reference>
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Windows.Interactivity, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>References\System.Windows.Interactivity.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -153,6 +149,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="AniDBmini\Mylist\TreeListView\TreeListView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="LoginWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -161,14 +161,21 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Compile Include="AniDBmini\Collections\Mylist\Mylist0Entry.cs" />
+    <Compile Include="AniDBmini\Collections\Mylist\GroupEntry.cs" />
+    <Compile Include="AniDBmini\Collections\Mylist\MylistEntry.cs" />
     <Compile Include="AniDBmini\Converters.cs" />
     <Compile Include="AniDBmini\Collections\AnimeTab.cs" />
     <Compile Include="AniDBAPI\AniDBAPI.cs" />
-    <Compile Include="AniDBmini\IgnoreMouseWheelBehavior.cs" />
-    <Compile Include="AniDBmini\Mylist\Mylist.cs" />
+    <Compile Include="AniDBmini\Mylist\MylistModel.cs" />
     <Compile Include="AniDBmini\Mylist\MylistSort.cs" />
-    <Compile Include="AniDBmini\TabControlEx.cs" />
+    <Compile Include="AniDBmini\Mylist\TreeListView\Collection.cs" />
+    <Compile Include="AniDBmini\Mylist\TreeListView\Converters.cs" />
+    <Compile Include="AniDBmini\Mylist\TreeListView\ITreeModel.cs" />
+    <Compile Include="AniDBmini\Mylist\TreeListView\RowExpander.cs" />
+    <Compile Include="AniDBmini\Mylist\TreeListView\TreeListView.cs" />
+    <Compile Include="AniDBmini\Mylist\TreeListView\TreeListViewRow.cs" />
+    <Compile Include="AniDBmini\Mylist\TreeListView\TreeNode.cs" />
+    <Compile Include="AniDBmini\UnixTimestamp.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -285,6 +292,7 @@
   <ItemGroup>
     <Resource Include="Resources\options.png" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

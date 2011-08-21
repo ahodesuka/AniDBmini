@@ -24,7 +24,8 @@ namespace AniDBmini
         private SQLiteConnection SQLConn;
 
         public bool isSQLConnOpen;
-        public TSObservableCollection<AnimeEntry> Entries = new TSObservableCollection<AnimeEntry>();
+        public delegate void EntryInsertedHandler(string aTitle);
+        public event EntryInsertedHandler OnEntryInserted = delegate { };
 
         #endregion Fields
 
@@ -32,8 +33,7 @@ namespace AniDBmini
 
         public MylistDB()
         {
-            if (Initialize())
-                SelectEntries();
+            Initialize();
         }
 
         #endregion Constructor
@@ -74,109 +74,150 @@ namespace AniDBmini
 
         #region SELECT
 
-        public void SelectEntries()
+        public List<AnimeEntry> SelectEntries()
         {
+            List<AnimeEntry> Entries = new List<AnimeEntry>();
+
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
-                cmd.CommandText = @"SELECT a.aid, a.type, a.title, a.nihongo, a.english, a.eps_total, a.year, SUM(f.length) AS length, IFNULL(SUM(f.size), 0) AS size,
-                                           COUNT(e.spl_epno) AS spl_have, (SELECT COUNT(spl_epno) FROM episodes WHERE aid = a.aid AND watched = 1) AS spl_watched,
-                                           IFNULL(MIN(COUNT(e.watched), a.eps_total), 0) AS eps_have, IFNULL(MIN(SUM(e.watched), a.eps_total), 0) AS eps_watched
+                cmd.CommandText = @"SELECT a.aid, a.type, a.title, a.nihongo, a.english, a.eps_total, a.year, IFNULL(SUM(f.length), 0) AS length, IFNULL(SUM(f.size), 0) AS size,
+					                       COUNT(e.spl_epno) AS spl_have, (SELECT COUNT(spl_epno) FROM episodes WHERE aid = a.aid AND watched = 1) AS spl_watched,
+					                       (SELECT COUNT(*) FROM episodes WHERE aid = a.aid AND spl_epno IS NULL) AS eps_have,
+					                       (SELECT COUNT(*) FROM episodes WHERE aid = a.aid AND spl_epno IS NULL AND watched = 1) AS eps_watched
                                       FROM anime AS a
                                  LEFT JOIN episodes AS e ON e.aid = a.aid
                                  LEFT JOIN files AS f ON f.eid = e.eid
                                   GROUP BY a.aid
-                                  ORDER BY a.title ASC;";
+                                  ORDER BY a.title COLLATE NOCASE ASC;";
 
                 using (SQLiteDataReader reader = cmd.ExecuteReader())
                     while (reader.Read())
-                    {
-                        AnimeEntry entry = new AnimeEntry(reader);
-                        entry.Episodes = this.SelectEpisodes(entry);
-                        Entries.Add(entry);
-                    }
+                        Entries.Add(new AnimeEntry(reader));
             }
+
+            return Entries;
         }
 
-        public void SelectEntry(int aid)
+        public List<EpisodeEntry> SelectEpisodes(int aid)
         {
-            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
-            {
-                cmd.CommandText = @"SELECT a.aid, a.type, a.title, a.nihongo, a.english, a.eps_total, a.year, SUM(f.length) AS length, IFNULL(SUM(f.size), 0) AS size,
-                                           COUNT(e.spl_epno) AS spl_have, (SELECT COUNT(spl_epno) FROM episodes WHERE aid = a.aid AND watched = 1) AS spl_watched,
-                                           IFNULL(MIN(COUNT(e.watched), a.eps_total), 0) AS eps_have, IFNULL(MIN(SUM(e.watched), a.eps_total), 0) AS eps_watched
-                                      FROM anime AS a
-                                 LEFT JOIN episodes AS e ON e.aid = a.aid
-                                 LEFT JOIN files AS f ON f.eid = e.eid
-                                     WHERE a.aid = @aid
-                                  GROUP BY a.aid
-                                  ORDER BY a.title ASC;";
-                cmd.Parameters.AddWithValue("@aid", aid);
-
-                using (SQLiteDataReader reader = cmd.ExecuteReader())
-                {
-                    AnimeEntry entry = Entries.FirstOrDefault<AnimeEntry>(x => x.aid == aid);
-
-                    if (entry != null)
-                    {
-                        int index = Entries.IndexOf(entry);
-                        Entries[index] = new AnimeEntry(reader);
-                        Entries[index].Episodes = this.SelectEpisodes(entry);
-                    }
-                    else
-                    {
-                        entry = new AnimeEntry(reader);
-                        entry.Episodes = this.SelectEpisodes(entry);
-                        Entries.Add(entry);
-                    }
-                }
-            }
-        }
-
-        public TSObservableCollection<EpisodeEntry> SelectEpisodes(AnimeEntry m_entry)
-        {
-            TSObservableCollection<EpisodeEntry> _temp = new TSObservableCollection<EpisodeEntry>();
+            List<EpisodeEntry> _temp = new List<EpisodeEntry>();
 
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
-                cmd.CommandText = @"SELECT e.*, IFNULL(f.length, 0) AS length, IFNULL(SUM(f.size), 0) AS size, f.generic,
-                                           (SELECT CASE WHEN  generic < COUNT(eid) THEN 0 ELSE 1 END FROM files WHERE eid = e.eid) AS genericOnly
+                cmd.CommandText = @"SELECT e.*, IFNULL(SUM(f.length), 0) AS length, IFNULL(SUM(f.size), 0) AS size,
+                                           f.generic, IFNULL(COUNT(f.eid), 0) as hasFiles
                                       FROM episodes AS e
                                  LEFT JOIN files AS f ON f.eid = e.eid
                                      WHERE e.aid = @aid
                                   GROUP BY e.eid
                                   ORDER BY IFNULL(e.epno, 'S'), spl_epno;";
-                cmd.Parameters.AddWithValue("@aid", m_entry.aid);
+                cmd.Parameters.AddWithValue("@aid", aid);
+
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    while (reader.Read())
+                        _temp.Add(new EpisodeEntry(reader));
+            }
+
+            return _temp;
+        }
+
+        public List<FileEntry> SelectFiles(int eid)
+        {
+            List<FileEntry> _temp = new List<FileEntry>();
+
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
+            {
+                cmd.CommandText = @"SELECT f.*, g.*, e.epno, e.spl_epno FROM files AS f
+                                      JOIN episodes AS e ON e.eid = f.eid
+                                 LEFT JOIN groups AS g ON g.gid = f.gid
+                                     WHERE f.eid = @eid
+                                  ORDER BY g.group_abbr;";
+                cmd.Parameters.AddWithValue("@eid", eid);
 
                 using (SQLiteDataReader reader = cmd.ExecuteReader())
                     while (reader.Read())
                     {
-                        EpisodeEntry entry = new EpisodeEntry(reader);
-                        entry.Files = this.SelectFiles(entry);
-                        _temp.Add(entry);
+                        FileEntry f = new FileEntry(reader);
+                        f.PropertyChanged += (s, e) => { UpdateFile(f); };
+                        _temp.Add(f);
                     }
             }
 
             return _temp;
         }
 
-        public TSObservableCollection<FileEntry> SelectFiles(EpisodeEntry e_entry)
+        public AnimeEntry SelectAnimeFromFile(int fid)
         {
-            TSObservableCollection<FileEntry> _temp = new TSObservableCollection<FileEntry>();
+            AnimeEntry anime = null;
 
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
-                cmd.CommandText = @"SELECT * FROM files AS f
+                cmd.CommandText = @"SELECT a.aid, a.type, a.title, a.nihongo, a.english, a.eps_total, a.year, IFNULL(SUM(f.length), 0) AS length, IFNULL(SUM(f.size), 0) AS size,
+					                       COUNT(e.spl_epno) AS spl_have, (SELECT COUNT(spl_epno) FROM episodes WHERE aid = a.aid AND watched = 1) AS spl_watched,
+					                       (SELECT COUNT(*) FROM episodes WHERE aid = a.aid AND spl_epno IS NULL) AS eps_have,
+					                       (SELECT COUNT(*) FROM episodes WHERE aid = a.aid AND spl_epno IS NULL AND watched = 1) AS eps_watched
+                                     FROM anime AS a
+                                     JOIN episodes AS e ON e.aid = a.aid
+                                     JOIN files AS f ON f.eid = e.eid
+                                    WHERE f.fid = @fid
+		                            LIMIT 1;";
+                cmd.Parameters.AddWithValue("@fid", fid);
+
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    if (reader.Read())
+                        anime = new AnimeEntry(reader);
+            }
+
+            return anime;
+        }
+
+        public FileEntry SelectFileFromAnime(int aid)
+        {
+            FileEntry file = null;
+
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
+            {
+                cmd.CommandText = @"SELECT f.*, g.*, e.epno, e.spl_epno FROM files AS f
+			                          JOIN anime AS a ON a.aid = e.aid
+			                          JOIN episodes AS e ON e.eid = f.eid
                                  LEFT JOIN groups AS g ON g.gid = f.gid
-                                     WHERE eid = @eid
-                                  ORDER BY g.group_abbr;";
-                cmd.Parameters.AddWithValue("@eid", e_entry.eid);
+		                             WHERE a.aid = @aid
+	                              ORDER BY e.epno
+		                            LIMIT 1;";
+                cmd.Parameters.AddWithValue("@aid", aid);
+
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    if (reader.Read())
+                        file = new FileEntry(reader);
+            }
+
+            return file;
+        }
+
+        public List<FileEntry> SelectFilesFromAnime(int aid)
+        {
+            List<FileEntry> files = new List<FileEntry>();
+
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
+            {
+                cmd.CommandText = @"SELECT f.*, g.*, e.epno, e.spl_epno FROM files AS f
+			                          JOIN anime AS a ON a.aid = e.aid
+			                          JOIN episodes AS e ON e.eid = f.eid
+                                 LEFT JOIN groups AS g ON g.gid = f.gid
+		                             WHERE a.aid = @aid AND e.spl_epno IS NULL
+	                              ORDER BY e.epno;";
+                cmd.Parameters.AddWithValue("@aid", aid);
 
                 using (SQLiteDataReader reader = cmd.ExecuteReader())
                     while (reader.Read())
-                        _temp.Add(new FileEntry(reader));
+                    {
+                        FileEntry f = new FileEntry(reader);
+                        f.PropertyChanged += (s, e) => { UpdateFile(f); };
+                        files.Add(f);
+                    }
             }
 
-            return _temp;
+            return files;
         }
 
         #endregion SELECT
@@ -201,8 +242,8 @@ namespace AniDBmini
                                     CREATE TABLE groups ('gid' INTEGER PRIMARY KEY NOT NULL, 'group_name' VARCHAR, 'group_abbr' VARCHAR);
                                     CREATE UNIQUE INDEX 'idx_anime_aid' ON 'anime' ('aid');
                                     CREATE UNIQUE INDEX 'idx_eps_eid' ON 'episodes' ('eid');
+                                    CREATE UNIQUE INDEX 'idx_files_fid' ON 'files' ('fid');
                                     CREATE INDEX 'idx_eps_aid' ON 'episodes' ('aid');
-                                    CREATE INDEX 'idx_eps_watched' ON 'episodes' ('watched');
                                     CREATE INDEX 'idx_files_eid' ON 'files' ('eid');";
                 cmd.ExecuteNonQuery();
             }
@@ -218,193 +259,158 @@ namespace AniDBmini
         /// </summary>
         public void InsertFileInfo(FileInfoFetchedArgs e)
         {
-            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
-            {
-                cmd.CommandText = @"INSERT OR REPLACE INTO anime VALUES (@aid, @type, @title, @nihongo, @english, @year, @eps_total);";
-
-                SQLiteParameter[] aParams = { new SQLiteParameter("@aid", e.Anime.aid),
-                                              new SQLiteParameter("@type", e.Anime.type),
-                                              new SQLiteParameter("@title", e.Anime.title),
-                                              new SQLiteParameter("@nihongo", e.Anime.nihongo),
-                                              new SQLiteParameter("@english", e.Anime.english),
-                                              new SQLiteParameter("@year", e.Anime.year),
-                                              new SQLiteParameter("@eps_total", e.Anime.eps_total) };
-
-                aParams[3].IsNullable = aParams[4].IsNullable = true;
-                cmd.Parameters.AddRange(aParams);
-
-                cmd.ExecuteNonQuery();
-                cmd.Parameters.Clear();
-
-                cmd.CommandText = @"INSERT OR REPLACE INTO episodes VALUES (@eid, @aid, @epno, @spl_epno, @english, @nihongo, @romaji, @airdate, @watched);";
-
-                SQLiteParameter[] eParams = { new SQLiteParameter("@eid", e.Episode.eid),
-                                              new SQLiteParameter("@aid", e.Anime.aid),
-                                              new SQLiteParameter("@epno", e.Episode.epno),
-                                              new SQLiteParameter("@spl_epno", e.Episode.spl_epno),
-                                              new SQLiteParameter("@english", e.Episode.english),
-                                              new SQLiteParameter("@nihongo", e.Episode.nihongo),
-                                              new SQLiteParameter("@romaji", e.Episode.romaji),
-                                              new SQLiteParameter("@airdate", e.Episode.airdate),
-                                              new SQLiteParameter("@watched", e.Episode.watched) };
-
-                eParams[2].IsNullable = eParams[3].IsNullable = eParams[4].IsNullable = eParams[5].IsNullable = true;
-
-                if (e.Episode.epno == 0)
-                    eParams[2].Value = null;
-
-                cmd.Parameters.AddRange(eParams);
-
-                cmd.ExecuteNonQuery();
-                cmd.Parameters.Clear();
-
-                cmd.CommandText = @"INSERT OR REPLACE INTO files VALUES (@fid, @lid, @eid, @gid, @ed2k, @watcheddate, @length, @size, @source, @acodec, @vcodec, @vres, @path, @generic);";
-
-                SQLiteParameter[] fParams = { new SQLiteParameter("@fid", e.File.fid),
-                                              new SQLiteParameter("@lid", e.File.lid),
-                                              new SQLiteParameter("@eid", e.Episode.eid),
-                                              new SQLiteParameter("@gid", e.File.gid),
-                                              new SQLiteParameter("@ed2k", e.File.ed2k),
-                                              new SQLiteParameter("@watcheddate", e.File.watcheddate),
-                                              new SQLiteParameter("@length", e.File.length),
-                                              new SQLiteParameter("@size", e.File.size),
-                                              new SQLiteParameter("@source", e.File.source),
-                                              new SQLiteParameter("@acodec", e.File.acodec),
-                                              new SQLiteParameter("@vcodec", e.File.vcodec),
-                                              new SQLiteParameter("@vres", e.File.vres),
-                                              new SQLiteParameter("@path", e.File.path),
-                                              new SQLiteParameter("@generic", e.File.generic) };
-
-                fParams[3].IsNullable = fParams[4].IsNullable = fParams[7].IsNullable =
-                fParams[8].IsNullable = fParams[9].IsNullable = fParams[10].IsNullable = fParams[11].IsNullable = true;
-
-                if (e.File.gid == 0)
-                    fParams[3].Value = null;
-
-                cmd.Parameters.AddRange(fParams);
-
-                cmd.ExecuteNonQuery();
-
-                InsertGroup(e.File.gid, e.File.group_name, e.File.group_abbr);
-            }
+            UpdateAnime(e.Anime);
+            UpdateEpisode(e.Episode);
+            UpdateFile(e.File);
+            InsertGroup(e.File.Group);
         }
 
         /// <summary>
         /// Insert a fansub group into the database.
         /// </summary>
-        public void InsertGroup(int gid, string name, string abbr)
+        public void InsertGroup(GroupEntry entry)
         {
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
                 cmd.CommandText = @"INSERT OR REPLACE INTO groups VALUES (@gid, @group_name, @group_abbr);";
 
-                cmd.Parameters.AddWithValue("@gid", gid);
-                cmd.Parameters.AddWithValue("@group_name", name);
-                cmd.Parameters.AddWithValue("@group_abbr", abbr);
+                cmd.Parameters.AddWithValue("@gid", entry.gid);
+                cmd.Parameters.AddWithValue("@group_name", entry.group_name);
+                cmd.Parameters.AddWithValue("@group_abbr", entry.group_abbr);
 
                 cmd.ExecuteNonQuery();
             }
         }
 
         /// <summary>
-        /// Insert a mylist entry into the database.
+        /// Insert a all data from a mylist import.
         /// Specifically for use when importing -- should not be used elsewhere. 
         /// </summary>
-        public void InsertAnimeEntryFromImport(AnimeEntry entry)
+        public void InsertFromImport(List<AnimeEntry> entries)
         {
-            Entries.Add(entry);
+            this.Create();
 
             using (SQLiteTransaction dbTrans = SQLConn.BeginTransaction())
             {
-                using (SQLiteCommand cmd = SQLConn.CreateCommand())
+                using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
                 {
-                    cmd.CommandText = @"INSERT INTO anime VALUES (@aid, @type, @title, @nihongo, @english, @year, @eps_total);";
+                    List<int> insertedGroups = new List<int>();                    
 
-                    cmd.Parameters.AddWithValue("@aid", entry.aid);
-                    cmd.Parameters.AddWithValue("@type", entry.type);
-                    cmd.Parameters.AddWithValue("@title", entry.title);
-                    cmd.Parameters.AddWithValue("@year", entry.year);
-                    cmd.Parameters.AddWithValue("@eps_total", entry.eps_total);
-
-                    SQLiteParameter[] aParams = { new SQLiteParameter("@english", entry.english),
-                                                  new SQLiteParameter("@nihongo", entry.nihongo) };
-                    aParams[0].IsNullable = aParams[1].IsNullable = true;
-                    cmd.Parameters.AddRange(aParams);
-
-                    cmd.ExecuteNonQuery();
-
-                    cmd.CommandText = @"INSERT INTO episodes VALUES (@eid, @aid, @epno, @spl_epno, @english, @nihongo, @romaji, @airdate, @watched);";
-
-                    SQLiteParameter[] eParams = { new SQLiteParameter("@eid"),
-                                                  new SQLiteParameter("@aid", entry.aid),
-                                                  new SQLiteParameter("@epno"),
-                                                  new SQLiteParameter("@spl_epno"),
-                                                  new SQLiteParameter("@english"),
-                                                  new SQLiteParameter("@nihongo"),
-                                                  new SQLiteParameter("@romaji"),
-                                                  new SQLiteParameter("@airdate"),
-                                                  new SQLiteParameter("@watched") };
-
-                    eParams[2].IsNullable = eParams[3].IsNullable =
-                    eParams[5].IsNullable = eParams[6].IsNullable = eParams[8].IsNullable = true;
-                    cmd.Parameters.AddRange(eParams);
-
-                    using (SQLiteCommand fileCmd = SQLConn.CreateCommand())
+                    foreach (AnimeEntry entry in entries)
                     {
+                        cmd.CommandText = @"INSERT INTO anime VALUES (@aid, @type, @title, @nihongo, @english, @year, @eps_total);";
 
-                        fileCmd.CommandText = @"INSERT OR REPLACE INTO files VALUES (@fid, @lid, @eid, @gid, @ed2k, @watcheddate, @length, @size, @source, @acodec, @vcodec, @vres, @path, @generic);";
+                        SQLiteParameter[] aParams = { new SQLiteParameter("@aid", entry.aid),
+                                                      new SQLiteParameter("@type", entry.type),
+                                                      new SQLiteParameter("@title", entry.title),
+                                                      new SQLiteParameter("@nihongo", entry.nihongo),
+                                                      new SQLiteParameter("@english", entry.english),
+                                                      new SQLiteParameter("@year", entry.year),
+                                                      new SQLiteParameter("@eps_total", entry.eps_total) };
 
-                        SQLiteParameter[] fParams = { new SQLiteParameter("@fid"),
-                                                      new SQLiteParameter("@lid"),
-                                                      new SQLiteParameter("@eid"),
-                                                      new SQLiteParameter("@gid"),
-                                                      new SQLiteParameter("@ed2k"),
-                                                      new SQLiteParameter("@watcheddate"),
-                                                      new SQLiteParameter("@length"),
-                                                      new SQLiteParameter("@size"),
-                                                      new SQLiteParameter("@source"),
-                                                      new SQLiteParameter("@acodec"),
-                                                      new SQLiteParameter("@vcodec"),
-                                                      new SQLiteParameter("@vres"),
-                                                      new SQLiteParameter("@path"),
-                                                      new SQLiteParameter("@generic") };
+                        aParams[3].IsNullable = aParams[4].IsNullable = true;
 
-                        fParams[3].IsNullable = fParams[4].IsNullable = fParams[5].IsNullable = fParams[6].IsNullable = fParams[7].IsNullable =
-                        fParams[8].IsNullable = fParams[9].IsNullable = fParams[10].IsNullable = fParams[11].IsNullable = fParams[12].IsNullable = true;
-                        fileCmd.Parameters.AddRange(fParams);
+                        cmd.Parameters.Clear();
+                        cmd.Parameters.AddRange(aParams);
 
-                        foreach (EpisodeEntry ep in entry.Episodes)
+                        cmd.ExecuteNonQuery();
+
+                        cmd.CommandText = @"INSERT INTO episodes VALUES (@eid, @aid, @epno, @spl_epno, @english, @nihongo, @romaji, @airdate, @watched);";
+
+                        SQLiteParameter[] eParams = { new SQLiteParameter("@eid"),
+                                                      new SQLiteParameter("@aid", entry.aid),
+                                                      new SQLiteParameter("@epno"),
+                                                      new SQLiteParameter("@spl_epno"),
+                                                      new SQLiteParameter("@english"),
+                                                      new SQLiteParameter("@nihongo"),
+                                                      new SQLiteParameter("@romaji"),
+                                                      new SQLiteParameter("@airdate"),
+                                                      new SQLiteParameter("@watched") };
+
+                        eParams[2].IsNullable = eParams[3].IsNullable =
+                        eParams[5].IsNullable = eParams[6].IsNullable = eParams[8].IsNullable = true;
+
+                        cmd.Parameters.Clear();
+                        cmd.Parameters.AddRange(eParams);
+
+                        using (SQLiteCommand fileCmd = new SQLiteCommand(SQLConn))
                         {
-                            eParams[0].Value = ep.eid;
-                            if (ep.epno != 0) eParams[2].Value = ep.epno;
-                            else eParams[3].Value = ep.spl_epno;
-                            eParams[4].Value = ep.english;
-                            eParams[5].Value = ep.nihongo;
-                            eParams[6].Value = ep.romaji;
-                            eParams[7].Value = ep.airdate;
-                            eParams[8].Value = ep.watched;
 
-                            cmd.ExecuteNonQuery();
+                            fileCmd.CommandText = @"INSERT OR REPLACE INTO files VALUES (@fid, @lid, @eid, @gid, @ed2k, @watcheddate, @length, @size, @source, @acodec, @vcodec, @vres, @path, @generic);";
 
-                            fParams[2].Value = ep.eid;
+                            SQLiteParameter[] fParams = { new SQLiteParameter("@fid"),
+                                                          new SQLiteParameter("@lid"),
+                                                          new SQLiteParameter("@eid"),
+                                                          new SQLiteParameter("@gid"),
+                                                          new SQLiteParameter("@ed2k"),
+                                                          new SQLiteParameter("@watcheddate"),
+                                                          new SQLiteParameter("@length"),
+                                                          new SQLiteParameter("@size"),
+                                                          new SQLiteParameter("@source"),
+                                                          new SQLiteParameter("@acodec"),
+                                                          new SQLiteParameter("@vcodec"),
+                                                          new SQLiteParameter("@vres"),
+                                                          new SQLiteParameter("@path"),
+                                                          new SQLiteParameter("@generic") };
 
-                            foreach (FileEntry file in ep.Files)
+                            fParams[3].IsNullable = fParams[4].IsNullable = fParams[5].IsNullable = fParams[6].IsNullable = fParams[7].IsNullable =
+                            fParams[8].IsNullable = fParams[9].IsNullable = fParams[10].IsNullable = fParams[11].IsNullable = fParams[12].IsNullable = true;
+                            fileCmd.Parameters.AddRange(fParams);
+
+                            foreach (EpisodeEntry ep in entry.Episodes)
                             {
-                                fParams[0].Value = file.fid;
-                                fParams[1].Value = file.lid;
-                                if (file.gid != 0) fParams[3].Value = file.gid;
-                                fParams[4].Value = file.ed2k;
-                                fParams[5].Value = file.watcheddate;
-                                fParams[6].Value = file.length;
-                                fParams[7].Value = file.size;
-                                fParams[8].Value = file.source;
-                                fParams[9].Value = file.acodec;
-                                fParams[10].Value = file.vcodec;
-                                fParams[11].Value = file.vres;
-                                fParams[12].Value = file.path;
-                                fParams[13].Value = file.generic;
+                                eParams[0].Value = ep.eid;
+                                if (ep.epno != 0)
+                                    eParams[2].Value = ep.epno;
+                                else
+                                {
+                                    eParams[2].Value = null;
+                                    eParams[3].Value = ep.spl_epno;
+                                }
+                                eParams[4].Value = ep.english;
+                                eParams[5].Value = ep.nihongo;
+                                eParams[6].Value = ep.romaji;
+                                eParams[7].Value = ep.airdate;
+                                eParams[8].Value = ep.watched;
 
-                                fileCmd.ExecuteNonQuery();
+                                cmd.ExecuteNonQuery();
+
+                                fParams[2].Value = ep.eid;
+
+                                foreach (FileEntry file in ep.Files)
+                                {
+                                    fParams[0].Value = file.fid;
+                                    fParams[1].Value = file.lid;
+                                    if (file.Group.gid != 0) fParams[3].Value = file.Group.gid;
+                                    fParams[4].Value = file.ed2k;
+                                    fParams[5].Value = file.watcheddate;
+                                    fParams[6].Value = file.length;
+                                    fParams[7].Value = file.size;
+                                    fParams[8].Value = file.source;
+                                    fParams[9].Value = file.acodec;
+                                    fParams[10].Value = file.vcodec;
+                                    fParams[11].Value = file.vres;
+                                    fParams[12].Value = file.path;
+                                    fParams[13].Value = file.generic;
+
+                                    fileCmd.ExecuteNonQuery();
+                                    OnEntryInserted(entry.title);
+
+                                    if (file.Group.gid != 0 && !insertedGroups.Contains(file.Group.gid))
+                                    {
+                                        using (SQLiteCommand groupCmd = new SQLiteCommand(SQLConn))
+                                        {
+                                            groupCmd.CommandText = @"INSERT INTO groups VALUES (@gid, @group_name, @group_abbr);";
+
+                                            groupCmd.Parameters.AddWithValue("@gid", file.Group.gid);
+                                            groupCmd.Parameters.AddWithValue("@group_name", file.Group.group_name);
+                                            groupCmd.Parameters.AddWithValue("@group_abbr", file.Group.group_abbr);
+
+                                            groupCmd.ExecuteNonQuery();
+                                            insertedGroups.Add(file.Group.gid);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -415,6 +421,85 @@ namespace AniDBmini
         }
 
         #endregion INSERT
+
+        #region UPDATE
+
+        private void UpdateAnime(AnimeEntry entry)
+        {
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
+            {
+                cmd.CommandText = @"INSERT OR REPLACE INTO anime VALUES (@aid, @type, @title, @nihongo, @english, @year, @eps_total);";
+
+                SQLiteParameter[] aParams = { new SQLiteParameter("@aid", entry.aid),
+                                              new SQLiteParameter("@type", entry.type),
+                                              new SQLiteParameter("@title", entry.title),
+                                              new SQLiteParameter("@nihongo", entry.nihongo),
+                                              new SQLiteParameter("@english", entry.english),
+                                              new SQLiteParameter("@year", entry.year),
+                                              new SQLiteParameter("@eps_total", entry.eps_total) };
+
+                aParams[3].IsNullable = aParams[4].IsNullable = true;
+                cmd.Parameters.AddRange(aParams);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void UpdateEpisode(EpisodeEntry entry)
+        {
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
+            {
+                cmd.CommandText = @"INSERT OR REPLACE INTO episodes VALUES (@eid, @aid, @epno, @spl_epno, @english, @nihongo, @romaji, @airdate, @watched);";
+
+                SQLiteParameter[] eParams = { new SQLiteParameter("@eid", entry.eid),
+                                              new SQLiteParameter("@aid", entry.aid),
+                                              new SQLiteParameter("@epno", entry.epno),
+                                              new SQLiteParameter("@spl_epno", entry.spl_epno),
+                                              new SQLiteParameter("@english", entry.english),
+                                              new SQLiteParameter("@nihongo", entry.nihongo),
+                                              new SQLiteParameter("@romaji", entry.romaji),
+                                              new SQLiteParameter("@airdate", entry.airdate),
+                                              new SQLiteParameter("@watched", entry.watched) };
+
+                eParams[2].IsNullable = eParams[3].IsNullable = eParams[4].IsNullable = eParams[5].IsNullable = true;
+                if (entry.epno == 0) eParams[2].Value = null;
+                cmd.Parameters.AddRange(eParams);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void UpdateFile(FileEntry entry)
+        {
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
+            {
+                cmd.CommandText = @"INSERT OR REPLACE INTO files VALUES (@fid, @lid, @eid, @gid, @ed2k, @watcheddate, @length, @size, @source, @acodec, @vcodec, @vres, @path, @generic);";
+
+                SQLiteParameter[] fParams = { new SQLiteParameter("@fid", entry.fid),
+                                              new SQLiteParameter("@lid", entry.lid),
+                                              new SQLiteParameter("@eid", entry.eid),
+                                              new SQLiteParameter("@gid", entry.Group.gid),
+                                              new SQLiteParameter("@ed2k", entry.ed2k),
+                                              new SQLiteParameter("@watcheddate", entry.watcheddate),
+                                              new SQLiteParameter("@length", entry.length),
+                                              new SQLiteParameter("@size", entry.size),
+                                              new SQLiteParameter("@source", entry.source),
+                                              new SQLiteParameter("@acodec", entry.acodec),
+                                              new SQLiteParameter("@vcodec", entry.vcodec),
+                                              new SQLiteParameter("@vres", entry.vres),
+                                              new SQLiteParameter("@path", entry.path),
+                                              new SQLiteParameter("@generic", entry.generic) };
+
+                fParams[3].IsNullable = fParams[4].IsNullable = fParams[7].IsNullable =
+                fParams[8].IsNullable = fParams[9].IsNullable = fParams[10].IsNullable = fParams[11].IsNullable = true;
+                if (entry.Group.gid == 0) fParams[3].Value = null;
+                cmd.Parameters.AddRange(fParams);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        #endregion UPDATE
 
         #endregion Public Methods
 

@@ -33,14 +33,28 @@ namespace AniDBmini
 
         public static string m_AppName = Application.ResourceAssembly.GetName().Name;
 
+        private int _pendingTasks;
+        public int m_pendingTasks
+        {
+            get { return _pendingTasks; }
+            set
+            {
+                _pendingTasks = value;
+                bTasksTextBlock.Dispatcher.BeginInvoke(new Action(delegate
+                {
+                    bTasksTextBlock.Text = _pendingTasks.ToString();
+                }));
+            }
+        }
+
         private Forms.NotifyIcon m_notifyIcon;
         private Forms.ContextMenu m_notifyContextMenu = new Forms.ContextMenu();
         private WindowState m_storedWindowState = WindowState.Normal;
 
         private BackgroundWorker m_HashWorker;
 
-        private AniDBAPI aniDB;
-        private MPCAPI mpcApi;
+        private AniDBAPI m_aniDBAPI;
+        private MPCAPI m_mpcAPI;
         private MylistDB m_myList;
 
         private DateTime m_hashingStartTime;
@@ -50,7 +64,7 @@ namespace AniDBmini
         private bool isHashing;
         private double totalQueueSize, ppSize;
 
-        private string[] allowedVideoFiles = { "*.avi", "*.mkv", "*.mov", "*.mp4", "*.mpeg", "*.mpg", "*.ogm" };
+        private string[] allowedVideoFiles = { "*.avi", "*.mkv", "*.mov", "*.mp4", "*.mpeg", "*.mpg", "*.ogm", "*.rm", "*.rmvb", "*.ts", "*.wmv" };
 
         private TSObservableCollection<MylistStat> mylistStatsList = new TSObservableCollection<MylistStat>();
         private TSObservableCollection<HashItem> hashFileList = new TSObservableCollection<HashItem>();
@@ -62,22 +76,22 @@ namespace AniDBmini
 
         public MainWindow(AniDBAPI api)
         {
-            aniDB = api;
-            AniDBAPI.AppendDebugLine("Welcome to AniDBmini, connected to: " + aniDB.APIServer);
+            m_aniDBAPI = api;
+            AniDBAPI.AppendDebugLine("Welcome to AniDBmini, connected to: " + m_aniDBAPI.APIServer);
 
             InitializeComponent();
             SetMylistVisibility();
 
             mylistStats.ItemsSource = mylistStatsList;
-            debugListBox.ItemsSource = aniDB.DebugLog;
+            debugListBox.ItemsSource = m_aniDBAPI.DebugLog;
             hashingListBox.ItemsSource = hashFileList;
             animeTabControl.ItemsSource = animeTabList;
 
             animeTabList.OnCountChanged += new CountChangedHandler(animeTabList_OnCountChanged);
 
-            aniDB.OnFileHashingProgress += new FileHashingProgressHandler(OnFileHashingProgress);
-            aniDB.OnAnimeTabFetched += new AnimeTabFetchedHandler(OnAnimeTabFetched);
-            aniDB.OnFileInfoFetched += new FileInfoFetchedHandler(OnFileInfoFetched);
+            m_aniDBAPI.OnFileHashingProgress += new FileHashingProgressHandler(OnFileHashingProgress);
+            m_aniDBAPI.OnAnimeTabFetched += new AnimeTabFetchedHandler(OnAnimeTabFetched);
+            m_aniDBAPI.OnFileInfoFetched += new FileInfoFetchedHandler(OnFileInfoFetched);
         }
 
         #endregion Constructor
@@ -89,7 +103,7 @@ namespace AniDBmini
         /// </summary>
         private void InitializeStats()
         {
-            int[] stats = aniDB.MyListStats();
+            int[] stats = m_aniDBAPI.MyListStats();
             int i = 0;
 
             foreach (int stat in stats)
@@ -153,6 +167,62 @@ namespace AniDBmini
 
         #region Private Methods
 
+        #region MPCHC
+
+        private bool SetMPCHCLocation()
+        {
+            string pFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+            dlg.Filter = "MPC-HC main executable|mpc-hc.exe;mpc-hc64.exe";
+            dlg.InitialDirectory = (System.IO.Directory.Exists(pFilesPath + @"\Media Player Classic - Home Cinema") ?
+                                   pFilesPath + @"\Media Player Classic - Home Cinema" : pFilesPath);
+
+            Nullable<bool> result = dlg.ShowDialog();
+
+            if (result == true)
+            {
+                if (System.IO.Path.GetFileNameWithoutExtension(dlg.FileName) == "mpc-hc64" && IntPtr.Size == 4)
+                    MessageBox.Show("Media Player Classic - Home Cinema 64bit will not work\nwith the 32bit version of " + MainWindow.m_AppName + ".\n\n" +
+                                    "Please use the 64bit version of " + MainWindow.m_AppName + ".\nOr use the 32bit version of Media Player Classic - Home Cinema.",
+                                    "Alert!", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                else
+                {
+                    ConfigFile.Write("mpcPath", dlg.FileName);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Adds a list of files to mpc-hc's playlist.
+        /// Optionally clears the current playlist, and starts playback.
+        /// </summary>
+        private void AddToPlaylist(List<string> fPaths, bool clearPlay)
+        {
+            if (fPaths.Count > 0)
+            {
+                mpchcLaunch(this, null);
+
+                ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+                {
+                    while (!m_mpcAPI.isHooked) Thread.Sleep(200);
+
+                    if (clearPlay)
+                        m_mpcAPI.ClearPlaylist();
+
+                    foreach (string path in fPaths)
+                        m_mpcAPI.AddFileToPlaylist(path);
+
+                    if (clearPlay)
+                        m_mpcAPI.StartPlaylist();
+                }));
+            }
+        }
+
+        #endregion MPCHC
+
         #region Hashing
 
         /// <summary>
@@ -184,7 +254,7 @@ namespace AniDBmini
                 totalQueueSize -= item.Size;
 
                 if (item == hashFileList[0])
-                    aniDB.cancelHashing();
+                    m_aniDBAPI.cancelHashing();
             }
 
             lock (m_hashingLock)
@@ -232,7 +302,7 @@ namespace AniDBmini
                 item.Viewed = Convert.ToInt32(watchedCheckBox.IsChecked);
                 item.State = stateComboBox.SelectedIndex;
 
-                aniDB.MyListAdd(item);
+                m_aniDBAPI.MyListAdd(item);
             }
         }
 
@@ -248,50 +318,56 @@ namespace AniDBmini
             if (m_myList.isSQLConnOpen)
             {
                 MylistImortButton.Visibility = Visibility.Collapsed;
-                MylistDataGrid.IsEnabled = true;
+                MylistTreeListView.IsEnabled = true;
             }
             else
             {
                 MylistImortButton.Visibility = Visibility.Visible;
-                MylistDataGrid.IsEnabled = false;
+                MylistTreeListView.IsEnabled = false;
             }
         }
 
-        /// <summary>
-        /// Expands or contracts a datagridrow's details.
-        /// </summary>
-        public void MylistToggleEntry(DependencyObject src)
+        private bool SetFileLocation(FileEntry entry)
         {
-            DataGridRow row = src.FindAncestor<DataGridRow>();
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+            dlg.Filter = "Video Files|" + String.Join(";", allowedVideoFiles) + "|All Files|*.*";
+            dlg.Title = String.Format("Browsing for {0} Episode {1}", m_myList.SelectAnimeFromFile(entry.fid).title, entry.epno);
 
-            if (row != null)
+            Nullable<bool> result = dlg.ShowDialog();
+
+            if (result == true)
             {
-                if (row.Item is AnimeEntry)
-                {
-                    AnimeEntry entry = (AnimeEntry)row.Item;
-                    entry.IsExpanded = !entry.IsExpanded;
-                    if (entry.IsExpanded && !entry.IsFetched)
-                    {
-                        entry.Episodes = m_myList.SelectEpisodes(entry);
-                        entry.IsFetched = true;
-                    }
-                }
-                else if (row.Item is EpisodeEntry)
-                {
-                    EpisodeEntry entry = (EpisodeEntry)row.Item;
-                    if (entry.genericOnly)
-                        return;
-                    else
-                    {
-                        entry.IsExpanded = !entry.IsExpanded;
-                        if (entry.IsExpanded && !entry.IsFetched)
-                        {
-                            entry.Files = m_myList.SelectFiles(entry);
-                            entry.IsFetched = true;
-                        }
-                    }
-                }
+                entry.path = dlg.FileName;
+                return true;
             }
+
+            return false;
+        }
+
+        private List<string> GetFilePathList(object sender)
+        {
+            object entry = (sender as MenuItem).Tag;
+            List<string> fPaths = new List<string>();
+
+            if (entry is AnimeEntry)
+            {
+                foreach (FileEntry file in m_myList.SelectFilesFromAnime((entry as AnimeEntry).aid))
+                    if (File.Exists(file.path))
+                        fPaths.Add(file.path);
+            }
+            else if (entry is FileEntry)
+            {
+                FileEntry fEntry = entry as FileEntry;
+
+                if (File.Exists(fEntry.path))
+                    fPaths.Add(fEntry.path);
+                else if (MessageBox.Show("Would you like to locate the file?", "File not found!",
+                    MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes &&
+                    SetFileLocation(fEntry))
+                    AddToMPCHC_Click(sender, null);
+            }
+
+            return fPaths;
         }
 
         #endregion Mylist
@@ -305,7 +381,9 @@ namespace AniDBmini
         private void OnInitialized(object sender, EventArgs e)
         {
             m_myList = new MylistDB();
-            MylistDataGrid.ItemsSource = m_myList.Entries;
+
+            if (m_myList.isSQLConnOpen)
+                MylistTreeListView.Model = new MylistModel(m_myList);
 
             InitializeStats();
             InitializeNotifyIcon();
@@ -315,7 +393,8 @@ namespace AniDBmini
         {
             OptionsWindow options = new OptionsWindow();
             options.Owner = this;
-            if (options.ShowDialog() == true && mpcApi != null) mpcApi.LoadConfig();
+            if (options.ShowDialog() == true && m_mpcAPI != null)
+                m_mpcAPI.LoadConfig();
         }
 
         /// <summary>
@@ -323,16 +402,17 @@ namespace AniDBmini
         /// </summary>
         private void mpchcLaunch(object sender, RoutedEventArgs e)
         {
-            if (mpcApi == null || !mpcApi.isHooked || !mpcApi.FocusMPC())
+            if (m_mpcAPI == null || !m_mpcAPI.isHooked || !m_mpcAPI.FocusMPC())
             {
                 if (File.Exists(ConfigFile.Read("mpcPath").ToString()))
                 {
-                    mpcApi = new MPCAPI(this);
-                    mpcApi.OnFileWatched += new FileWatchedHandler(OnFileWatched);                    
+                    m_mpcAPI = new MPCAPI(this);
+                    m_mpcAPI.OnFileWatched += new FileWatchedHandler(OnFileWatched);
                 }
-                else
-                    MessageBox.Show("Media Player Classic - Home Cinema not found!\n" +
-                                    "Please ensure you have located the mpc-hc executable inside the options.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+                else if (MessageBox.Show("Please ensure you have located the mpc-hc executable inside the options.\nWould you like to set mpc-hc's location now?",
+                                     "Media Player Classic - Home Cinema not found!", MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
+                    if (SetMPCHCLocation())
+                        mpchcLaunch(sender, e);
             }
         }
 
@@ -343,11 +423,11 @@ namespace AniDBmini
 
             ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
             {
-                item = aniDB.ed2kHash(item);
-                aniDB.MyListAdd(item);
+                item = m_aniDBAPI.ed2kHash(item);
+                m_aniDBAPI.MyListAdd(item);
 
-                if (ConfigFile.Read("mpcShowOSD").ToBoolean() && mpcApi != null && mpcApi.isHooked)
-                    mpcApi.ShowWatchedOSD();
+                if (ConfigFile.Read("mpcShowOSD").ToBoolean() && m_mpcAPI != null && m_mpcAPI.isHooked)
+                    m_mpcAPI.OSDShowMessage(String.Format("{0}: File marked as watched", m_AppName));
             }));
         }
 
@@ -362,7 +442,7 @@ namespace AniDBmini
         private void randomAnimeLabelContextMenuItem_Click(object sender, RoutedEventArgs e)
         {
             MenuItem mi = (MenuItem)sender;
-            aniDB.RandomAnime(int.Parse(mi.Tag.ToString()));
+            m_aniDBAPI.RandomAnime(int.Parse(mi.Tag.ToString()));
         }
 
         private void OnAnimeTabFetched(AnimeTab aTab)
@@ -379,12 +459,7 @@ namespace AniDBmini
             }
 
             m_myList.InsertFileInfo(e);
-
-            Dispatcher.BeginInvoke(new Action(delegate
-            {
-                m_myList.SelectEntry(e.Anime.aid);
-                MylistDataGrid.Items.SortDescriptions.Add(new SortDescription("title", ListSortDirection.Ascending));
-            }));
+            Dispatcher.BeginInvoke(new Action(delegate {MylistTreeListView.Refresh(); }));
         }
 
         private void mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -409,11 +484,11 @@ namespace AniDBmini
 
         private void OnClose(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (ConfigFile.Read("mpcClose").ToBoolean() && mpcApi != null && mpcApi.isHooked)
-                mpcApi.CloseMPC();
+            if (ConfigFile.Read("mpcClose").ToBoolean() && m_mpcAPI != null && m_mpcAPI.isHooked)
+                m_mpcAPI.CloseMPC();
 
             m_myList.Close();
-            aniDB.Logout();
+            m_aniDBAPI.Logout();
 
             m_notifyIcon.Dispose();
             m_notifyIcon = null;
@@ -425,7 +500,7 @@ namespace AniDBmini
 
         private void clearDebugLog(object sender, RoutedEventArgs e)
         {
-            aniDB.DebugLog.Clear();
+            m_aniDBAPI.DebugLog.Clear();
         }
 
         private void debugListBox_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -486,7 +561,7 @@ namespace AniDBmini
             if (isHashing)
             {
                 m_HashWorker.CancelAsync();
-                aniDB.cancelHashing();
+                m_aniDBAPI.cancelHashing();
 
                 OnHashWorkerCompleted(sender, null);
             }
@@ -502,7 +577,7 @@ namespace AniDBmini
                     return;
                 }
 
-                HashItem _temp = aniDB.ed2kHash(hashFileList[0]);
+                HashItem _temp = m_aniDBAPI.ed2kHash(hashFileList[0]);
 
                 if (isHashing && _temp != null) // if we did not abort remove item from queue and process
                 {
@@ -552,14 +627,14 @@ namespace AniDBmini
                 ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
                 {
                     foreach (string _file in Directory.GetFiles(dlg.SelectedPath, "*.*")
-                                                      .Where(s => allowedVideoFiles.Contains("*" + Path.GetExtension(s).ToLower())))
+                                                      .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
                         addRowToHashTable(_file);
 
                     foreach (string dir in Directory.GetDirectories(dlg.SelectedPath))
                         try
                         {
                             foreach (string _file in Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories)
-                                                              .Where(s => allowedVideoFiles.Contains("*" + Path.GetExtension(s).ToLower())))
+                                                              .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
                                 addRowToHashTable(_file);
                         }
                         catch (UnauthorizedAccessException) { }
@@ -579,8 +654,8 @@ namespace AniDBmini
             {
                 if (isHashing)
                 {
-                    timeElapsedTextBlock.Text = String.Format("Elapsed: {0}", totalTimeElapsed.ToFormatedString());
-                    timeRemainingTextBlock.Text = String.Format("ETA: {0}", remainingSpan.ToFormatedString());
+                    timeElapsedTextBlock.Text = String.Format("Elapsed: {0}", totalTimeElapsed.ToHMS());
+                    timeRemainingTextBlock.Text = String.Format("ETA: {0}", remainingSpan.ToHMS());
                     totalBytesTextBlock.Text = String.Format("Bytes: {0} / {1}", (e.ProcessedSize + ppSize).ToFormatedBytes(ExtensionMethods.BYTE_UNIT.GB),
                                                                                  totalQueueSize.ToFormatedBytes(ExtensionMethods.BYTE_UNIT.GB));
 
@@ -605,98 +680,115 @@ namespace AniDBmini
             SetMylistVisibility();
         }
 
-        private void MylistDataGridSorting(object sender, DataGridSortingEventArgs e)
-        {
-            e.Handled = true;
-
-            MylistDataGrid.EnableRowVirtualization = true;
-            ListSortDirection direction = (e.Column.SortDirection != ListSortDirection.Ascending) ? ListSortDirection.Ascending : ListSortDirection.Descending;
-            e.Column.SortDirection = direction;
-
-            ListCollectionView lcv = (ListCollectionView)CollectionViewSource.GetDefaultView(MylistDataGrid.ItemsSource);
-            MylistSort mylistSort = new MylistSort(direction, e.Column);
-            lcv.CustomSort = mylistSort;
-            MylistDataGrid.EnableRowVirtualization = false;
-        }
-
-        private void ExpandExecuted(object sender, ExecutedRoutedEventArgs e)
-        {
-            MylistToggleEntry((DependencyObject)e.OriginalSource);
-            e.Handled = true;
-        }
-
-        private void MylistExpand_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            try
-            {
-                DependencyObject src = (DependencyObject)e.OriginalSource;
-                if (src.FindAncestor<Button>() == null && src.FindAncestor<DataGrid>().Name != "filesDataGrid")
-                    MylistToggleEntry(src);
-            }
-            catch (NullReferenceException) { }
-
-            e.Handled = true;
-        }
-
         private void OpenADBPage_Click(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(AniDBaLink + ((MenuItem)sender).Tag.ToString());
+            System.Diagnostics.Process.Start(AniDBaLink + (sender as MenuItem).Tag.ToString());
         }
         
         private void EntryViewDetails_Click(object sender, RoutedEventArgs e)
         {
-            aniDB.Anime(int.Parse(((MenuItem)sender).Tag.ToString()));
+            m_aniDBAPI.Anime(int.Parse(((MenuItem)sender).Tag.ToString()));
         }
 
-        private void OpenFileWithMPCHC_Click(object sender, RoutedEventArgs e)
+        private void AddToMPCHC_Click(object sender, RoutedEventArgs e)
         {
-            MenuItem item = (MenuItem)sender;
+            AddToPlaylist(GetFilePathList(sender), false);
+        }
 
-            if (item.Tag != null)
+        private void FetchEntryInfo_Click(object sender, RoutedEventArgs e)
+        {
+            object entry = (sender as MenuItem).Tag;
+
+            if (entry is AnimeEntry)
             {
-                string filePath = item.Tag.ToString();
-                mpchcLaunch(this, null);
-
-                ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
-                {
-                    while (!mpcApi.isHooked) Thread.Sleep(200);
-                    mpcApi.OpenFile(filePath);
-                }));
+                FileEntry fEntry = m_myList.SelectFileFromAnime((entry as AnimeEntry).aid);
+                if (fEntry != null) m_aniDBAPI.File(fEntry);
             }
-        }
-
-        private void MarkWatched_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem item = (MenuItem)sender;
-            var row = ((ContextMenu)item.Parent).PlacementTarget as DataGridRow;
-            System.Diagnostics.Debug.WriteLine(row);
-        }
-
-        private void MarkUnwatched_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem item = (MenuItem)sender;
-            var row = ((ContextMenu)item.Parent).PlacementTarget as DataGridRow;
-            System.Diagnostics.Debug.WriteLine(row);
-        }
-
-        private void MylistDGRDVChanged(object sender, DataGridRowDetailsEventArgs e)
-        {
-            DataGrid dg = (DataGrid)sender;
-            if (dg != null && e.Row.DetailsVisibility == Visibility.Collapsed)
-            {
-                DataGrid childDG = ((DependencyObject)e.Row).FindChild<DataGrid>();
-                if (childDG != null)
-                    childDG.UnselectAll();
-            }
+            else if (entry is FileEntry)
+                m_aniDBAPI.File(entry as FileEntry);
         }
 
         /// <summary>
-        /// Fixes height bug.
+        /// This is not completely foolproof,
+        /// but it works most of the time.
+        /// NOT recursive. Will NOT add OP's ED's or Specials.
         /// </summary>
-        private void episodesDGRDVChanged(object sender, DataGridRowDetailsEventArgs e)
+        private void LocateFiles_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid dg = sender as DataGrid;
-            if (dg != null && e.Row.DetailsVisibility == Visibility.Collapsed) dg.Items.Refresh();
+            object entry = (sender as MenuItem).Tag;
+
+            if (entry is AnimeEntry)
+            {
+                List<FileEntry> files = m_myList.SelectFilesFromAnime((entry as AnimeEntry).aid);
+
+                if (files.Count > 0)
+                {
+                    Forms.FolderBrowserDialog dlg = new Forms.FolderBrowserDialog();
+                    dlg.ShowNewFolderButton = false;
+
+                    Forms.DialogResult result = dlg.ShowDialog();
+                    if (result == Forms.DialogResult.OK)
+                    {
+                        List<string> fPaths = new List<string>();
+
+                        foreach (string _file in Directory.GetFiles(dlg.SelectedPath, "*.*")
+                            .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
+                            fPaths.Add(_file);
+
+                        foreach (FileEntry file in files)
+                        {
+                            string path = fPaths.FirstOrDefault(x =>
+                                Regex.IsMatch(x, String.Format(@"{0}.*[p\]) _-]0?{1}[v([ _-].*", file.Group.group_abbr, file.epno)) ||  // [EnA]_Lucky_Star_01_(1024x576_h.264)_[C5D5FB67].mkv
+                                Regex.IsMatch(x, String.Format(@"[p\]) _-]0?{0}[v([ _-].*{1}.*", file.epno, file.Group.group_abbr)) ||  // Macross_Frontier_Ep01_Close_Encounter_[720p,BluRay,x264]_-_THORA.mkv
+                                Regex.IsMatch(x, String.Format(@"[p\]) _-]0?{0}[v([ _-].*{1}.*", file.epno, file.Group.group_name)));   // LOGH Episode 01v2(DVD) - Central Anime(eb2858dc).mkv
+                            if (path != string.Empty) file.path = path;
+                        }
+                    }
+                }
+                else
+                    MessageBox.Show("No file entries found for the selected anime.");
+            }
+            else if (entry is FileEntry)
+                SetFileLocation(entry as FileEntry);
+        }
+
+        private void PlayWithMPCHC_Click(object sender, RoutedEventArgs e)
+        {
+            object entry = (sender as MenuItem).Tag;
+
+            if (entry is AnimeEntry)
+            {
+                AddToPlaylist(GetFilePathList(sender), true);
+            }
+            else if (entry is FileEntry)
+            {
+                FileEntry fEntry = entry as FileEntry;
+                if (fEntry.path != null ||
+                    (MessageBox.Show("Would you like to locate the file?", "File not found!",
+                    MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes &&
+                    SetFileLocation(fEntry)))
+                {
+                    mpchcLaunch(this, null);
+
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+                    {
+                        while (!m_mpcAPI.isHooked) Thread.Sleep(200);
+                        m_mpcAPI.OpenFile(fEntry.path);
+                    }));
+                }
+            }
+        }
+
+        // TODO
+        private void MarkWatched_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        // TODO
+        private void MarkUnwatched_Click(object sender, RoutedEventArgs e)
+        {
+
         }
 
         #endregion Mylist Tab
@@ -754,14 +846,4 @@ namespace AniDBmini
         #endregion
 
     }
-
-    #region Custom Application Commands
-
-    public static class Command
-    {
-        public static readonly RoutedUICommand Expand = new RoutedUICommand("Expand Entry", "Expand", typeof(MainWindow));
-    }
-
-    #endregion Custom Application Commands
-
 }

@@ -2,7 +2,7 @@
 #region Using Statements
 
 using System;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SQLite;
 using System.Linq;
@@ -14,12 +14,13 @@ using AniDBmini;
 namespace AniDBmini.Collections
 {
     public class EpisodeEntry : IEquatable<EpisodeEntry>,
-                               INotifyPropertyChanged
+                                INotifyPropertyChanged
 	{
 
         #region Properties
 
         public int eid { get; set; }
+        public int aid { get; set; }
         public int epno { get; set; }
 
         public double length { get; set; }
@@ -29,53 +30,25 @@ namespace AniDBmini.Collections
         public string english { get; set; }
         public string nihongo { get; set; }
         public string romaji { get; set; }
-        public string airdate { get; set; }
+
+        public UnixTimestamp airdate { get; set; }
 
         public bool watched { get; set; }
-        public bool genericOnly { get; set; }
+        public bool hasFiles { get; set; }
 
-        private bool isExpanded;
-        public bool IsExpanded
-        {
-            get { return isExpanded; }
-            set
-            {
-                if (isExpanded != value)
-                {
-                    isExpanded = value;
-                    RaisePropertyChanged("IsExpanded");
-                }
-            }
-        }
-
-        private bool isFetched;
-        public bool IsFetched
-        {
-            get { return isFetched; }
-            set
-            {
-                if (isFetched != value)
-                {
-                    isFetched = value;
-                    RaisePropertyChanged("IsFetched");
-                }
-            }
-        }
-
-        public ObservableCollection<FileEntry> Files { get; set; }
+        private List<FileEntry> _files = new List<FileEntry>();
+        public List<FileEntry> Files { get { return _files; } }
 
         #endregion Properties
 
         #region Constructors
 
-        public EpisodeEntry()
-        {
-            Files = new ObservableCollection<FileEntry>();
-        }
+        public EpisodeEntry() { }
 
         public EpisodeEntry(SQLiteDataReader reader)
         {
             eid = int.Parse(reader["eid"].ToString());
+            aid = int.Parse(reader["aid"].ToString());
             
             if ((spl_epno = reader["spl_epno"].ToString().FormatNullable()) == null)
                 epno = int.Parse(reader["epno"].ToString());
@@ -89,11 +62,11 @@ namespace AniDBmini.Collections
             romaji = !string.IsNullOrEmpty(reader["romaji"].ToString()) ?
                      reader["romaji"].ToString() : null;
 
-            airdate = !string.IsNullOrEmpty(reader["airdate"].ToString()) ?
-                      ExtensionMethods.UnixTimeToDateTime(reader["airdate"].ToString()).ToShortDateString() : null;
+            if (!string.IsNullOrEmpty(reader["airdate"].ToString()))
+                airdate = double.Parse(reader["airdate"].ToString());
 
             watched = Convert.ToBoolean(int.Parse(reader["watched"].ToString()));
-            genericOnly = Convert.ToBoolean(int.Parse(reader["genericOnly"].ToString()));
+            hasFiles = Convert.ToBoolean(int.Parse(reader["hasFiles"].ToString()));
         }
 
         #endregion Constructors
@@ -118,7 +91,7 @@ namespace AniDBmini.Collections
         /// raise the PropertyChanged event
         /// </summary>
         /// <param name="propName"></param>
-        protected void RaisePropertyChanged(string propName)
+        protected void NotifyPropertyChanged(string propName)
         {
             if (this.PropertyChanged != null)
             {

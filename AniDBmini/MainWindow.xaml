@@ -3,21 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:c="clr-namespace:System;assembly=mscorlib"
         xmlns:l="clr-namespace:AniDBmini"
-        xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+        xmlns:lc="clr-namespace:AniDBmini.Collections"
         Background="{DynamicResource WindowBackgroundBrush}"
-        Title="AniDBmini" Height="475" Width="850" Icon="/AniDBmini;component/Resources/AniDBmini.ico" WindowStartupLocation="Manual"
-        MinWidth="850" MinHeight="475" Initialized="OnInitialized" Closing="OnClose" StateChanged="OnStateChanged" IsVisibleChanged="OnIsVisibleChanged" FontFamily="Calibri">
-    <Window.CommandBindings>
-        <CommandBinding Command="l:Command.Expand" Executed="ExpandExecuted" />
-    </Window.CommandBindings>
+        Title="AniDBmini" Height="480" Width="850" Icon="/AniDBmini;component/Resources/AniDBmini.ico" WindowStartupLocation="Manual"
+        MinWidth="850" MinHeight="480" Initialized="OnInitialized" Closing="OnClose" StateChanged="OnStateChanged" IsVisibleChanged="OnIsVisibleChanged" FontFamily="Calibri">
     <Window.Resources>
 
-        <l:BooleanToYesNo x:Key="BooleanToYesNo" />
-        <l:NullToUnknown x:Key="NullToUnknown" />
-        <l:EpisodesZeroToQuestionMark x:Key="EpisodesZeroToQuestionMark" />
         <l:FileSizeConverter x:Key="FileSizeConverter" />
-        <l:BoolZeroNullToVisibility x:Key="BoolZeroNullToVisibility" />
-        <l:SecondsToFormatedTime x:Key="SecondsToFormatedTime" />
+        <l:ObjectToType x:Key="ObjectToType" />
 
         <!-- #region Buttons -->
 
@@ -202,20 +195,35 @@
         <!-- #region Mylist -->
 
         <ContextMenu x:Key="EntryContextMenu">
-            <MenuItem Header="Open anidb.net page" Click="OpenADBPage_Click" Tag="{Binding aid}" />
-            <MenuItem Header="Show anime details" Click="EntryViewDetails_Click" Tag="{Binding aid}" />
+            <MenuItem Header="Open anidb.net Page" Click="OpenADBPage_Click" Tag="{Binding ID}" />
+            <MenuItem Header="Show Anime Details" Click="EntryViewDetails_Click" Tag="{Binding ID}" />
+            <MenuItem Header="Fetch Anime Info" Click="FetchEntryInfo_Click" Tag="{Binding OriginalEntry}" />
             <Separator />
-            <MenuItem Header="Remove from mylist" Tag="{Binding aid}" />
+            <MenuItem Header="Play with MPC-HC" Click="PlayWithMPCHC_Click" Tag="{Binding OriginalEntry}" />
+            <MenuItem Header="Add to MPC-HC Playlist" Click="AddToMPCHC_Click" Tag="{Binding OriginalEntry}" />
+            <MenuItem Header="Set Files Location" Click="LocateFiles_Click" Tag="{Binding OriginalEntry}" />
+            <Separator />
+            <MenuItem Header="Mark Watched" Click="MarkWatched_Click" Tag="{Binding OriginalEntry}" />
+            <MenuItem Header="Mark Unwatched" Click="MarkUnwatched_Click" Tag="{Binding OriginalEntry}" />
+            <Separator />
+            <MenuItem Header="Remove From Mylist" Tag="{Binding OriginalEntry}" />
         </ContextMenu>
         <ContextMenu x:Key="FileContextMenu">
-            <MenuItem Header="Open with MPC-HC" Click="OpenFileWithMPCHC_Click" Tag="{Binding path}" />
+            <MenuItem Header="Play with MPC-HC" Click="PlayWithMPCHC_Click" Tag="{Binding OriginalEntry}" />
+            <MenuItem Header="Add to MPC-HC Playlist" Click="AddToMPCHC_Click" Tag="{Binding OriginalEntry}" />
+            <MenuItem Header="Set File Location" Click="LocateFiles_Click" Tag="{Binding OriginalEntry}" />
             <Separator />
-            <MenuItem Header="Mark Watched" Click="MarkWatched_Click" />
-            <MenuItem Header="Mark Unwatched" Click="MarkUnwatched_Click" />
+            <MenuItem Header="Fetch File Info" Click="FetchEntryInfo_Click" Tag="{Binding OriginalEntry}" />
+            <Separator />
+            <MenuItem Header="Mark Watched" Click="MarkWatched_Click" Tag="{Binding OriginalEntry}" />
+            <MenuItem Header="Mark Unwatched" Click="MarkUnwatched_Click" Tag="{Binding OriginalEntry}" />
+            <Separator />
+            <MenuItem Header="Remove From Mylist" Tag="{Binding OriginalEntry}" />
         </ContextMenu>
 
         <Style TargetType="{x:Type DataGridCell}">
             <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type DataGridCell}">
@@ -225,6 +233,10 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+        
+        <Style TargetType="{x:Type DataGridRowHeader}">
+            <Setter Property="Width" Value="0" />
         </Style>
 
         <!-- #region ImportListButtonTemplate -->
@@ -278,37 +290,6 @@
         </ControlTemplate>
 
         <!-- #endregion ImportListButtonTemplate -->
-
-        <!-- #region MylistExpandButtonStyle -->
-
-        <Geometry x:Key="ExpandButton">M4,0 L4,8 M8,4 L0,4</Geometry>
-        <Geometry x:Key="CollapseButton">M8,4 L0,4</Geometry>
-
-        <Style x:Key="MylistExpandButtonStyle" TargetType="{x:Type Button}">
-            <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Setter Property="Margin" Value="5,0"/>
-            <Setter Property="Height" Value="9"/>
-            <Setter Property="Width" Value="9"/>
-            <Setter Property="Focusable" Value="False"/>
-            <Setter Property="OverridesDefaultStyle" Value="true"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Button}">
-                        <Border x:Name="ButtonBorder" Background="White" BorderThickness="1" BorderBrush="Black" RenderOptions.EdgeMode="Aliased">
-                            <Path x:Name="ButtonPath" RenderOptions.EdgeMode="Aliased" Data="{StaticResource ExpandButton}" Stroke="Black"
-                                  StrokeThickness="1" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="1" Width="7" Height="7" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <DataTrigger Binding="{Binding DetailsVisibility, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="Visible">
-                                <Setter TargetName="ButtonPath" Property="Data" Value="{StaticResource CollapseButton}" />
-                            </DataTrigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- #endregion MylistExpandButtonStyle -->
 
         <!-- #endregion Mylist -->
 
@@ -436,7 +417,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition />
-            <RowDefinition Height="24" />
+            <RowDefinition Height="22" />
         </Grid.RowDefinitions>
         <Button Template="{StaticResource OptionsButonTemplate}" Click="ShowOpionsWindow" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5" Panel.ZIndex="1" ToolTip="Options" />
         <Button Template="{StaticResource MPCHCButonTemplate}" Click="mpchcLaunch" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="42,5" Panel.ZIndex="1" ToolTip="Open Media Player Classic - Home Cinema" />
@@ -570,289 +551,87 @@
                     <Button x:Name="MylistImortButton" VerticalAlignment="Center" HorizontalAlignment="Center" Height="80" Width="380" Template="{StaticResource ImportListButtonTemplate}" Content="Import Mylist" Click="ImportList_Click" Panel.ZIndex="1" />
                     <Border Background="#9FFF" BorderBrush="#CCC" CornerRadius="2" BorderThickness="1">
                         <Grid>
-                            <Border Name="dgBorder" Background="White" CornerRadius="2" />
-                            <DataGrid x:Name="MylistDataGrid"
-                                      AutoGenerateColumns="False"
-                                      IsReadOnly="True" CanUserResizeRows="False" CanUserResizeColumns="False" CanUserReorderColumns="False"
-                                      HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" FontFamily="Segoe UI"
-                                      HorizontalScrollBarVisibility="Disabled"
-                                      HeadersVisibility="Column"
-                                      BorderThickness="0" RowHeight="20" Background="Transparent"
-                                      SelectionMode="Single" SelectionUnit="FullRow"
-                                      VirtualizingStackPanel.VirtualizationMode="Recycling"
-                                      DataGridRow.MouseDoubleClick="MylistExpand_MouseDoubleClick"
-                                      RowDetailsVisibilityChanged="MylistDGRDVChanged" 
-                                      Sorting="MylistDataGridSorting">
-                                <DataGrid.OpacityMask>
-                                    <VisualBrush Visual="{Binding ElementName=dgBorder}"/>
-                                </DataGrid.OpacityMask>
-                                <DataGrid.RowStyle>
+                            <Border Name="myListBorder" Background="White" CornerRadius="2" />
+                            <l:TreeListView x:Name="MylistTreeListView" AutoGenerateColumns="False"
+                                        IsReadOnly="True" CanUserReorderColumns="False" CanUserResizeRows="False"
+                                        HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" FontFamily="Segoe UI"
+                                        HorizontalScrollBarVisibility="Disabled"
+                                        HeadersVisibility="Column"
+                                        BorderThickness="0" RowHeight="20" Background="Transparent"
+                                        SelectionMode="Single" SelectionUnit="FullRow">
+                                <l:TreeListView.OpacityMask>
+                                    <VisualBrush Visual="{Binding ElementName=myListBorder}"/>
+                                </l:TreeListView.OpacityMask>
+                                <l:TreeListView.RowStyle>
                                     <Style TargetType="{x:Type DataGridRow}">
-                                        <Setter Property="ContextMenu" Value="{StaticResource EntryContextMenu}" />
-                                        <Setter Property="DetailsVisibility" Value="{Binding IsExpanded, Converter={StaticResource BoolZeroNullToVisibility}}" />
+                                        <Setter Property="HeaderStyle">
+                                            <Setter.Value>
+                                                <Style TargetType="{x:Type DataGridRowHeader}">
+                                                    <Setter Property="Width" Value="0" />
+                                                </Style>
+                                            </Setter.Value>
+                                        </Setter>
                                         <Style.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
                                                 <Setter Property="Background" Value="#EEE" />
                                             </Trigger>
+                                            <DataTrigger Binding="{Binding OriginalEntry, Converter={StaticResource ObjectToType}}" Value="{x:Type lc:AnimeEntry}">
+                                                <Setter Property="ContextMenu" Value="{StaticResource EntryContextMenu}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding OriginalEntry, Converter={StaticResource ObjectToType}}" Value="{x:Type lc:FileEntry}">
+                                                <Setter Property="ContextMenu" Value="{StaticResource FileContextMenu}" />
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </DataGrid.RowStyle>
-                                <DataGrid.Columns>
-                                    <DataGridTemplateColumn Header="Title" Width="*" MinWidth="75" SortMemberPath="title">
+                                </l:TreeListView.RowStyle>
+                                <l:TreeListView.Columns>
+                                    <DataGridTemplateColumn Header="Title" Width="*" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Button Command="l:Command.Expand">
-                                                        <Button.Style>
-                                                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource MylistExpandButtonStyle}">
-                                                                <Style.Triggers>
-                                                                    <MultiDataTrigger>
-                                                                        <MultiDataTrigger.Conditions>
-                                                                            <Condition Binding="{Binding IsFetched}" Value="True" />
-                                                                            <Condition Binding="{Binding Episodes.Count}" Value="0" />
-                                                                        </MultiDataTrigger.Conditions>
-                                                                        <Setter Property="Visibility" Value="Hidden" />
-                                                                    </MultiDataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Button.Style>
-                                                    </Button>
-                                                    <TextBlock Text="{Binding title}" TextTrimming="CharacterEllipsis" />
+                                                    <l:RowExpander/>
+                                                    <TextBlock Text="{Binding Col0}" />
                                                 </StackPanel>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Eps" Width="65" SortMemberPath="eps_have">
+                                    <DataGridTemplateColumn Header="Eps" Width="100" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <StackPanel Orientation="Horizontal" Margin="5,0">
-                                                    <TextBlock Text="{Binding eps_have}" />
-                                                    <TextBlock Text="/" />
-                                                    <TextBlock Text="{Binding eps_total, Converter={StaticResource EpisodesZeroToQuestionMark}}" />
-                                                    <TextBlock Visibility="{Binding spl_have, Converter={StaticResource BoolZeroNullToVisibility}}">
-                                                        +<TextBlock Text="{Binding spl_have}" />
-                                                    </TextBlock>
-                                                </StackPanel>
+                                                <TextBlock Text="{Binding Col1}" Margin="5,0,0,0" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Watched" Width="65" SortMemberPath="eps_watched">
+                                    <DataGridTemplateColumn Header="Watched" Width="100" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <StackPanel Orientation="Horizontal" Margin="5,0">
-                                                    <TextBlock Text="{Binding eps_watched}" />
-                                                    <TextBlock Text="/" />
-                                                    <TextBlock Text="{Binding eps_total, Converter={StaticResource EpisodesZeroToQuestionMark}}" />
-                                                    <TextBlock Visibility="{Binding spl_watched, Converter={StaticResource BoolZeroNullToVisibility}}">
-                                                        +<TextBlock Text="{Binding spl_watched}" />
-                                                    </TextBlock>
-                                                </StackPanel>
+                                                <TextBlock Text="{Binding Col2}" Margin="5,0,0,0" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Year" Width="80" SortMemberPath="year">
+                                    <DataGridTemplateColumn Header="Year" Width="100" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding year}" Margin="5,0" />
+                                                <TextBlock Text="{Binding Col3}" Margin="5,0,0,0" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Length" SortMemberPath="length" Width="80">
+                                    <DataGridTemplateColumn Header="Length" Width="75" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <StackPanel Margin="5,0">
-                                                    <TextBlock Text="{Binding length, Converter={StaticResource SecondsToFormatedTime}, ConverterParameter=true}" />
-                                                </StackPanel>
+                                                <TextBlock Text="{Binding Col4}" Margin="5,0,0,0" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Size" SortMemberPath="size" Width="75">
+                                    <DataGridTemplateColumn Header="Size" Width="75" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Margin="5,0" Text="{Binding size, Converter={StaticResource FileSizeConverter}}" />
+                                                <TextBlock Text="{Binding Col5}" Margin="5,0,0,0" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                </DataGrid.Columns>
-                                <DataGrid.RowDetailsTemplate>
-                                    <DataTemplate>
-                                        <Border Background="#EEE">
-                                            <Border BorderBrush="LightGray" BorderThickness="1,0,0,0" Margin="15,0,0,5">
-                                                <DataGrid ItemsSource="{Binding Episodes}"
-                                                          AutoGenerateColumns="False"
-                                                          CanUserResizeColumns="False" CanUserReorderColumns="False" CanUserResizeRows="False" IsReadOnly="True"
-                                                          HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" FontFamily="Segoe UI"
-                                                          SelectionUnit="FullRow" SelectionMode="Single"
-                                                          HeadersVisibility="None" 
-                                                          Background="Transparent" BorderThickness="0" RowHeight="20"
-                                                          VirtualizingStackPanel.VirtualizationMode="Recycling"
-                                                          RowDetailsVisibilityChanged="episodesDGRDVChanged"
-                                                          HorizontalScrollBarVisibility="Disabled"
-                                                          MaxHeight="250">
-                                                    <DataGrid.RowStyle>
-                                                        <Style TargetType="{x:Type DataGridRow}">
-                                                            <Setter Property="ContextMenu">
-                                                                <Setter.Value>
-                                                                    <ContextMenu />
-                                                                </Setter.Value>
-                                                            </Setter>
-                                                            <Setter Property="DetailsVisibility" Value="{Binding IsExpanded, Converter={StaticResource BoolZeroNullToVisibility}}" />
-                                                            <Style.Triggers>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Background" Value="#EEE" />
-                                                                </Trigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </DataGrid.RowStyle>
-                                                    <DataGrid.Columns>
-                                                        <DataGridTemplateColumn Header="Title" Width="*">
-                                                            <DataGridTemplateColumn.CellTemplate>
-                                                                <DataTemplate>
-                                                                    <StackPanel Orientation="Horizontal">
-                                                                        <Button Command="l:Command.Expand">
-                                                                            <Button.Style>
-                                                                                <Style TargetType="{x:Type Button}" BasedOn="{StaticResource MylistExpandButtonStyle}">
-                                                                                    <Style.Triggers>
-                                                                                        <MultiDataTrigger>
-                                                                                            <MultiDataTrigger.Conditions>
-                                                                                                <Condition Binding="{Binding IsFetched}" Value="True" />
-                                                                                                <Condition Binding="{Binding Files.Count}" Value="0" />
-                                                                                            </MultiDataTrigger.Conditions>
-                                                                                            <Setter Property="Visibility" Value="Hidden" />
-                                                                                        </MultiDataTrigger>
-                                                                                        <DataTrigger Binding="{Binding genericOnly}" Value="True">
-                                                                                            <Setter Property="Visibility" Value="Hidden" />
-                                                                                        </DataTrigger>
-                                                                                    </Style.Triggers>
-                                                                                </Style>
-                                                                            </Button.Style>
-                                                                        </Button>
-                                                                        <TextBlock ToolTip="{Binding english}">
-                                                                            <TextBlock Text="{Binding epno}" Visibility="{Binding epno, Converter={StaticResource BoolZeroNullToVisibility}}" /><TextBlock Visibility="{Binding spl_epno, Converter={StaticResource BoolZeroNullToVisibility}}" Text="{Binding spl_epno}" />: 
-                                                                            <TextBlock Text="{Binding english}" TextTrimming="CharacterEllipsis" />
-                                                                        </TextBlock>
-                                                                    </StackPanel>
-                                                                </DataTemplate>
-                                                            </DataGridTemplateColumn.CellTemplate>
-                                                        </DataGridTemplateColumn>
-                                                        <DataGridTemplateColumn Header="Watched" Width="65">
-                                                            <DataGridTemplateColumn.CellTemplate>
-                                                                <DataTemplate>
-                                                                    <TextBlock Margin="5,0" Text="{Binding watched, Converter={StaticResource BooleanToYesNo}}" />
-                                                                </DataTemplate>
-                                                            </DataGridTemplateColumn.CellTemplate>
-                                                        </DataGridTemplateColumn>
-                                                        <DataGridTemplateColumn Header="Date" Width="80">
-                                                            <DataGridTemplateColumn.CellTemplate>
-                                                                <DataTemplate>
-                                                                    <TextBlock Text="{Binding airdate}" Margin="5,0" />
-                                                                </DataTemplate>
-                                                            </DataGridTemplateColumn.CellTemplate>
-                                                        </DataGridTemplateColumn>
-                                                        <DataGridTemplateColumn Header="Length" Width="80">
-                                                            <DataGridTemplateColumn.CellTemplate>
-                                                                <DataTemplate>
-                                                                    <StackPanel Margin="5,0">
-                                                                        <TextBlock Text="{Binding length, Converter={StaticResource SecondsToFormatedTime}}" />
-                                                                    </StackPanel>
-                                                                </DataTemplate>
-                                                            </DataGridTemplateColumn.CellTemplate>
-                                                        </DataGridTemplateColumn>
-                                                        <DataGridTemplateColumn Header="Size" Width="75">
-                                                            <DataGridTemplateColumn.CellTemplate>
-                                                                <DataTemplate>
-                                                                    <StackPanel Margin="5,0">
-                                                                        <TextBlock Text="{Binding size, Converter={StaticResource FileSizeConverter}}" />
-                                                                    </StackPanel>
-                                                                </DataTemplate>
-                                                            </DataGridTemplateColumn.CellTemplate>
-                                                        </DataGridTemplateColumn>
-                                                    </DataGrid.Columns>
-                                                    <DataGrid.RowDetailsTemplate>
-                                                        <DataTemplate>
-                                                            <Border Background="#EEE">
-                                                                <Border BorderBrush="LightGray" BorderThickness="1,0,0,0" Margin="15,0,0,5">
-                                                                    <DataGrid x:Name="filesDataGrid" ItemsSource="{Binding Files}" AutoGenerateColumns="False" CanUserResizeRows="False" IsReadOnly="True" SelectionUnit="FullRow"
-                                                                              HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" FontFamily="Segoe UI" SelectionMode="Extended"
-                                                                              HeadersVisibility="Column" BorderThickness="0" RowHeight="20" Background="Transparent" CanUserSortColumns="False"
-                                                                              HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled" CanUserReorderColumns="False" CanUserResizeColumns="False">
-                                                                        <i:Interaction.Behaviors>
-                                                                            <l:IgnoreMouseWheelBehavior />
-                                                                        </i:Interaction.Behaviors>
-                                                                        <DataGrid.RowStyle>
-                                                                            <Style TargetType="DataGridRow">
-                                                                                <Setter Property="ContextMenu" Value="{StaticResource FileContextMenu}" />
-                                                                                <Style.Triggers>
-                                                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                                                        <Setter Property="Background" Value="#F6F6F6" />
-                                                                                    </Trigger>
-                                                                                </Style.Triggers>
-                                                                            </Style>
-                                                                        </DataGrid.RowStyle>
-                                                                        <DataGrid.Columns>
-                                                                            <DataGridTemplateColumn Header="Group" Width="*">
-                                                                                <DataGridTemplateColumn.CellTemplate>
-                                                                                    <DataTemplate>
-                                                                                        <StackPanel Orientation="Horizontal">
-                                                                                            <TextBlock Margin="5,0" ToolTip="{Binding group_name}" Visibility="{Binding gid, TargetNullValue=Hidden, Converter={StaticResource BoolZeroNullToVisibility}}">
-                                                                                                [<TextBlock Text="{Binding group_abbr}" />] - <TextBlock Text="{Binding group_name}" TextTrimming="CharacterEllipsis" />
-                                                                                            </TextBlock>
-                                                                                        </StackPanel>
-                                                                                    </DataTemplate>
-                                                                                </DataGridTemplateColumn.CellTemplate>
-                                                                            </DataGridTemplateColumn>
-                                                                            <DataGridTemplateColumn Header="Watched" Width="100">
-                                                                                <DataGridTemplateColumn.CellTemplate>
-                                                                                    <DataTemplate>
-                                                                                        <TextBlock Margin="5,0" Text="{Binding watcheddate}" />
-                                                                                    </DataTemplate>
-                                                                                </DataGridTemplateColumn.CellTemplate>
-                                                                            </DataGridTemplateColumn>
-                                                                            <DataGridTemplateColumn Header="Source" Width="60">
-                                                                                <DataGridTemplateColumn.CellTemplate>
-                                                                                    <DataTemplate>
-                                                                                        <TextBlock Margin="5,0" Text="{Binding source, Converter={StaticResource NullToUnknown}}" HorizontalAlignment="Center" />
-                                                                                    </DataTemplate>
-                                                                                </DataGridTemplateColumn.CellTemplate>
-                                                                            </DataGridTemplateColumn>
-                                                                            <DataGridTemplateColumn Header="Audio" Width="130">
-                                                                                <DataGridTemplateColumn.CellTemplate>
-                                                                                    <DataTemplate>
-                                                                                        <TextBlock Margin="5,0" Text="{Binding acodec, Converter={StaticResource NullToUnknown}}" HorizontalAlignment="Center" />
-                                                                                    </DataTemplate>
-                                                                                </DataGridTemplateColumn.CellTemplate>
-                                                                            </DataGridTemplateColumn>
-                                                                            <DataGridTemplateColumn Header="Video" Width="160">
-                                                                                <DataGridTemplateColumn.CellTemplate>
-                                                                                    <DataTemplate>
-                                                                                        <TextBlock Margin="5,0" HorizontalAlignment="Center">
-                                                                                            <TextBlock Text="{Binding vcodec, Converter={StaticResource NullToUnknown}}" />
-                                                                                            <TextBlock Visibility="{Binding vres, Converter={StaticResource BoolZeroNullToVisibility}}"> ( <TextBlock Text="{Binding vres}" /> )</TextBlock>
-                                                                                        </TextBlock>
-                                                                                    </DataTemplate>
-                                                                                </DataGridTemplateColumn.CellTemplate>
-                                                                            </DataGridTemplateColumn>
-                                                                            <DataGridTemplateColumn Header="Size" Width="75">
-                                                                                <DataGridTemplateColumn.CellTemplate>
-                                                                                    <DataTemplate>
-                                                                                        <StackPanel Margin="5,0">
-                                                                                            <TextBlock Name="size" Text="{Binding size, Converter={StaticResource FileSizeConverter}}" />
-                                                                                        </StackPanel>
-                                                                                    </DataTemplate>
-                                                                                </DataGridTemplateColumn.CellTemplate>
-                                                                            </DataGridTemplateColumn>
-                                                                        </DataGrid.Columns>
-                                                                    </DataGrid>
-                                                                </Border>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </DataGrid.RowDetailsTemplate>
-                                                </DataGrid>
-                                            </Border>
-                                        </Border>
-                                    </DataTemplate>
-                                </DataGrid.RowDetailsTemplate>
-                            </DataGrid>
+                                </l:TreeListView.Columns>
+                            </l:TreeListView>
                         </Grid>
                     </Border>
                 </Grid>
@@ -1018,8 +797,14 @@
                 </TabControl>
             </TabItem>
         </TabControl>
-        <StatusBar Grid.Row="1" Height="23" HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
-            
+        <StatusBar Grid.Row="1" Height="22" HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
+            <StatusBarItem Padding="5,0,0,0">
+                <TextBlock>
+                    Pending Tasks:
+                    <TextBlock x:Name="bTasksTextBlock" Padding="25,0,0,0" Text="0" />
+                </TextBlock>
+            </StatusBarItem>
+            <StatusBarItem x:Name="bStatusTextBlock" Padding="0,0,5,0" HorizontalAlignment="Right" />
         </StatusBar>
     </Grid>
 </Window>

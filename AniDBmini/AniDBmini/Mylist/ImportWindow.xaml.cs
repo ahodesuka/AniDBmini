@@ -25,11 +25,10 @@ namespace AniDBmini
         #region Fields
 
         private BackgroundWorker xmlWorker;
+        private MylistDB m_myList;
+
         private string xmlPath;
         private bool closePending, isBackup, isWorking;
-
-        private MylistDB m_myList;
-        private Dispatcher uiDispatcher = Dispatcher.CurrentDispatcher;
 
         #endregion Fields
 
@@ -79,15 +78,7 @@ namespace AniDBmini
             {
                 isWorking = false;
                 if (!_e.Cancelled && MessageBox.Show("Importing finised!", "Status", MessageBoxButton.OK, MessageBoxImage.Information) == MessageBoxResult.OK)
-                {
-                    if (isBackup)
-                        File.Delete(MylistDB.dbPath + ".bak");
-
-                    m_myList.Entries.Clear();
-                    m_myList.SelectEntries();
-
                     this.DialogResult = true;
-                }
                 else
                     importStart.IsEnabled = true;
             };
@@ -103,7 +94,6 @@ namespace AniDBmini
                         isBackup = true;
                     }
                     catch (IOException) { }
-                    finally { File.Delete(MylistDB.dbPath); }
                 }
                 else
                     return;
@@ -116,8 +106,10 @@ namespace AniDBmini
 
         private void DoWork(object sender, DoWorkEventArgs e)
         {
-            int totalProcessedFiles = 0,
-            totalFiles = int.Parse(new XPathDocument(xmlPath).CreateNavigator().Evaluate("count(//file)").ToString());
+            List<AnimeEntry> m_aList = new List<AnimeEntry>();
+
+            double totalProcessedFiles = 0;
+            double totalFiles = int.Parse(new XPathDocument(xmlPath).CreateNavigator().Evaluate("count(//file)").ToString()) * 2;
 
             using (XmlReader reader = XmlReader.Create(xmlPath))
             {
@@ -126,17 +118,14 @@ namespace AniDBmini
                 {
                     Dispatcher.Invoke(new Action(delegate
                     {
-                        MessageBox.Show("Please ensure you selected a mylist export file that used the xml-mini template.", "Invalid xml template!", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("Please ensure you selected a mylist export file that used the xml-mini template.",
+                            "Invalid xml template!", MessageBoxButton.OK, MessageBoxImage.Error);
                     }));
 
                     xmlWorker.CancelAsync();
                     return;
                 }
 
-                m_myList.Create();
-
-                List<int> m_groupList = new List<int>();
-                List<AnimeEntry> m_list = new List<AnimeEntry>();
 
                 // <anime>
                 while (reader.ReadToFollowing("anime"))
@@ -152,7 +141,7 @@ namespace AniDBmini
                     // <titles>
                     reader.ReadToFollowing("default");
                     entry.title = reader.ReadElementContentAsString();
-                    uiDispatcher.BeginInvoke(new Action<string>(str => { importFilePath.Text = str; }), "Importing: " + entry.title);
+                    Dispatcher.BeginInvoke(new Action(delegate { importFilePath.Text = String.Format("Reading: {0}", entry.title); }));
 
                     reader.ReadToFollowing("nihongo");
                     entry.nihongo = reader.ReadElementContentAsString().FormatNullable();
@@ -178,26 +167,14 @@ namespace AniDBmini
                         episode.eid = int.Parse(episodesReader["eid"]);
 
                         episode.airdate = episodesReader["aired"] == "-" ? null :
-                                          ExtensionMethods.DateTimeToUnixTime(DateTime.Parse(episodesReader["aired"],
-                                                                                             System.Globalization.CultureInfo.CreateSpecificCulture("en-GB"))).ToString();
+                                          UnixTimestamp.FromDateTime(DateTime.Parse(episodesReader["aired"],
+                                          System.Globalization.CultureInfo.CreateSpecificCulture("en-GB")));
                         episode.watched = Convert.ToBoolean(int.Parse(episodesReader["watched"]));
 
                         if (Regex.IsMatch(episodesReader["epno"].Substring(0, 1), @"\D"))
-                        {
                             episode.spl_epno = episodesReader["epno"];
-
-                            entry.spl_have++;
-                            if (episode.watched)
-                                entry.spl_watched++;
-                        }
                         else
-                        {
                             episode.epno = int.Parse(episodesReader["epno"]);
-
-                            entry.eps_have++;
-                            if (episode.watched)
-                                entry.eps_watched++;
-                        }
 
                         // <titles>
                         episodesReader.ReadToDescendant("english");
@@ -225,25 +202,27 @@ namespace AniDBmini
                             file.fid = int.Parse(filesReader["fid"]);
                             file.lid = int.Parse(filesReader["lid"]);
                             file.watcheddate = filesReader["watched"] == "-" ? null :
-                                               ExtensionMethods.DateTimeToUnixTime(DateTime.Parse(episodesReader["watched"],
-                                                                                                  System.Globalization.CultureInfo.CreateSpecificCulture("en-GB"))).ToString();
+                                               UnixTimestamp.FromDateTime(DateTime.Parse(episodesReader["watched"],
+                                               System.Globalization.CultureInfo.CreateSpecificCulture("en-GB")));
                             file.watched = file.watcheddate != null;
                             file.generic = episodesReader["generic"] != null;
 
                             if (!file.generic) // generic entries do not have this information
                             {
+                                int gid = 0;
+
                                 if (filesReader["gid"] != null)
-                                    file.gid = int.Parse(filesReader["gid"]);
+                                    gid = int.Parse(filesReader["gid"]);
 
                                 file.ed2k = filesReader["ed2k"];
                                 file.length = double.Parse(filesReader["length"]);
                                 file.size = double.Parse(filesReader["size"]);
                                 file.source = filesReader["source"].FormatNullable();
-                                file.acodec = filesReader["acodec"].FormatNullable();
-                                file.vcodec = filesReader["vcodec"].FormatNullable();
+                                file.acodec = ExtensionMethods.FormatAudioCodec(filesReader["acodec"].FormatNullable());
+                                file.vcodec = ExtensionMethods.FormatVideoCodec(filesReader["vcodec"].FormatNullable());
                                 file.vres = filesReader["vres"].FormatNullable();
                                 
-                                if (file.gid != 0 && !m_groupList.Contains(file.gid))
+                                if (gid != 0)
                                 {
                                     // <group_name>
                                     filesReader.ReadToFollowing("group_name");
@@ -255,33 +234,49 @@ namespace AniDBmini
                                     string group_abbr = filesReader.ReadElementContentAsString();
                                     // </group_abbr>
 
-                                    m_myList.InsertGroup(file.gid, group_name, group_abbr);
-                                    m_groupList.Add(file.gid);
+
+                                    file.Group = new GroupEntry
+                                    {
+                                        gid = gid,
+                                        group_name = group_name,
+                                        group_abbr = group_abbr
+                                    };
                                 }
                             }
 
                             episode.Files.Add(file);
-                            totalProcessedFiles++;
                             importProgressBar.Dispatcher.BeginInvoke(new Action<double, double>((total, processed) =>
                             {
                                 importProgressBar.Value = Math.Ceiling(processed / total * 100);
-                            }), totalFiles, totalProcessedFiles);
+                            }), totalFiles, ++totalProcessedFiles);
                         // </file>
                         }
                         // </files>
                         filesReader.Close();
                         entry.Episodes.Add(episode);
                     // </episode>
-                    }                    
+                    }
                     // </episodes>
                     episodesReader.Close();
 
                 Finish:
-                    m_myList.InsertAnimeEntryFromImport(entry);
+                    m_aList.Add(entry);
+                    
                 // </anime>
                 }
              // </mylist>
             }
+
+            m_myList.OnEntryInserted += (aTitle) =>
+            {
+                importProgressBar.Dispatcher.BeginInvoke(new Action(delegate
+                {
+                    importFilePath.Text = String.Format("Writing: {0}", aTitle);
+                    importProgressBar.Value = Math.Ceiling(++totalProcessedFiles / totalFiles * 100);
+                }));
+            };
+
+            m_myList.InsertFromImport(m_aList);
         }
 
         private void OnDragOver(object sender, DragEventArgs e)
@@ -320,16 +315,15 @@ namespace AniDBmini
                 {
                     closePending = false;
                     e.Cancel = true;
+                    return;
                 }
                 else if (File.Exists(MylistDB.dbPath))
                 {
-                    m_myList.Entries.Clear();
-
+                    m_myList.Close();
                     File.Delete(MylistDB.dbPath);
-
-                    if (isBackup)
-                        File.Delete(MylistDB.dbPath + ".bak");
                 }
+
+                this.DialogResult = false;
             }
         }
 

@@ -2,7 +2,7 @@
 #region Using Statements
 
 using System;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SQLite;
 
@@ -10,7 +10,8 @@ using System.Data.SQLite;
 
 namespace AniDBmini.Collections
 {
-    public class AnimeEntry : IEquatable<AnimeEntry>
+    public class AnimeEntry : IEquatable<AnimeEntry>,
+                              INotifyPropertyChanged
 	{
 
         #region Properties
@@ -34,46 +35,10 @@ namespace AniDBmini.Collections
         public bool complete { get; set; }
         public bool watched { get; set; }
 
-        private bool isExpanded;
-        public bool IsExpanded
+        private List<EpisodeEntry> _episodes = new List<EpisodeEntry>();
+        public List<EpisodeEntry> Episodes
         {
-            get { return isExpanded; }
-            set
-            {
-                if (isExpanded != value)
-                {
-                    isExpanded = value;
-                    RaisePropertyChanged("IsExpanded");
-                }
-            }
-        }
-
-        private bool isFetched;
-        public bool IsFetched
-        {
-            get { return isFetched; }
-            set
-            {
-                if (isFetched != value)
-                {
-                    isFetched = value;
-                    RaisePropertyChanged("IsFetched");
-                }
-            }
-        }
-
-        private ObservableCollection<EpisodeEntry> episodes = new ObservableCollection<EpisodeEntry>();
-        public ObservableCollection<EpisodeEntry> Episodes
-        {
-            get { return episodes; }
-            set
-            {
-                if (episodes != value)
-                {
-                    episodes = value;
-                    RaisePropertyChanged("Episodes");
-                }
-            }
+            get { return _episodes; }
         }
 
         #endregion Properties
@@ -88,7 +53,6 @@ namespace AniDBmini.Collections
         /// <summary>
         /// Create a AnimeEntry from a SQLiteDataReader.
         /// </summary>
-        /// <param name="reader"></param>
         public AnimeEntry(SQLiteDataReader reader)
         {
             aid = int.Parse(reader["aid"].ToString());
@@ -132,7 +96,7 @@ namespace AniDBmini.Collections
         /// raise the PropertyChanged event
         /// </summary>
         /// <param name="propName"></param>
-        protected void RaisePropertyChanged(string propName)
+        protected void NotifyPropertyChanged(string propName)
         {
             if (this.PropertyChanged != null)
             {

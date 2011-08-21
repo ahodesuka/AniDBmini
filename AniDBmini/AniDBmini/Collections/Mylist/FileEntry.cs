@@ -2,33 +2,47 @@
 #region Using Statements
 
 using System;
+using System.ComponentModel;
 using System.Data.SQLite;
 
 #endregion Using Statements
 
 namespace AniDBmini.Collections
 {
-    public class FileEntry : IEquatable<FileEntry>
+    public class FileEntry : INotifyPropertyChanged
     {
 
         #region Properties
 
         public int fid { get; set; }
         public int lid { get; set; }
-        public int gid { get; set; }
+        public int eid { get; set; }
 
         public double length { get; set; }
         public double size { get; set; }
 
+        public string epno { get; set; }
         public string ed2k { get; set; }
-        public string watcheddate { get; set; }
         public string source { get; set; }
         public string acodec { get; set; }
         public string vcodec { get; set; }
         public string vres { get; set; }
-        public string group_name { get; set; }
-        public string group_abbr { get; set; }
-        public string path { get; set; }
+
+        public UnixTimestamp watcheddate { get; set; }
+        public GroupEntry Group { get; set; }
+
+        private string _path;
+        public string path {
+            get { return _path; }
+            set
+            {
+                if (value != _path)
+                {
+                    _path = value;
+                    NotifyPropertyChanged("path");
+                }
+            }
+        }
 
         public bool watched { get; set; }
         public bool generic { get; set; }
@@ -43,7 +57,6 @@ namespace AniDBmini.Collections
         /// Used for an entry that is to be inserted into the database
         /// from a recently hashed HashItem.
         /// </summary>
-        /// <param name="item"></param>
         public FileEntry(HashItem item)
         {
             ed2k = item.Hash;
@@ -60,14 +73,24 @@ namespace AniDBmini.Collections
         {
             fid = int.Parse(reader["fid"].ToString());
             lid = int.Parse(reader["lid"].ToString());
+            eid = int.Parse(reader["eid"].ToString());
+
+            if ((epno = reader["spl_epno"].ToString().FormatNullable()) == null)
+                epno = reader["epno"].ToString();
 
             generic = Convert.ToBoolean(int.Parse(reader["generic"].ToString()));
 
             if (!generic)
             {
-                if (!string.IsNullOrWhiteSpace(reader["gid"].ToString())) gid = int.Parse(reader["gid"].ToString());
-                group_name = reader["group_name"].ToString();
-                group_abbr = reader["group_abbr"].ToString();
+                if (!string.IsNullOrWhiteSpace(reader["gid"].ToString()))
+                {
+                    Group = new GroupEntry
+                    {
+                        gid = int.Parse(reader["gid"].ToString()),
+                        group_name = reader["group_name"].ToString(),
+                        group_abbr = reader["group_abbr"].ToString()
+                    };
+                }
 
                 ed2k = reader["ed2k"].ToString();
                 length = double.Parse(reader["length"].ToString());
@@ -81,23 +104,34 @@ namespace AniDBmini.Collections
                 path =  !string.IsNullOrEmpty(reader["path"].ToString()) ? reader["path"].ToString() : null;
             }
 
-            watcheddate = !string.IsNullOrEmpty(reader["watcheddate"].ToString()) ?
-                          ExtensionMethods.UnixTimeToDateTime(reader["watcheddate"].ToString()).ToShortDateString() + " " +
-                          ExtensionMethods.UnixTimeToDateTime(reader["watcheddate"].ToString()).ToShortTimeString() : null;
+            if (!string.IsNullOrEmpty(reader["watcheddate"].ToString()))
+                watcheddate = double.Parse(reader["watcheddate"].ToString());
 
             watched = watcheddate != null;
         }
 
         #endregion Constructors
 
-        #region IEquatable
+        #region INotifyPropertyChanged
 
-        public bool Equals(FileEntry other)
+        /// <summary>
+        /// event for INotifyPropertyChanged.PropertyChanged
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// raise the PropertyChanged event
+        /// </summary>
+        /// <param name="propName"></param>
+        protected void NotifyPropertyChanged(string propName)
         {
-            return lid == other.lid;
+            if (this.PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propName));
+            }
         }
 
-        #endregion IEquatable
+        #endregion
 
     }
 }

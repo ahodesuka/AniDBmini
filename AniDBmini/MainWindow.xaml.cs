@@ -476,7 +476,7 @@ namespace AniDBmini
             }
 
             m_myList.InsertFileInfo(e);
-            Dispatcher.BeginInvoke(new Action(delegate {MylistTreeListView.Refresh(); }));
+            Dispatcher.BeginInvoke(new Action(delegate { MylistTreeListView.Refresh(); }));
         }
 
         private void mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -719,7 +719,8 @@ namespace AniDBmini
             if (entry is AnimeEntry)
             {
                 FileEntry fEntry = m_myList.SelectFileFromAnime((entry as AnimeEntry).aid);
-                if (fEntry != null) m_aniDBAPI.File(fEntry);
+                if (fEntry != null)
+                    m_aniDBAPI.File(fEntry);
             }
             else if (entry is FileEntry)
                 m_aniDBAPI.File(entry as FileEntry);

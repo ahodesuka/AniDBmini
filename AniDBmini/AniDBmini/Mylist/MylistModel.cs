@@ -87,7 +87,7 @@ namespace AniDBmini
         public ITreeModel Sort(ListSortDirection lsd, DataGridColumn column)
         {
             MylistModel model = new MylistModel(m_myList);
-            m_currentSort = new SortDescription { direction = lsd, column = column };
+            model.m_currentSort = new SortDescription { direction = lsd, column = column };
 
             model.Root.Sort(new MylistSort(lsd, column));
 

@@ -135,7 +135,8 @@ namespace AniDBmini
         {
 #if !DEBUG
             apiserver = new IPEndPoint(IPAddress.Any, localPort);
-            conn.Connect(server, port); //TODO: Check if connect was succesful or not
+            conn.Connect(server, port); // TODO: PING PONG, check if API is alive.
+                                        // TODO: Check if connect was succesful or not 
 #endif
         }
 
@@ -461,9 +462,6 @@ namespace AniDBmini
                     return new APIResponse { Message = e_response, Code = e_code };
             }
 #else
-            m_lastCommand = DateTime.Now;
-            queryLog.Add(m_lastCommand);
-            System.Diagnostics.Debug.WriteLine(String.Format("Executed: {0} @ {1}", cmd, m_lastCommand.ToLongTimeString()));
             return new APIResponse { Message = "\n411|7562|7488|1928235|0|0|0|0|0|0|3|6|54|4117|0|0|94407", Code = (RETURN_CODE)200 }; 
 #endif
         }

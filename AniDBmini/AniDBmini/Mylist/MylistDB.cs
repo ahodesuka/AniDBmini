@@ -74,21 +74,26 @@ namespace AniDBmini
 
         #region SELECT
 
+        /// <summary>
+        /// Selects all anime entries from the database,
+        /// ordered by the set title language.
+        /// </summary>
+        /// <returns>List of AnimeEntry objects</returns>
         public List<AnimeEntry> SelectEntries()
         {
             List<AnimeEntry> Entries = new List<AnimeEntry>();
 
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
-                cmd.CommandText = @"SELECT a.aid, a.type, a.title, a.nihongo, a.english, a.eps_total, a.year, IFNULL(SUM(f.length), 0) AS length, IFNULL(SUM(f.size), 0) AS size,
-					                       COUNT(e.spl_epno) AS spl_have, (SELECT COUNT(spl_epno) FROM episodes WHERE aid = a.aid AND watched = 1) AS spl_watched,
-					                       (SELECT COUNT(*) FROM episodes WHERE aid = a.aid AND spl_epno IS NULL) AS eps_have,
-					                       (SELECT COUNT(*) FROM episodes WHERE aid = a.aid AND spl_epno IS NULL AND watched = 1) AS eps_watched
-                                      FROM anime AS a
-                                 LEFT JOIN episodes AS e ON e.aid = a.aid
-                                 LEFT JOIN files AS f ON f.eid = e.eid
-                                  GROUP BY a.aid
-                                  ORDER BY a.title COLLATE NOCASE ASC;";
+                cmd.CommandText = String.Format(@"SELECT a.aid, a.type, a.romaji, a.nihongo, a.english, a.eps_total, a.year, IFNULL(SUM(f.length), 0) AS length, IFNULL(SUM(f.size), 0) AS size,
+					                                     COUNT(e.spl_epno) AS spl_have, (SELECT COUNT(spl_epno) FROM episodes WHERE aid = a.aid AND watched = 1) AS spl_watched,
+					                                     (SELECT COUNT(*) FROM episodes WHERE aid = a.aid AND spl_epno IS NULL) AS eps_have,
+					                                     (SELECT COUNT(*) FROM episodes WHERE aid = a.aid AND spl_epno IS NULL AND watched = 1) AS eps_watched
+                                                    FROM anime AS a
+                                               LEFT JOIN episodes AS e ON e.aid = a.aid
+                                               LEFT JOIN files AS f ON f.eid = e.eid
+                                                GROUP BY a.aid
+                                                ORDER BY IFNULL(a.{0}, a.romaji) COLLATE NOCASE ASC;", MainWindow.m_aLang);
 
                 using (SQLiteDataReader reader = cmd.ExecuteReader())
                     while (reader.Read())
@@ -98,6 +103,11 @@ namespace AniDBmini
             return Entries;
         }
 
+        /// <summary>
+        /// Selects all episodes of a provided anime.
+        /// </summary>
+        /// <param name="aid">Anime ID</param>
+        /// <returns>List of EpisodeEntry objects</returns>
         public List<EpisodeEntry> SelectEpisodes(int aid)
         {
             List<EpisodeEntry> _temp = new List<EpisodeEntry>();
@@ -121,6 +131,11 @@ namespace AniDBmini
             return _temp;
         }
 
+        /// <summary>
+        /// Selects all files of a provided episode.
+        /// </summary>
+        /// <param name="aid">Episode ID</param>
+        /// <returns>List of FileEntry objects</returns>
         public List<FileEntry> SelectFiles(int eid)
         {
             List<FileEntry> _temp = new List<FileEntry>();
@@ -152,7 +167,7 @@ namespace AniDBmini
 
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
-                cmd.CommandText = @"SELECT a.aid, a.type, a.title, a.nihongo, a.english, a.eps_total, a.year, IFNULL(SUM(f.length), 0) AS length, IFNULL(SUM(f.size), 0) AS size,
+                cmd.CommandText = @"SELECT a.aid, a.type, a.romaji, a.nihongo, a.english, a.eps_total, a.year, IFNULL(SUM(f.length), 0) AS length, IFNULL(SUM(f.size), 0) AS size,
 					                       COUNT(e.spl_epno) AS spl_have, (SELECT COUNT(spl_epno) FROM episodes WHERE aid = a.aid AND watched = 1) AS spl_watched,
 					                       (SELECT COUNT(*) FROM episodes WHERE aid = a.aid AND spl_epno IS NULL) AS eps_have,
 					                       (SELECT COUNT(*) FROM episodes WHERE aid = a.aid AND spl_epno IS NULL AND watched = 1) AS eps_watched
@@ -234,7 +249,7 @@ namespace AniDBmini
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
                 cmd.CommandText = @"CREATE TABLE anime ('aid' INTEGER PRIMARY KEY NOT NULL, 'type' VARCHAR NOT NULL,
-                                                        'title' VARCHAR NOT NULL, 'nihongo' VARCHAR, 'english' VARCHAR, 'year' VARCHAR NOT NULL, 'eps_total' INTEGER);
+                                                        'romaji' VARCHAR NOT NULL, 'nihongo' VARCHAR, 'english' VARCHAR, 'year' VARCHAR NOT NULL, 'eps_total' INTEGER);
                                     CREATE TABLE episodes ('eid' INTEGER PRIMARY KEY, 'aid' INTEGER NOT NULL, 'epno' INTEGER, 'spl_epno' VARCHAR,
                                                            'english' VARCHAR NOT NULL, 'nihongo' VARCHAR, 'romaji' VARCHAR, 'airdate' INTEGER, 'watched' INTEGER);
                                     CREATE TABLE files ('fid' INTEGER PRIMARY KEY NOT NULL, 'lid' INTEGER NOT NULL, 'eid' INTEGER, 'gid' INTEGER, 'ed2k' VARCHAR, 'watcheddate' INTEGER,

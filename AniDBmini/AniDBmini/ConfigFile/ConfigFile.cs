@@ -3,15 +3,13 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 #endregion Using Statements
 
 namespace AniDBmini
 {
-    /// <summary>
-    /// Create a New INI file to store or load data
-    /// </summary>
     public static class ConfigFile
     {
 
@@ -20,8 +18,11 @@ namespace AniDBmini
         private static string configPath = @".\data\config.ini",
                               configSection = MainWindow.m_AppName;
 
+        private static string[] configLangs = { "romaji", "nihongo", "english" };
+
         public static readonly Dictionary<string, string> Default = new Dictionary<string, string>
         {
+            /* AniDBmini Defaults */
             { "autoLogin", "False" },
             { "rememberUser", "True" },
             { "username", "" },
@@ -29,6 +30,16 @@ namespace AniDBmini
             { "server", "api.anidb.net" },
             { "port", "9000" },
             { "localPort", "9001" },
+            { "minimizeTray", "True" },
+            { "closeTray", "False" },
+            { "constTray", "False" },
+            { "singleTrayClick", "False" },
+
+            /* Mylist Defaults */
+            { "aLang", "romaji" },
+            { "eLang", "english" },
+
+            /* MPC Defaults */
             { "mpcPath", "" },
             { "mpcMarkWatched", "1" },
             { "mpcMarkWatchedPerc", "50" },
@@ -36,7 +47,7 @@ namespace AniDBmini
             { "mpcShowOSD", "True" },
             { "mpcOSDPos", "1" },
             { "mpcOSDDurMS", "2000" },
-            { "mpcClose", "False" },
+            { "mpcClose", "False" }
         };
 
         #endregion Fields
@@ -76,16 +87,17 @@ namespace AniDBmini
         #region Reading/Writing
 
         /// <summary>
-        /// Read Data Value From the ini File
+        /// Read data value from the ini file
         /// </summary>
         public static ConfigValue Read(string Key)
         {
             CheckDefaultConfig();
 
             StringBuilder temp = new StringBuilder(255);
-            int i = WinAPI.GetPrivateProfileString(configSection, Key, null, temp, 255, configPath);
+            WinAPI.GetPrivateProfileString(configSection, Key, null, temp, 255, configPath);
 
-            if (string.IsNullOrWhiteSpace(temp.ToString()) && !string.IsNullOrWhiteSpace(Default[Key]))
+            if ((string.IsNullOrWhiteSpace(temp.ToString()) && !string.IsNullOrWhiteSpace(Default[Key])) ||
+                ((Key == "aLang" || Key == "eLang") && !configLangs.Contains(temp.ToString())))
             {
                 Write(Key, Default[Key]);
                 return new ConfigValue(Default[Key]);
@@ -95,12 +107,11 @@ namespace AniDBmini
         }
 
         /// <summary>
-        /// Write Data to the ini File
+        /// Write data to the ini file
         /// </summary>
         public static void Write(string Key, string Value)
         {
             CheckDefaultConfig();
-
             WinAPI.WritePrivateProfileString(configSection, Key, Value, configPath);
         }
 

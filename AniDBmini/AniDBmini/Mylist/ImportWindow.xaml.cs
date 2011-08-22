@@ -140,7 +140,7 @@ namespace AniDBmini
 
                     // <titles>
                     reader.ReadToFollowing("default");
-                    entry.title = reader.ReadElementContentAsString();
+                    entry.romaji = reader.ReadElementContentAsString();
                     Dispatcher.BeginInvoke(new Action(delegate { importFilePath.Text = String.Format("Reading: {0}", entry.title); }));
 
                     reader.ReadToFollowing("nihongo");

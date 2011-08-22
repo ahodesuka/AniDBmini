@@ -27,7 +27,7 @@ namespace AniDBmini.Collections
         public double size { get; set; }
 
         public string type { get; set; }
-        public string title { get; set; }
+        public string romaji { get; set; }
         public string nihongo { get; set; }
         public string english { get; set; }
         public string year { get; set; }
@@ -39,6 +39,24 @@ namespace AniDBmini.Collections
         public List<EpisodeEntry> Episodes
         {
             get { return _episodes; }
+        }
+
+        public string title
+        {
+            get
+            {
+                switch (MainWindow.m_aLang)
+                {
+                    case "english":
+                        if (!string.IsNullOrEmpty(english)) return english;
+                        else goto default;
+                    case "nihongo":
+                        if (!string.IsNullOrEmpty(nihongo)) return nihongo;
+                        else goto default;
+                    default:
+                        return romaji;
+                }
+            }
         }
 
         #endregion Properties
@@ -61,7 +79,7 @@ namespace AniDBmini.Collections
             length = double.Parse(reader["length"].ToString());
             size = double.Parse(reader["size"].ToString());
 
-            title = reader["title"].ToString();
+            romaji = reader["romaji"].ToString();
             nihongo = reader["nihongo"].ToString();
             english = reader["english"].ToString();
 

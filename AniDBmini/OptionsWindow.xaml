@@ -5,14 +5,16 @@
         Title="AniDBmini Options" Height="400" Width="500" ResizeMode="NoResize" ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner" Background="{DynamicResource WindowBackgroundBrush}" FontFamily="Calibri">
     <Window.Resources>
-        <l:WholeNumberConverter x:Key="WholeNumberConverter"/>
+        <l:WholeNumberConverter x:Key="WholeNumberConverter" />
         <ControlTemplate x:Key="HeaderTextBlockTemplate" TargetType="{x:Type HeaderedContentControl}">
-            <Border Background="#F333" BorderThickness="1" CornerRadius="2" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,5" BorderBrush="#FFFF" Height="24">
+            <Border Background="{x:Static SystemColors.HighlightBrush}" BorderThickness="1" CornerRadius="2"
+                    HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,5" BorderBrush="{x:Static SystemColors.HighlightTextBrush}" Height="24">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="2" Opacity="0.75" ShadowDepth="0" />
                 </Border.Effect>
                 <Grid VerticalAlignment="Top">
-                    <ContentPresenter ContentSource="Header" Margin="5,0" TextBlock.FontSize="16" TextBlock.Foreground="#FFFF">
+                    <ContentPresenter ContentSource="Header" Margin="5,0" TextOptions.TextFormattingMode="Display"
+                                      TextBlock.FontSize="16" TextBlock.Foreground="{x:Static SystemColors.HighlightTextBrush}">
                         <ContentPresenter.Effect>
                             <DropShadowEffect Color="#F000" Opacity="0.75" ShadowDepth="0" />
                         </ContentPresenter.Effect>
@@ -37,23 +39,67 @@
         <Grid x:Name="OptionGirds" Grid.Column="1"  Margin="5">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="36"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="36" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <HeaderedContentControl Header="General" Template="{StaticResource HeaderTextBlockTemplate}" />
+                <GroupBox Header="Login" Grid.Row="1">
+                    <StackPanel HorizontalAlignment="Stretch">
+                        <StackPanel HorizontalAlignment="Center" Margin="0,0,0,2" Orientation="Horizontal">
+                            <StackPanel Width="160" Margin="0,0,5,0">
+                                <Label Content="Username:" Margin="5,0" VerticalAlignment="Bottom" />
+                                <TextBox x:Name="adbmUsernameTextBox" />
+                            </StackPanel>
+                            <StackPanel Width="160">
+                                <Label Content="Password:" Margin="5,0" VerticalAlignment="Bottom" />
+                                <PasswordBox x:Name="adbmPasswordPasswordBox" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel HorizontalAlignment="Center" Margin="0,0,0,5" Orientation="Horizontal">
+                            <StackPanel Width="155" Margin="0,0,5,0" VerticalAlignment="Top">
+                                <Label Content="API Server:" Margin="5,0" VerticalAlignment="Bottom" />
+                                <ComboBox HorizontalAlignment="Left" x:Name="adbmServerComboBox"
+                                          FontSize="12" BorderBrush="DarkGray" BorderThickness="1" Padding="1" Height="24"
+                                          VerticalAlignment="Top" SelectedValuePath="Tag">
+                                    <ComboBoxItem IsSelected="True">api.anidb.net:9000</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                            <Grid Width="155" Margin="0,3,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="5*" />
+                                    <RowDefinition Height="5*" />
+                                </Grid.RowDefinitions>
+                                <Label Content="Local Port:" Margin="5,0" VerticalAlignment="Center" />
+                                <TextBox x:Name="adbmLocalPortTextBox" Margin="70,0,0,0" VerticalAlignment="Center" />
+                                <StackPanel Grid.Row="1" Margin="0,5,0,0">
+                                    <CheckBox Content="Auto Login" HorizontalAlignment="Left" x:Name="adbmAutoLoginCheckBox" VerticalAlignment="Top"
+                                              BorderThickness="1" Margin="5,2,5,0" />
+                                    <CheckBox Content="Remember Username" HorizontalAlignment="Left" x:Name="adbmRememberUserCheckBox"
+                                              VerticalAlignment="Top" BorderThickness="1" Margin="5,2,5,0" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="System Tray" Grid.Row="2">
+                    <StackPanel>
+
+                    </StackPanel>
+                </GroupBox>
             </Grid>
             <Grid Visibility="Collapsed">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="36"/>
-                    <RowDefinition Height="160"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="36" />
+                    <RowDefinition Height="160" />
+                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <HeaderedContentControl Header="MPC-HC Hooking" Template="{StaticResource HeaderTextBlockTemplate}" />
                 <GroupBox Header="Media Player Classic - Home Cinema" Grid.Row="1">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="80"/>                            
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="80" />                            
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="22" />
@@ -65,7 +111,7 @@
                         </Grid.RowDefinitions>
                         <Label Content="Location:" Margin="5,0" VerticalAlignment="Bottom" />
                         <TextBox x:Name="mpchcLocationTextBox" Grid.Row="1" Margin="5,0" Height="24" TextChanged="enableApplyButton" />
-                        <Button Grid.Column="1" Grid.Row="1" Content="Browse" Margin="5,0" Height="24" Click="MPCBrowseOnClick" />
+                        <Button Grid.Column="1" Grid.Row="1" Content="Browse" Margin="5,0" Height="24" Click="MPCBrowseOnClick" BorderThickness="1" />
                         <StackPanel Grid.ColumnSpan="2" Grid.Row="2" Orientation="Horizontal">
                             <Label Content="Mark watched:"  Margin="5,0" VerticalAlignment="Center" />
                             <RadioButton x:Name="mpcMarkDuring" Content="During playback" Margin="5" VerticalAlignment="Center" Click="enableApplyButton" />
@@ -88,7 +134,7 @@
                             </Slider.ToolTip>
                         </Slider>
                         <TextBlock Grid.ColumnSpan="2" Grid.Row="5" Margin="5,0" HorizontalAlignment="Center">
-                            <TextBlock x:Name="mpcWatchedPerc" Text="{Binding ElementName=mpcWatchedPercSlider, Path=Value, Converter={StaticResource WholeNumberConverter}}"/>%
+                            <TextBlock x:Name="mpcWatchedPerc" Text="{Binding ElementName=mpcWatchedPercSlider, Path=Value, Converter={StaticResource WholeNumberConverter}}" />%
                         </TextBlock>
                     </Grid>
                 </GroupBox>
@@ -100,22 +146,25 @@
                                 <ColumnDefinition Width="158" />
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <CheckBox x:Name="ShowFileInTitle" Content="Show file in title" Margin="5,2,0,0" VerticalAlignment="Center" Click="enableApplyButton" />
-                                <CheckBox x:Name="ShowWatchedOSD" Content="Show OSD message" Margin="5,2,0,0" VerticalAlignment="Center" Click="enableApplyButton" ToolTip="Show a message inside MPC-HC when a file is marked as watched." />
+                                <CheckBox x:Name="mpcShowFileInTitle" Content="Show file in title" Margin="5,2,0,0"
+                                          VerticalAlignment="Center" Click="enableApplyButton" BorderThickness="1" />
+                                <CheckBox x:Name="mpcShowWatchedOSD" Content="Show OSD message" Margin="5,2,0,0" BorderThickness="1"
+                                          VerticalAlignment="Center" Click="enableApplyButton" ToolTip="Show a message inside MPC-HC when a file is marked as watched." />
                             </StackPanel>
                             <StackPanel Grid.Column="1">
-                                <CheckBox x:Name="mpcClose" Content="Close MPC-HC on exit" Margin="5,2,0,0" VerticalAlignment="Center" Click="enableApplyButton" />
+                                <CheckBox x:Name="mpcClose" Content="Close MPC-HC on exit" Margin="5,2,0,0"
+                                          VerticalAlignment="Center" Click="enableApplyButton" BorderThickness="1" />
                             </StackPanel>
                         </Grid>
                         <StackPanel Margin="5,5,5,0" Orientation="Horizontal">
-                            <Label Content="OSD message position:" Margin="5,0" />
+                            <Label Content="OSD message position:" Margin="5,0" Width="125" />
                             <ComboBox x:Name="mpcOSDPos" Height="24" Margin="5,0" SelectionChanged="enableApplyButton" SelectedIndex="0" ToolTip="MadVR OSD posistion will always be top left.">
                                 <ComboBoxItem>Top Left</ComboBoxItem>
                                 <ComboBoxItem>Top Right</ComboBoxItem>
                             </ComboBox>
                         </StackPanel>
                         <StackPanel Margin="5,5,5,0" Orientation="Horizontal">
-                            <Label Content="OSD message duration:" Margin="5,0" />
+                            <Label Content="OSD message duration:" Margin="5,0" Width="125" />
                             <ComboBox x:Name="mpcOSDDurMS" Height="24" Margin="5,0" SelectionChanged="enableApplyButton" SelectedIndex="1">
                                 <ComboBoxItem>1 Second</ComboBoxItem>
                                 <ComboBoxItem>2 Seconds</ComboBoxItem>
@@ -128,11 +177,12 @@
                 </GroupBox>
             </Grid>
         </Grid>
-        <Border Grid.ColumnSpan="2" Grid.Row="1" Height="1" Background="#F999" VerticalAlignment="Top" />
+        <Border Grid.ColumnSpan="2" Grid.Row="1" Height="1" Background="#CCC" VerticalAlignment="Top" />
+        <Border Grid.ColumnSpan="2" Grid.Row="1" Height="1" Background="#FFF" Margin="0,1,0,0" VerticalAlignment="Top" />
         <StackPanel Grid.ColumnSpan="2" Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button x:Name="okButton" Content="OK" Height="28" Margin="5" Width="75" Click="OKOnClick" />
-            <Button Content="Cancel" Height="28" Margin="5" Width="75" Click="CancelOnClick" />
-            <Button x:Name="applyButton" Content="Apply" Height="28" Margin="5" Width="75" Click="ApplyOnClick" />
+            <Button x:Name="okButton" Content="OK" Height="28" Margin="5" Width="75" Click="OKOnClick" BorderThickness="1" />
+            <Button Content="Cancel" Height="28" Margin="5" Width="75" Click="CancelOnClick" BorderThickness="1" />
+            <Button x:Name="applyButton" Content="Apply" Height="28" Margin="5" Width="75" Click="ApplyOnClick" BorderThickness="1" />
         </StackPanel>
     </Grid>
 </Window>

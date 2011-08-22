@@ -247,7 +247,7 @@ namespace AniDBmini
                         (info[13].Split('-')[0] != info[13].Split('-')[1] ? info[13] : info[13].Split('-')[0]) : info[13];
             anime.type = info[14];
 
-            anime.title = info[15];
+            anime.romaji = info[15];
             anime.nihongo = info[16].FormatNullable();
             anime.english = info[17].FormatNullable();
 
@@ -280,27 +280,25 @@ namespace AniDBmini
             Action addToList = new Action(delegate
             {
                 string r_msg = String.Empty;
-                APIResponse response = Execute("MYLISTADD size=" + item.Size +
-                                                        "&ed2k=" + item.Hash +
-                                                        "&viewed=" + item.Viewed +
-                                                        "&state=" + item.State + (item.Edit ? "&edit=1" : null));
+                APIResponse response = Execute(String.Format("MYLISTADD size={0}&ed2k={1}&viewed={2}&state={3}&edit={4}",
+                    item.Size, item.Hash, Convert.ToInt32(item.Watched), item.State, Convert.ToInt32(item.Edit)));
 
                 switch (response.Code)
                 {
                     case RETURN_CODE.MYLIST_ENTRY_ADDED:
                         File(item);
-                        r_msg = "Added " + item.Name + " to mylist.";
+                        r_msg = String.Format("Added {0} to mylist", item.Name);
                         break;
                     case RETURN_CODE.MYLIST_ENTRY_EDITED:
                         File(item);
-                        r_msg = "Edited mylist entry for " + item.Name + ".";
+                        r_msg = String.Format("Edited mylist entry for {0}", item.Name);
                         break;
                     case RETURN_CODE.FILE_ALREADY_IN_MYLIST: // TODO: add auto edit to options.
                         item.Edit = true;
                         MyListAdd(item);
                         return;
                     case RETURN_CODE.NO_SUCH_FILE:
-                        r_msg = "Error! File not in database.";
+                        r_msg = "Error! File not in database";
                         break;
                 }
 

@@ -37,7 +37,29 @@ namespace AniDBmini.Collections
         public bool hasFiles { get; set; }
 
         private List<FileEntry> _files = new List<FileEntry>();
-        public List<FileEntry> Files { get { return _files; } }
+        public List<FileEntry> Files
+        {
+            get { return _files; }
+        }
+
+
+        public string title
+        {
+            get
+            {
+                switch (MainWindow.m_eLang)
+                {
+                    case "romaji":
+                        if (!string.IsNullOrEmpty(romaji)) return romaji;
+                        else goto default;
+                    case "nihongo":
+                        if (!string.IsNullOrEmpty(nihongo)) return nihongo;
+                        else goto default;
+                    default:
+                        return english;
+                }
+            }
+        }
 
         #endregion Properties
 

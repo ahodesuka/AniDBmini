@@ -50,7 +50,7 @@
 
         <ControlTemplate x:Key="OptionsButonTemplate" TargetType="{x:Type Button}">
             <Grid>
-                <Image Name="Img" Source="Resources/options.png" Width="24" Height="24" VerticalAlignment="Center" Panel.ZIndex="1">
+                <Image x:Name="Img" Source="Resources/options.png" Width="24" Height="24" VerticalAlignment="Center" Panel.ZIndex="1">
                     <Image.RenderTransformOrigin>
                         <Point X="0.5" Y="0.5" />
                     </Image.RenderTransformOrigin>
@@ -61,7 +61,7 @@
                         <RotateTransform CenterX="0.5" CenterY="0.5" />
                     </Image.LayoutTransform>
                 </Image>
-                <Image Name="ImgBlur" Source="Resources/options.png" Width="24" Height="24" Opacity="0">
+                <Image x:Name="ImgBlur" Source="Resources/options.png" Width="24" Height="24" Opacity="0">
                     <Image.RenderTransform>
                         <ScaleTransform ScaleX="1.3" ScaleY="1.3"/>
                     </Image.RenderTransform>
@@ -94,7 +94,7 @@
 
         <ControlTemplate x:Key="MPCHCButonTemplate" TargetType="{x:Type Button}">
             <Grid>
-                <Image Name="Img" Source="Resources/mpchc.png" Width="24" Height="24" VerticalAlignment="Center" Panel.ZIndex="1">
+                <Image x:Name="Img" Source="Resources/mpchc.png" Width="24" Height="24" VerticalAlignment="Center" Panel.ZIndex="1">
                     <Image.RenderTransformOrigin>
                         <Point X="0.5" Y="0.5" />
                     </Image.RenderTransformOrigin>
@@ -105,7 +105,7 @@
                         <RotateTransform CenterX="0.5" CenterY="0.5" />
                     </Image.LayoutTransform>
                 </Image>
-                <Image Name="ImgBlur" Source="Resources/mpchc.png" Width="24" Height="24" Opacity="0">
+                <Image x:Name="ImgBlur" Source="Resources/mpchc.png" Width="24" Height="24" Opacity="0">
                     <Image.RenderTransform>
                         <ScaleTransform ScaleX="1.3" ScaleY="1.3"/>
                     </Image.RenderTransform>
@@ -138,7 +138,7 @@
 
         <ControlTemplate x:Key="RandomButonTemplate" TargetType="{x:Type Button}">
             <Grid>
-                <Image Name="Img" Source="Resources/random.png" Width="24" Height="24" VerticalAlignment="Center" Panel.ZIndex="1">
+                <Image x:Name="Img" Source="Resources/random.png" Width="24" Height="24" VerticalAlignment="Center" Panel.ZIndex="1">
                     <Image.RenderTransformOrigin>
                         <Point X="0.5" Y="0.5" />
                     </Image.RenderTransformOrigin>
@@ -149,7 +149,7 @@
                         <RotateTransform CenterX="0.5" CenterY="0.5" />
                     </Image.LayoutTransform>
                 </Image>
-                <Image Name="ImgBlur" Source="Resources/random.png" Width="24" Height="24" Opacity="0">
+                <Image x:Name="ImgBlur" Source="Resources/random.png" Width="24" Height="24" Opacity="0">
                     <Image.RenderTransform>
                         <ScaleTransform ScaleX="1.3" ScaleY="1.3"/>
                     </Image.RenderTransform>
@@ -242,7 +242,7 @@
         <!-- #region ImportListButtonTemplate -->
 
         <ControlTemplate x:Key="ImportListButtonTemplate" TargetType="{x:Type Button}">
-            <Border Name="bBorder" BorderThickness="1" CornerRadius="5" BorderBrush="#FDDD">
+            <Border x:Name="bBorder" BorderThickness="1" CornerRadius="5" BorderBrush="#FDDD">
                 <Border.Background>
                     <RadialGradientBrush>
                         <GradientStop Color="#EEE" Offset="0" />
@@ -522,17 +522,19 @@
                             <TextBlock x:Name="totalBytesTextBlock" Grid.Column="2" HorizontalAlignment="Right" />
                         </Grid>
                         <ProgressBar Height="22" Margin="5,5,5,0" x:Name="fileProgressBar" />
-                        <ProgressBar Height="22" Margin="5,5,5,0" Name="totalProgressBar" />
+                        <ProgressBar Height="22" Margin="5,5,5,0" x:Name="totalProgressBar" />
                     </StackPanel>
-                    <GroupBox Grid.Column="1" Grid.Row="1" Header="MyList Options" Margin="5" Name="hashingMyListOptions">
+                    <GroupBox Grid.Column="1" Grid.Row="1" Header="MyList Options" Margin="5" x:Name="hashingMyListOptions">
                         <Grid Margin="0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <CheckBox Content="Add to mylist" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" Name="addToMyListCheckBox" VerticalAlignment="Top" IsChecked="True" IsEnabled="True" />
-                            <CheckBox Content="Watched" Height="16" HorizontalAlignment="Left" Margin="6,0,0,6" Name="watchedCheckBox" VerticalAlignment="bottom" />
-                            <ComboBox Grid.Column="1" Height="24" Margin="6,6,6,0" Name="stateComboBox" VerticalAlignment="Top">
+                            <CheckBox Content="Add to mylist" Height="16" HorizontalAlignment="Left" Margin="6,6,0,0" x:Name="addToMyListCheckBox"
+                                      VerticalAlignment="Top" IsChecked="True" IsEnabled="True" BorderThickness="1" />
+                            <CheckBox Content="Watched" Height="16" HorizontalAlignment="Left" Margin="6,0,0,6" x:Name="watchedCheckBox"
+                                      VerticalAlignment="bottom" BorderThickness="1" />
+                            <ComboBox Grid.Column="1" Height="24" Margin="6,6,6,0" x:Name="stateComboBox" VerticalAlignment="Top">
                                 <ComboBoxItem Content="Unknown" />
                                 <ComboBoxItem Content="Internal storage (HDD)" IsSelected="True" />
                                 <ComboBoxItem Content="External storage (CD, DVD, ...)" />
@@ -540,10 +542,14 @@
                             </ComboBox>
                         </Grid>
                     </GroupBox>
-                    <Button Content="Add File(s)" HorizontalAlignment="Right" Margin="0,12,90,0" Name="addFilesButton" Width="80" Grid.Row="1" Height="28" VerticalAlignment="Top" Grid.Column="2" Click="addFilesButton_Click" />
-                    <Button Content="Add Folder(s)" HorizontalAlignment="Right" Margin="0,0,90,6" Name="addFoldersButton" Width="80" Grid.Row="1" Height="28" VerticalAlignment="bottom" Grid.Column="2" Click="addFoldersButton_Click" ToolTip="Note: This is recursive, subdirectories will be added." />
-                    <Button Content="Start" Style="{StaticResource NuclearGreenButton}" HorizontalAlignment="Right" Margin="0,12,5,0" Name="hashingStartButton" Width="80" Grid.Row="1" Click="startHashingButton_Click" IsEnabled="False" Height="28" VerticalAlignment="Top" Grid.Column="2" />
-                    <Button Content="Stop" HorizontalAlignment="Right" Margin="0,0,5,6" Name="hashingStopButton" Width="80" Grid.Row="1" IsEnabled="False" Height="28" VerticalAlignment="bottom" Grid.Column="2" Click="hashingStopButton_Click" />
+                    <Button Content="Add File(s)" HorizontalAlignment="Right" Margin="0,12,90,0" x:Name="addFilesButton" BorderThickness="1"
+                            Width="80" Grid.Row="1" Height="28" VerticalAlignment="Top" Grid.Column="2" Click="addFilesButton_Click" />
+                    <Button Content="Add Folder(s)" HorizontalAlignment="Right" Margin="0,0,90,6" x:Name="addFoldersButton" Width="80" BorderThickness="1"
+                            Grid.Row="1" Height="28" VerticalAlignment="bottom" Grid.Column="2" Click="addFoldersButton_Click" ToolTip="Note: This is recursive, subdirectories will be added." />
+                    <Button Content="Start" Style="{StaticResource NuclearGreenButton}" HorizontalAlignment="Right" Margin="0,12,5,0"
+                            x:Name="hashingStartButton" Width="80" Grid.Row="1" Click="startHashingButton_Click" IsEnabled="False" Height="28" VerticalAlignment="Top" Grid.Column="2" />
+                    <Button Content="Stop" HorizontalAlignment="Right" Margin="0,0,5,6" x:Name="hashingStopButton" Width="80" BorderThickness="1"
+                            Grid.Row="1" IsEnabled="False" Height="28" VerticalAlignment="bottom" Grid.Column="2" Click="hashingStopButton_Click" />
                 </Grid>
             </TabItem>
             <TabItem Header="Mylist">
@@ -551,7 +557,7 @@
                     <Button x:Name="MylistImortButton" VerticalAlignment="Center" HorizontalAlignment="Center" Height="80" Width="380" Template="{StaticResource ImportListButtonTemplate}" Content="Import Mylist" Click="ImportList_Click" Panel.ZIndex="1" />
                     <Border Background="#9FFF" BorderBrush="#CCC" CornerRadius="2" BorderThickness="1">
                         <Grid>
-                            <Border Name="myListBorder" Background="White" CornerRadius="2" />
+                            <Border x:Name="myListBorder" Background="White" CornerRadius="2" />
                             <l:TreeListView x:Name="MylistTreeListView" AutoGenerateColumns="False"
                                         IsReadOnly="True" CanUserReorderColumns="False" CanUserResizeRows="False"
                                         HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" FontFamily="Segoe UI"
@@ -590,7 +596,7 @@
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
                                                     <l:RowExpander/>
-                                                    <TextBlock Text="{Binding Col0}" />
+                                                    <TextBlock Text="{Binding Col0}" TextOptions.TextFormattingMode="Display" />
                                                 </StackPanel>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
@@ -598,35 +604,35 @@
                                     <DataGridTemplateColumn Header="Eps" Width="100" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Col1}" Margin="5,0,0,0" />
+                                                <TextBlock Text="{Binding Col1}" Margin="5,0,0,0" TextOptions.TextFormattingMode="Display" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="Watched" Width="100" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Col2}" Margin="5,0,0,0" />
+                                                <TextBlock Text="{Binding Col2}" Margin="5,0,0,0" TextOptions.TextFormattingMode="Display" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="Year" Width="100" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Col3}" Margin="5,0,0,0" />
+                                                <TextBlock Text="{Binding Col3}" Margin="5,0,0,0" TextOptions.TextFormattingMode="Display" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="Length" Width="75" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Col4}" Margin="5,0,0,0" />
+                                                <TextBlock Text="{Binding Col4}" Margin="5,0,0,0" TextOptions.TextFormattingMode="Display" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="Size" Width="75" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Col5}" Margin="5,0,0,0" />
+                                                <TextBlock Text="{Binding Col5}" Margin="5,0,0,0" TextOptions.TextFormattingMode="Display" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
@@ -667,7 +673,7 @@
                                             <DropShadowEffect ShadowDepth="0" RenderingBias="Quality" Opacity="0.3" />
                                         </Border.Effect>
                                         <Grid>
-                                            <Border Name="imgMask" Background="White" CornerRadius="3"/>
+                                            <Border x:Name="imgMask" Background="White" CornerRadius="3"/>
                                             <Image Source="{Binding Image}" Margin="1">
                                                 <Image.OpacityMask>
                                                     <VisualBrush Visual="{Binding ElementName=imgMask}"/>
@@ -734,7 +740,7 @@
                                                     <DropShadowEffect ShadowDepth="0" RenderingBias="Quality" Opacity="0.3" />
                                                 </Border.Effect>
                                                 <Grid>
-                                                    <Border Name="maskanimation" Background="White" CornerRadius="3"/>
+                                                    <Border x:Name="maskanimation" Background="White" CornerRadius="3"/>
                                                     <Image Source="Resources/animation.png" Grid.Column="0" Margin="1">
                                                         <Image.OpacityMask>
                                                             <VisualBrush Visual="{Binding ElementName=maskanimation}"/>
@@ -756,7 +762,7 @@
                                                     <DropShadowEffect ShadowDepth="0" RenderingBias="Quality" Opacity="0.3" />
                                                 </Border.Effect>
                                                 <Grid>
-                                                    <Border Name="maskoofuji" Background="White" CornerRadius="3"/>
+                                                    <Border x:Name="maskoofuji" Background="White" CornerRadius="3"/>
                                                     <Image Source="Resources/oofuji.png" Grid.Column="1" Margin="1">
                                                         <Image.OpacityMask>
                                                             <VisualBrush Visual="{Binding ElementName=maskoofuji}"/>

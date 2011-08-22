@@ -18,12 +18,7 @@ namespace AniDBmini.Collections
         /// </summary>
         public int State { get; set; }
 
-        /// <summary>
-        /// <para>0 - unwatched</para>
-        /// <para>1 - watched</para>
-        /// </summary>
-        public int Viewed { get; set; }
-
+        public bool Watched { get; set; }
         public bool Edit { get; set; }
 
         public HashItem(string path)

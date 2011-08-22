@@ -33,6 +33,18 @@ namespace AniDBmini
 
         public static string m_AppName = Application.ResourceAssembly.GetName().Name;
 
+        private static string _aLang;
+        public static string m_aLang
+        {
+            get { return _aLang; }
+        }
+
+        private static string _eLang;
+        public static string m_eLang
+        {
+            get { return _eLang; }
+        }
+
         private int _pendingTasks;
         public int m_pendingTasks
         {
@@ -78,6 +90,9 @@ namespace AniDBmini
         {
             m_aniDBAPI = api;
             AniDBAPI.AppendDebugLine("Welcome to AniDBmini, connected to: " + m_aniDBAPI.APIServer);
+
+            _aLang = ConfigFile.Read("aLang").ToString();
+            _eLang = ConfigFile.Read("eLang").ToString();
 
             InitializeComponent();
             SetMylistVisibility();
@@ -299,7 +314,7 @@ namespace AniDBmini
 
             if (addToMyListCheckBox.IsChecked == true)
             {
-                item.Viewed = Convert.ToInt32(watchedCheckBox.IsChecked);
+                item.Watched = (bool)watchedCheckBox.IsChecked;
                 item.State = stateComboBox.SelectedIndex;
 
                 m_aniDBAPI.MyListAdd(item);
@@ -393,6 +408,7 @@ namespace AniDBmini
         {
             OptionsWindow options = new OptionsWindow();
             options.Owner = this;
+
             if (options.ShowDialog() == true && m_mpcAPI != null)
                 m_mpcAPI.LoadConfig();
         }
@@ -410,16 +426,17 @@ namespace AniDBmini
                     m_mpcAPI.OnFileWatched += new FileWatchedHandler(OnFileWatched);
                 }
                 else if (MessageBox.Show("Please ensure you have located the mpc-hc executable inside the options.\nWould you like to set mpc-hc's location now?",
-                                     "Media Player Classic - Home Cinema not found!", MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
-                    if (SetMPCHCLocation())
-                        mpchcLaunch(sender, e);
+                                         "Media Player Classic - Home Cinema not found!", MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes &&
+                        SetMPCHCLocation())
+                    mpchcLaunch(sender, e);
             }
         }
 
         private void OnFileWatched(object sender, FileWatchedArgs e)
         {
             HashItem item = new HashItem(e.Path);
-            item.State = item.Viewed = 1;
+            item.State = 1;
+            item.Watched = true;
 
             ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
             {

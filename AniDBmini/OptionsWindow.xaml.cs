@@ -1,13 +1,15 @@
-﻿using System;
+﻿
+#region Using Statements
+
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
+#endregion Using Statements
+
 namespace AniDBmini
 {
-    /// <summary>
-    /// Interaction logic for OptionsWindow.xaml
-    /// </summary>
     public partial class OptionsWindow : Window
     {
 
@@ -34,6 +36,11 @@ namespace AniDBmini
 
         private void LoadOptions()
         {
+            adbmUsernameTextBox.Text = ConfigFile.Read("username").ToString();
+            adbmPasswordPasswordBox.Password = ConfigFile.Read("password").ToString();
+            adbmLocalPortTextBox.Text = ConfigFile.Read("localPort").ToString();
+            
+
             MPCAPI.MPC_WATCHED mpcMarkedWatched = (MPCAPI.MPC_WATCHED)ConfigFile.Read("mpcMarkWatched").ToInt32();
 
             mpchcLocationTextBox.Text = ConfigFile.Read("mpcPath").ToString();
@@ -44,8 +51,8 @@ namespace AniDBmini
                 mpcMarkDuring.IsChecked = true;
 
             mpcWatchedPercSlider.Value = ConfigFile.Read("mpcMarkWatchedPerc").ToInt32();
-            ShowFileInTitle.IsChecked = ConfigFile.Read("mpcShowTitle").ToBoolean();
-            ShowWatchedOSD.IsChecked = ConfigFile.Read("mpcShowOSD").ToBoolean();
+            mpcShowFileInTitle.IsChecked = ConfigFile.Read("mpcShowTitle").ToBoolean();
+            mpcShowWatchedOSD.IsChecked = ConfigFile.Read("mpcShowOSD").ToBoolean();
             mpcClose.IsChecked = ConfigFile.Read("mpcClose").ToBoolean();
             mpcOSDPos.SelectedIndex = ConfigFile.Read("mpcOSDPos").ToInt32() - 1;
             mpcOSDDurMS.SelectedIndex = ConfigFile.Read("mpcOSDDurMS").ToInt32() / 1000 - 1;
@@ -56,8 +63,8 @@ namespace AniDBmini
             ConfigFile.Write("mpcPath", mpchcLocationTextBox.Text);
             ConfigFile.Write("mpcMarkWatched", mpcMarkAfter.IsChecked == true ? "2" : (mpcMarkDuring.IsChecked == true ? "1" : "0"));
             ConfigFile.Write("mpcMarkWatchedPerc", mpcWatchedPerc.Text);
-            ConfigFile.Write("mpcShowTitle", ShowFileInTitle.IsChecked.ToString());
-            ConfigFile.Write("mpcShowOSD", ShowWatchedOSD.IsChecked.ToString());
+            ConfigFile.Write("mpcShowTitle", mpcShowFileInTitle.IsChecked.ToString());
+            ConfigFile.Write("mpcShowOSD", mpcShowWatchedOSD.IsChecked.ToString());
             ConfigFile.Write("mpcClose", mpcClose.IsChecked.ToString());
             ConfigFile.Write("mpcOSDPos", (mpcOSDPos.SelectedIndex + 1).ToString());
             ConfigFile.Write("mpcOSDDurMS", ((mpcOSDDurMS.SelectedIndex + 1) * 1000).ToString());

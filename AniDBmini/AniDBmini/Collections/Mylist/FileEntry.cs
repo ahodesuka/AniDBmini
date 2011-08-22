@@ -65,7 +65,7 @@ namespace AniDBmini.Collections
             if (item.State == 1)
                 path = item.Path;
 
-            watched = Convert.ToBoolean(item.Viewed);
+            watched = item.Watched;
             generic = false;
         }
 

@@ -17,7 +17,7 @@
                   VerticalAlignment="Top" SelectedValuePath="Tag">
             <ComboBoxItem IsSelected="True">api.anidb.net:9000</ComboBoxItem>
         </ComboBox>
-        <Button Height="32" Margin="248,125,30,0" x:Name="loginButton" VerticalAlignment="Top"
+        <Button Height="32" Margin="248,125,30,0" x:Name="loginButton" VerticalAlignment="Top" BorderThickness="1"
                 Content="Login" Click="loginButton_Click" IsEnabled="True" Style="{StaticResource NuclearGreenButton}" />
         <CheckBox Content="Auto Login" HorizontalAlignment="Left" Margin="30,167,0,0" x:Name="autoLoginCheckBox" VerticalAlignment="Top"
                   BorderThickness="1" Click="autoLoginCheckBox_Click" />

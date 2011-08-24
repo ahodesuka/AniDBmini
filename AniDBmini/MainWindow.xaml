@@ -415,10 +415,6 @@
 
     </Window.Resources>
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition />
-            <RowDefinition Height="22" />
-        </Grid.RowDefinitions>
         <Button Template="{StaticResource OptionsButonTemplate}" Click="ShowOpionsWindow" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,5" Panel.ZIndex="1" ToolTip="Options" />
         <Button Template="{StaticResource MPCHCButonTemplate}" Click="mpchcLaunch" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="42,5" Panel.ZIndex="1" ToolTip="Open Media Player Classic - Home Cinema" />
         <Button Template="{StaticResource RandomButonTemplate}" Click="randomAnimeButton_Click" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="74,5" Panel.ZIndex="1" ToolTip="Random Anime">
@@ -433,7 +429,7 @@
         </Button>
         <TabControl x:Name="mainTabControl" Margin="5" SelectionChanged="mainTabControl_SelectionChanged">
             <TabItem Width="96" IsEnabled="False" Focusable="False" Visibility="Hidden" Height="28" />
-            <TabItem Header="Home" IsSelected="True">
+            <TabItem Header="Home" IsSelected="True" TextOptions.TextFormattingMode="Display">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="300" />
@@ -495,8 +491,10 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="80" />
                     </Grid.RowDefinitions>
-                    <ListBox x:Name="hashingListBox" Grid.ColumnSpan="3" Margin="5,5,5,0" Drop="hashingListBox_Drop" AllowDrop="True" SelectionMode="Extended"
-                             HorizontalContentAlignment="Stretch"  KeyUp="hashingListBox_KeyUp" ItemContainerStyle="{StaticResource hashingListBoxItemStyle}">
+                    <ListBox x:Name="hashingListBox" Grid.ColumnSpan="3" Margin="5,5,5,0" Drop="hashingListBox_Drop"
+                             AllowDrop="True" SelectionMode="Extended" TextOptions.TextFormattingMode="Display"
+                             HorizontalContentAlignment="Stretch"  KeyUp="hashingListBox_KeyUp"
+                             ItemContainerStyle="{StaticResource hashingListBoxItemStyle}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
@@ -547,7 +545,8 @@
                     <Button Content="Add Folder(s)" HorizontalAlignment="Right" Margin="0,0,90,6" x:Name="addFoldersButton" Width="80" BorderThickness="1"
                             Grid.Row="1" Height="28" VerticalAlignment="bottom" Grid.Column="2" Click="addFoldersButton_Click" ToolTip="Note: This is recursive, subdirectories will be added." />
                     <Button Content="Start" Style="{StaticResource NuclearGreenButton}" HorizontalAlignment="Right" Margin="0,12,5,0"
-                            x:Name="hashingStartButton" Width="80" Grid.Row="1" Click="startHashingButton_Click" IsEnabled="False" Height="28" VerticalAlignment="Top" Grid.Column="2" />
+                            x:Name="hashingStartButton" Width="80" Grid.Row="1" Click="startHashingButton_Click"
+                            IsEnabled="False" Height="28" VerticalAlignment="Top" Grid.Column="2" BorderThickness="1" />
                     <Button Content="Stop" HorizontalAlignment="Right" Margin="0,0,5,6" x:Name="hashingStopButton" Width="80" BorderThickness="1"
                             Grid.Row="1" IsEnabled="False" Height="28" VerticalAlignment="bottom" Grid.Column="2" Click="hashingStopButton_Click" />
                 </Grid>
@@ -562,7 +561,7 @@
                                         IsReadOnly="True" CanUserReorderColumns="False" CanUserResizeRows="False"
                                         HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" FontFamily="Segoe UI"
                                         HorizontalScrollBarVisibility="Disabled"
-                                        HeadersVisibility="Column"
+                                        HeadersVisibility="Column" TextOptions.TextFormattingMode="Display"
                                         BorderThickness="0" RowHeight="20" Background="Transparent"
                                         SelectionMode="Single" SelectionUnit="FullRow">
                                 <l:TreeListView.OpacityMask>
@@ -596,7 +595,7 @@
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
                                                     <l:RowExpander/>
-                                                    <TextBlock Text="{Binding Col0}" TextOptions.TextFormattingMode="Display" />
+                                                    <TextBlock Text="{Binding Col0}" />
                                                 </StackPanel>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
@@ -604,35 +603,35 @@
                                     <DataGridTemplateColumn Header="Eps" Width="100" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Col1}" Margin="5,0,0,0" TextOptions.TextFormattingMode="Display" />
+                                                <TextBlock Text="{Binding Col1}" Margin="5,0,0,0" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="Watched" Width="100" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Col2}" Margin="5,0,0,0" TextOptions.TextFormattingMode="Display" />
+                                                <TextBlock Text="{Binding Col2}" Margin="5,0,0,0" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="Year" Width="100" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Col3}" Margin="5,0,0,0" TextOptions.TextFormattingMode="Display" />
+                                                <TextBlock Text="{Binding Col3}" Margin="5,0,0,0" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="Length" Width="75" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Col4}" Margin="5,0,0,0" TextOptions.TextFormattingMode="Display" />
+                                                <TextBlock Text="{Binding Col4}" Margin="5,0,0,0" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="Size" Width="75" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Col5}" Margin="5,0,0,0" TextOptions.TextFormattingMode="Display" />
+                                                <TextBlock Text="{Binding Col5}" Margin="5,0,0,0" />
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
@@ -803,14 +802,5 @@
                 </TabControl>
             </TabItem>
         </TabControl>
-        <StatusBar Grid.Row="1" Height="22" HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
-            <StatusBarItem Padding="5,0,0,0">
-                <TextBlock>
-                    Pending Tasks:
-                    <TextBlock x:Name="bTasksTextBlock" Padding="25,0,0,0" Text="0" />
-                </TextBlock>
-            </StatusBarItem>
-            <StatusBarItem x:Name="bStatusTextBlock" Padding="0,0,5,0" HorizontalAlignment="Right" />
-        </StatusBar>
     </Grid>
 </Window>

@@ -22,12 +22,12 @@ namespace AniDBmini
         }
     }
 
-    [ValueConversion(typeof(double), typeof(double))]
-    class WholeNumberConverter : IValueConverter
+    [ValueConversion(typeof(object), typeof(Type))]
+    class ObjectToType : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return Math.Round((double)value);
+            return value.GetType();
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -36,12 +36,12 @@ namespace AniDBmini
         }
     }
 
-    [ValueConversion(typeof(object), typeof(Type))]
-    class ObjectToType : IValueConverter
+    [ValueConversion(typeof(double), typeof(double))]
+    class WholeNumberConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return value.GetType();
+            return Math.Round((double)value);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

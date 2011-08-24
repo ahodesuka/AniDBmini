@@ -52,10 +52,6 @@ namespace AniDBmini
             set
             {
                 _pendingTasks = value;
-                bTasksTextBlock.Dispatcher.BeginInvoke(new Action(delegate
-                {
-                    bTasksTextBlock.Text = _pendingTasks.ToString();
-                }));
             }
         }
 

@@ -33,7 +33,6 @@ namespace AniDBmini.Collections
         public string year { get; set; }
 
         public bool complete { get; set; }
-        public bool watched { get; set; }
 
         private List<EpisodeEntry> _episodes = new List<EpisodeEntry>();
         public List<EpisodeEntry> Episodes
@@ -90,6 +89,8 @@ namespace AniDBmini.Collections
             spl_have = int.Parse(reader["spl_have"].ToString());
             eps_watched = int.Parse(reader["eps_watched"].ToString());
             spl_watched = int.Parse(reader["spl_watched"].ToString());
+
+            complete = (eps_total == eps_have && eps_have > 0);
         }
 
         #endregion Constructors

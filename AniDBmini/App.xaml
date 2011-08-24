@@ -61,9 +61,9 @@
                             <Border x:Name="miBorder" MinWidth="{TemplateBinding MinWidth}" Background="Transparent" BorderThickness="0,1,0,1">
                                 <DockPanel HorizontalAlignment="Stretch">
                                     <TextBlock x:Name="Header" Text="{Binding Path=Header, RelativeSource={RelativeSource TemplatedParent}}" FontFamily="{TemplateBinding FontFamily}"
-                                               Foreground="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}" TextOptions.TextFormattingMode="Display" />
+                                               Foreground="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}" />
                                     <TextBlock x:Name="InputGestureText" FontSize="10" Text="{TemplateBinding InputGestureText}"
-                                               Margin="5,2,2,2" Padding="0,3,16,3" DockPanel.Dock="Right" TextOptions.TextFormattingMode="Display" />
+                                               Margin="5,2,2,2" Padding="0,3,16,3" DockPanel.Dock="Right" />
                                     <Popup x:Name="SubMenuPopup" Placement="Bottom" IsOpen="{Binding Path=IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}" Focusable="false">
                                         <Border>
                                             <ItemsPresenter Margin="1" KeyboardNavigation.DirectionalNavigation="Cycle" />

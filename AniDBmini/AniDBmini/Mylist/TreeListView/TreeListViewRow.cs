@@ -79,29 +79,38 @@ namespace AniDBmini
                         ChangeFocus(Node);
                         break;
                 }
-
-                if (!e.Handled)
-                {
-                    TreeNode tn = Node.Parent.Children.FirstOrDefault(x =>
-                    (x.Tag as MylistEntry).Col0.StartsWith(new KeyConverter().ConvertToString(e.Key), StringComparison.CurrentCultureIgnoreCase));
-                    if (tn != null)
-                    {
-                        tn.Tree.ScrollIntoView(tn);
-                        e.Handled = true;
-                    }
-                }
             }
 
             if (!e.Handled)
                 base.OnKeyDown(e);
         }
 
+        protected override void OnTextInput(TextCompositionEventArgs e)
+        {
+            if (Node != null)
+            {
+                string keyChar = e.Text;
+                TreeNode tn = Node.Parent.Children.FirstOrDefault(x => x != Node && x.Index > Node.Index &&
+                    (x.Tag as MylistEntry).Col0.StartsWith(keyChar, StringComparison.CurrentCultureIgnoreCase));
+
+                if (tn != null || (tn = Node.Parent.Children.FirstOrDefault(x => x != Node &&
+                        (x.Tag as MylistEntry).Col0.StartsWith(keyChar, StringComparison.CurrentCultureIgnoreCase))) != null)
+                {
+                    tn.Tree.ScrollIntoView(tn);
+                    e.Handled = true;
+                }
+            }
+
+            if (!e.Handled)
+                base.OnTextInput(e);
+        }
+
         protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
         {
             if (Node != null && FindAncestor<RowExpander>(e.OriginalSource as DependencyObject) == null)
                 Node.IsExpanded = !Node.IsExpanded;
-
-            base.OnMouseDoubleClick(e);
+            else
+                base.OnMouseDoubleClick(e);
         }
 
         #endregion Protected Overrides

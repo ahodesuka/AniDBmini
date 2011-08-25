@@ -22,6 +22,24 @@ namespace AniDBmini
         }
     }
 
+    [ValueConversion(typeof(object), typeof(string))]
+    class ObjectToEntry : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var v = ExtensionMethods.GetPropValue(value, parameter.ToString());
+            if (v != null)
+                return v.ToString();
+
+            return null;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     [ValueConversion(typeof(object), typeof(Type))]
     class ObjectToType : IValueConverter
     {

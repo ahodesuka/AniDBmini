@@ -349,6 +349,8 @@ namespace AniDBmini
             if (result == true)
             {
                 entry.path = dlg.FileName;
+                MylistTreeListView.Refresh();
+
                 return true;
             }
 
@@ -743,21 +745,29 @@ namespace AniDBmini
                     Forms.DialogResult result = dlg.ShowDialog();
                     if (result == Forms.DialogResult.OK)
                     {
-                        List<string> fPaths = new List<string>();
-
-                        foreach (string _file in Directory.GetFiles(dlg.SelectedPath, "*.*")
-                            .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
-                            fPaths.Add(_file);
-
-                        foreach (FileEntry file in files)
+                        ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
                         {
-                            string path = fPaths.FirstOrDefault(x =>
-                                Regex.IsMatch(x, String.Format(@"{0}.*[p\]) _-]0?{1}[v([ _-].*", file.Group.group_abbr, file.epno)) ||  // [EnA]_Lucky_Star_01_(1024x576_h.264)_[C5D5FB67].mkv
-                                Regex.IsMatch(x, String.Format(@"[p\]) _-]0?{0}[v([ _-].*{1}.*", file.epno, file.Group.group_abbr)) ||  // Macross_Frontier_Ep01_Close_Encounter_[720p,BluRay,x264]_-_THORA.mkv
-                                Regex.IsMatch(x, String.Format(@"[p\]) _-]0?{0}[v([ _-].*{1}.*", file.epno, file.Group.group_name)));   // LOGH Episode 01v2(DVD) - Central Anime(eb2858dc).mkv
-                            if (path != string.Empty) file.path = path;
-                        }
+                                List<string> fPaths = new List<string>();
+                                List<string> uPaths = new List<string>();
+
+                                foreach (string _file in Directory.GetFiles(dlg.SelectedPath, "*.*")
+                                    .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
+                                    fPaths.Add(_file);
+
+                                foreach (FileEntry file in files)
+                                {
+                                    string path = fPaths.FirstOrDefault(x => !uPaths.Contains(x) &&
+                                        Regex.IsMatch(x, String.Format(@"([p\.\[\]\(\) _-]0?{0}[v\.\[\]\(\) _-]).*(\[[A-F0-9]{{8}}])?", file.epno)));
+                                    if (path != string.Empty)
+                                    {
+                                        file.path = path;
+                                        uPaths.Add(path);
+                                    }
+                                }
+                        }));
                     }
+
+                    MylistTreeListView.Refresh();
                 }
                 else
                     MessageBox.Show("No file entries found for the selected anime.");

@@ -292,7 +292,24 @@
   <ItemGroup>
     <Resource Include="Resources\options.png" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="Resources\online.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\busy.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\offline.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\deleted.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\onhdd.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\unknown.gif" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

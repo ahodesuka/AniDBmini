@@ -29,6 +29,18 @@ namespace AniDBmini
             YB
         };
 
+        /// <summary>
+        /// Returns a given value of a given object.
+        /// </summary>
+        public static object GetPropValue(object src, string propName)
+        {
+            System.Reflection.PropertyInfo pi;
+            if ((pi = src.GetType().GetProperty(propName)) != null)
+                return pi.GetValue(src, null);
+
+            return null;
+        }
+
         public static TSObservableCollection<T> RemoveAll<T>(this TSObservableCollection<T> coll, Func<T, bool> condition)
         {
             var itemsToRemove = coll.Where(condition).ToList();

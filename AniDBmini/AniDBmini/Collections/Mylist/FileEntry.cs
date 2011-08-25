@@ -44,7 +44,24 @@ namespace AniDBmini.Collections
             }
         }
 
+        public string state
+        {
+            get
+            {
+                string state = @"Resources/";
+                if (deleted)
+                    state += "deleted";
+                else if (System.IO.File.Exists(path))
+                    state += "onhdd";
+                else
+                    state += "unknown";
+
+                return state + ".gif";
+            }
+        }
+
         public bool watched { get; set; }
+        public bool deleted { get; set; }
         public bool generic { get; set; }
 
         #endregion Properties
@@ -78,7 +95,7 @@ namespace AniDBmini.Collections
             if ((epno = reader["spl_epno"].ToString().FormatNullable()) == null)
                 epno = reader["epno"].ToString();
 
-            generic = Convert.ToBoolean(int.Parse(reader["generic"].ToString()));
+            generic = !string.IsNullOrEmpty(reader["generic"].ToString());
 
             if (!generic)
             {
@@ -102,6 +119,7 @@ namespace AniDBmini.Collections
                 vres = reader["vres"].ToString();
 
                 path =  !string.IsNullOrEmpty(reader["path"].ToString()) ? reader["path"].ToString() : null;
+                deleted = !string.IsNullOrEmpty(reader["deleted"].ToString());
             }
 
             if (!string.IsNullOrEmpty(reader["watcheddate"].ToString()))

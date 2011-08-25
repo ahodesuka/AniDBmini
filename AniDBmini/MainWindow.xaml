@@ -10,6 +10,7 @@
     <Window.Resources>
 
         <l:FileSizeConverter x:Key="FileSizeConverter" />
+        <l:ObjectToEntry x:Key="ObjectToEntry" />
         <l:ObjectToType x:Key="ObjectToType" />
 
         <!-- #region Buttons -->
@@ -422,11 +423,15 @@
                 <ContextMenu>
                     <MenuItem Header="Watched" Tag="1" Click="randomAnimeLabelContextMenuItem_Click" />
                     <MenuItem Header="Unwatched" Tag="2" Click="randomAnimeLabelContextMenuItem_Click" />
-                    <MenuItem Header="From database" Tag="0" Click="randomAnimeLabelContextMenuItem_Click" />
                     <MenuItem Header="From mylist" Tag="3" Click="randomAnimeLabelContextMenuItem_Click" />
+                    <MenuItem Header="From database" Tag="0" Click="randomAnimeLabelContextMenuItem_Click" />
                 </ContextMenu>
             </Button.ContextMenu>
         </Button>
+        <StackPanel Height="24" HorizontalAlignment="Right" Margin="10,5" Orientation="Horizontal" VerticalAlignment="Top">
+            <TextBlock VerticalAlignment="Center" Text="Connected" />
+            <Image Source="Resources/online.png" Margin="5,0" Height="14" Width="14" />
+        </StackPanel>
         <TabControl x:Name="mainTabControl" Margin="5" SelectionChanged="mainTabControl_SelectionChanged">
             <TabItem Width="96" IsEnabled="False" Focusable="False" Visibility="Hidden" Height="28" />
             <TabItem Header="Home" IsSelected="True" TextOptions.TextFormattingMode="Display">
@@ -603,7 +608,21 @@
                                     <DataGridTemplateColumn Header="Eps" Width="100" SortMemberPath="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Col1}" Margin="5,0,0,0" />
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Col1}" Margin="5,0,0,0" VerticalAlignment="Center" />
+                                                    <Image Stretch="None" Height="13" Width="15" HorizontalAlignment="Right">
+                                                        <Image.Style>
+                                                            <Style TargetType="{x:Type Image}">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding OriginalEntry, Converter={StaticResource ObjectToType}}" Value="{x:Type lc:FileEntry}">
+                                                                        <Setter Property="Source" Value="{Binding OriginalEntry, Converter={StaticResource ObjectToEntry}, ConverterParameter='state'}" />
+                                                                        <Setter Property="ToolTip" Value="{Binding OriginalEntry, Converter={StaticResource ObjectToEntry}, ConverterParameter='path'}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Image.Style>
+                                                    </Image>
+                                                </StackPanel>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>

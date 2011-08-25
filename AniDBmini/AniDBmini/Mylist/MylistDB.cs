@@ -252,8 +252,9 @@ namespace AniDBmini
                                                         'romaji' VARCHAR NOT NULL, 'nihongo' VARCHAR, 'english' VARCHAR, 'year' VARCHAR NOT NULL, 'eps_total' INTEGER);
                                     CREATE TABLE episodes ('eid' INTEGER PRIMARY KEY, 'aid' INTEGER NOT NULL, 'epno' INTEGER, 'spl_epno' VARCHAR,
                                                            'english' VARCHAR NOT NULL, 'nihongo' VARCHAR, 'romaji' VARCHAR, 'airdate' INTEGER, 'watched' INTEGER);
-                                    CREATE TABLE files ('fid' INTEGER PRIMARY KEY NOT NULL, 'lid' INTEGER NOT NULL, 'eid' INTEGER, 'gid' INTEGER, 'ed2k' VARCHAR, 'watcheddate' INTEGER,
-                                                        'length' INTEGER, 'size' INTEGER,'source' VARCHAR, 'acodec' VARCHAR, 'vcodec' VARCHAR, 'vres' VARCHAR, 'path' VARCHAR, 'generic' INTEGER);
+                                    CREATE TABLE files ('fid' INTEGER PRIMARY KEY NOT NULL, 'lid' INTEGER NOT NULL, 'eid' INTEGER, 'gid' INTEGER, 'ed2k' VARCHAR,
+                                                        'watcheddate' INTEGER, 'length' INTEGER, 'size' INTEGER,'source' VARCHAR, 'acodec' VARCHAR, 'vcodec' VARCHAR,
+                                                        'vres' VARCHAR, 'path' VARCHAR, 'deleted' INTEGER, 'generic' INTEGER);
                                     CREATE TABLE groups ('gid' INTEGER PRIMARY KEY NOT NULL, 'group_name' VARCHAR, 'group_abbr' VARCHAR);
                                     CREATE UNIQUE INDEX 'idx_anime_aid' ON 'anime' ('aid');
                                     CREATE UNIQUE INDEX 'idx_eps_eid' ON 'episodes' ('eid');
@@ -351,7 +352,8 @@ namespace AniDBmini
                         using (SQLiteCommand fileCmd = new SQLiteCommand(SQLConn))
                         {
 
-                            fileCmd.CommandText = @"INSERT OR REPLACE INTO files VALUES (@fid, @lid, @eid, @gid, @ed2k, @watcheddate, @length, @size, @source, @acodec, @vcodec, @vres, @path, @generic);";
+                            fileCmd.CommandText = @"INSERT OR REPLACE INTO files VALUES (@fid, @lid, @eid, @gid, @ed2k, @watcheddate, @length, @size, @source,
+                                                                                         @acodec, @vcodec, @vres, @path, @deleted, @generic);";
 
                             SQLiteParameter[] fParams = { new SQLiteParameter("@fid"),
                                                           new SQLiteParameter("@lid"),
@@ -366,10 +368,12 @@ namespace AniDBmini
                                                           new SQLiteParameter("@vcodec"),
                                                           new SQLiteParameter("@vres"),
                                                           new SQLiteParameter("@path"),
+                                                          new SQLiteParameter("@deleted"),
                                                           new SQLiteParameter("@generic") };
 
-                            fParams[3].IsNullable = fParams[4].IsNullable = fParams[5].IsNullable = fParams[6].IsNullable = fParams[7].IsNullable =
-                            fParams[8].IsNullable = fParams[9].IsNullable = fParams[10].IsNullable = fParams[11].IsNullable = fParams[12].IsNullable = true;
+                            fParams[3].IsNullable = fParams[4].IsNullable = fParams[5].IsNullable = fParams[6].IsNullable = fParams[7].IsNullable = fParams[8].IsNullable =
+                            fParams[9].IsNullable = fParams[10].IsNullable = fParams[11].IsNullable = fParams[12].IsNullable = fParams[13].IsNullable = fParams[14].IsNullable = true;
+
                             fileCmd.Parameters.AddRange(fParams);
 
                             foreach (EpisodeEntry ep in entry.Episodes)
@@ -406,7 +410,8 @@ namespace AniDBmini
                                     fParams[10].Value = file.vcodec;
                                     fParams[11].Value = file.vres;
                                     fParams[12].Value = file.path;
-                                    fParams[13].Value = file.generic;
+                                    if (file.deleted) fParams[13].Value = file.deleted;
+                                    if (file.generic) fParams[14].Value = file.generic;
 
                                     fileCmd.ExecuteNonQuery();
                                     OnEntryInserted(entry.title);
@@ -454,8 +459,8 @@ namespace AniDBmini
                                               new SQLiteParameter("@eps_total", entry.eps_total) };
 
                 aParams[3].IsNullable = aParams[4].IsNullable = true;
-                cmd.Parameters.AddRange(aParams);
 
+                cmd.Parameters.AddRange(aParams);
                 cmd.ExecuteNonQuery();
             }
         }
@@ -478,8 +483,8 @@ namespace AniDBmini
 
                 eParams[2].IsNullable = eParams[3].IsNullable = eParams[4].IsNullable = eParams[5].IsNullable = true;
                 if (entry.epno == 0) eParams[2].Value = null;
-                cmd.Parameters.AddRange(eParams);
 
+                cmd.Parameters.AddRange(eParams);
                 cmd.ExecuteNonQuery();
             }
         }
@@ -488,7 +493,8 @@ namespace AniDBmini
         {
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
-                cmd.CommandText = @"INSERT OR REPLACE INTO files VALUES (@fid, @lid, @eid, @gid, @ed2k, @watcheddate, @length, @size, @source, @acodec, @vcodec, @vres, @path, @generic);";
+                cmd.CommandText = @"INSERT OR REPLACE INTO files VALUES (@fid, @lid, @eid, @gid, @ed2k, @watcheddate, @length, @size, @source,
+                                                                         @acodec, @vcodec, @vres, @path, @deleted, @generic);";
 
                 SQLiteParameter[] fParams = { new SQLiteParameter("@fid", entry.fid),
                                               new SQLiteParameter("@lid", entry.lid),
@@ -503,13 +509,17 @@ namespace AniDBmini
                                               new SQLiteParameter("@vcodec", entry.vcodec),
                                               new SQLiteParameter("@vres", entry.vres),
                                               new SQLiteParameter("@path", entry.path),
+                                              new SQLiteParameter("@deleted", entry.deleted),
                                               new SQLiteParameter("@generic", entry.generic) };
 
-                fParams[3].IsNullable = fParams[4].IsNullable = fParams[7].IsNullable =
-                fParams[8].IsNullable = fParams[9].IsNullable = fParams[10].IsNullable = fParams[11].IsNullable = true;
-                if (entry.Group.gid == 0) fParams[3].Value = null;
-                cmd.Parameters.AddRange(fParams);
+                fParams[3].IsNullable = fParams[4].IsNullable = fParams[7].IsNullable = fParams[8].IsNullable = fParams[9].IsNullable =
+                fParams[10].IsNullable = fParams[11].IsNullable = fParams[12].IsNullable = fParams[13].IsNullable = fParams[14].IsNullable = true;
 
+                if (entry.Group.gid == 0) fParams[3].Value = null;
+                if (!entry.deleted) fParams[13].Value = null;
+                if (!entry.generic) fParams[14].Value = null;
+
+                cmd.Parameters.AddRange(fParams);
                 cmd.ExecuteNonQuery();
             }
         }

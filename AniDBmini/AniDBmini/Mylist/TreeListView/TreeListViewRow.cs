@@ -108,7 +108,7 @@ namespace AniDBmini
         protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
         {
             if (Node != null && FindAncestor<RowExpander>(e.OriginalSource as DependencyObject) == null)
-                Node.IsExpanded = !Node.IsExpanded;
+                Node.Tree.SetIsExpanded(Node, !Node.IsExpanded, true);
             else
                 base.OnMouseDoubleClick(e);
         }

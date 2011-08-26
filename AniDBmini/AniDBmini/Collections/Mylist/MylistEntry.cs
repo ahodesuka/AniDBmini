@@ -44,10 +44,10 @@ namespace AniDBmini.Collections
 
             m_entry.Col0 = entry.title;
             m_entry.Col1 = String.Format("{0}/{1}{2}", entry.eps_have,
-                                                       (entry.eps_total == 0) ? "?" : entry.eps_total.ToString(),
+                                                       (entry.eps_total == 0) ? "TBC" : entry.eps_total.ToString(),
                                                        (entry.spl_have > 0) ? String.Format("+{0}", entry.spl_have) : null);
             m_entry.Col2 = String.Format("{0}/{1}{2}", entry.eps_watched,
-                                                       (entry.eps_total == 0) ? "?" : entry.eps_total.ToString(),
+                                                       (entry.eps_total == 0) ? "TBC" : entry.eps_total.ToString(),
                                                        (entry.spl_watched > 0) ? String.Format("+{0}", entry.spl_watched) : null);
             m_entry.Col3 = entry.year;
             m_entry.Col4 = length.ToFormatedLength();

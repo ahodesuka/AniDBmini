@@ -156,7 +156,7 @@ namespace AniDBmini
             if (ItemContainerGenerator.Status == GeneratorStatus.ContainersGenerated && PendingFocusNode != null)
             {
                 var item = ItemContainerGenerator.ContainerFromItem(PendingFocusNode) as TreeListViewRow;
-                if (item != null) item.Focus();
+                if (item != null) item.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
                 PendingFocusNode = null;
             }
         }
@@ -193,7 +193,7 @@ namespace AniDBmini
         private void StoreNodes()
         {
             s_ExpandedNodes = Rows.Where(x => x.IsExpanded && x.Parent.IsExpanded).ToList();
-            s_SelectedNode = this.SelectedNode;
+            s_SelectedNode = SelectedNode;
         }
 
         private void RestoreNodes()
@@ -226,38 +226,46 @@ namespace AniDBmini
 
         internal new void ScrollIntoView(object item)
         {
-            this.SelectedItem = item;
-            base.ScrollIntoView(item, this.ColumnFromDisplayIndex(0));
+            if (item == null)
+                return;
+
+            SelectedItem = item;
+            base.ScrollIntoView(item, ColumnFromDisplayIndex(0));
 
             Dispatcher.BeginInvoke(new Action(delegate
             {
-                while (this.SelectedItem == null)
-                    this.SelectedItem = item;
+                while (SelectedItem == null)
+                    SelectedItem = item;
 
-                TreeListViewRow tlItem = this.ItemContainerGenerator.ContainerFromIndex(this.SelectedIndex) as TreeListViewRow;
+                TreeListViewRow tlItem = ItemContainerGenerator.ContainerFromIndex(SelectedIndex) as TreeListViewRow;
                 tlItem.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
             }));
         }
 
-        internal void SetIsExpanded(TreeNode node, bool value)
+        internal void SetIsExpanded(TreeNode node, bool value, bool scrollTo = false)
         {
+            if (!scrollTo && node != Root)
+                PendingFocusNode = SelectedNode;
+
             if (value)
             {
                 if (!node.IsChildrenFetched && node != Root)
                 {
-                    this.Model.FetchChildren(node.Tag);
+                    Model.FetchChildren(node.Tag);
                     node.IsChildrenFetched = true;
                     node.AssignIsExpanded(value);
 
                     CreateChildrenNodes(node);
-                    ScrollIntoView(node);
+
+                    if (scrollTo)
+                        ScrollIntoView(node);
                 }
                 else
                 {
                     node.AssignIsExpanded(value);
                     CreateChildrenRows(node);
 
-                    if (node != Root)
+                    if (scrollTo && node != Root)
                         ScrollIntoView(node);
                 }
             }
@@ -265,7 +273,9 @@ namespace AniDBmini
             {
                 DropChildrenRows(node, false);
                 node.AssignIsExpanded(value);
-                ScrollIntoView(node);
+
+                if (scrollTo)
+                    ScrollIntoView(node);
             }
         }
 

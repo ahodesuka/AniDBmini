@@ -18,8 +18,11 @@ namespace AniDBmini
             return new UnixTimestamp(timestamp);
         }
 
-        public DateTime ToDateTime()
+        public DateTime ToDateTime(bool local = true)
         {
+            if (!local)
+                return Epoch.AddSeconds(_timestamp);
+
             return Epoch.AddSeconds(_timestamp).ToLocalTime();
         }
 

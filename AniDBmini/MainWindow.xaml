@@ -615,7 +615,7 @@
                                                             <Style TargetType="{x:Type Image}">
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding OriginalEntry, Converter={StaticResource ObjectToType}}" Value="{x:Type lc:FileEntry}">
-                                                                        <Setter Property="Source" Value="{Binding OriginalEntry, Converter={StaticResource ObjectToEntry}, ConverterParameter='state'}" />
+                                                                        <Setter Property="Source" Value="{Binding OriginalEntry, Converter={StaticResource ObjectToEntry}, ConverterParameter='stateIMG'}" />
                                                                         <Setter Property="ToolTip" Value="{Binding OriginalEntry, Converter={StaticResource ObjectToEntry}, ConverterParameter='path'}" />
                                                                     </DataTrigger>
                                                                 </Style.Triggers>

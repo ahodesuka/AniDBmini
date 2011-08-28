@@ -69,7 +69,7 @@ namespace AniDBmini.Collections
             m_entry.Col2 = entry.watched ? "Yes" : "No";
 
             if (entry.airdate != null)
-                m_entry.Col3 = entry.airdate.ToDateTime().ToShortDateString();
+                m_entry.Col3 = entry.airdate.ToDateTime(false).ToShortDateString();
 
             m_entry.Col4 = length.ToFormatedLength();
             m_entry.Col5 = entry.size.ToFormatedBytes();

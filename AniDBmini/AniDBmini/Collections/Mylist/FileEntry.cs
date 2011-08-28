@@ -44,24 +44,38 @@ namespace AniDBmini.Collections
             }
         }
 
-        public string state
+        /// <summary>
+        /// <para>0 - unknown - state is unknown or the user doesn't want to provide this information</para>
+        /// <para>1 - on hdd - the file is stored on hdd (but is not shared)</para>
+        /// <para>2 - on cd - the file is stored on cd</para>
+        /// <para>3 - deleted - the file has been deleted or is not available for other reasons (i.e. reencoded)</para>
+        /// </summary>
+        public int state;
+
+        public string stateIMG
         {
             get
             {
-                string state = @"Resources/";
-                if (deleted)
-                    state += "deleted";
-                else if (System.IO.File.Exists(path))
-                    state += "onhdd";
-                else
-                    state += "unknown";
+                string str = @"Resources/";
+                switch (state)
+                {
+                    case 1:
+                        if (System.IO.File.Exists(path)) str += "onhdd";
+                        else goto default;
+                        break;
+                    case 3:
+                        str += "deleted";
+                        break;
+                    default:
+                        str += "unknown";
+                        break;
+                }
 
-                return state + ".gif";
+                return str + ".gif";
             }
         }
 
         public bool watched { get; set; }
-        public bool deleted { get; set; }
         public bool generic { get; set; }
 
         #endregion Properties
@@ -119,8 +133,9 @@ namespace AniDBmini.Collections
                 vres = reader["vres"].ToString();
 
                 path =  !string.IsNullOrEmpty(reader["path"].ToString()) ? reader["path"].ToString() : null;
-                deleted = !string.IsNullOrEmpty(reader["deleted"].ToString());
             }
+
+            state = int.Parse(reader["state"].ToString());
 
             if (!string.IsNullOrEmpty(reader["watcheddate"].ToString()))
                 watcheddate = double.Parse(reader["watcheddate"].ToString());

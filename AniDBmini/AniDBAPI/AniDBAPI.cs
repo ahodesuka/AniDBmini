@@ -148,7 +148,7 @@ namespace AniDBmini
 #endif
                 isLoggedIn = true;
                 this.user = user;
-                this.pass = pass;                
+                this.pass = pass;
             }
             else
             {
@@ -186,7 +186,7 @@ namespace AniDBmini
         {
             Action fileInfo = new Action(delegate
             {
-                APIResponse response = Execute(String.Format("FILE size={0}&ed2k={1}&fmask=78006A28B0&amask=70E0F0C0", item.Size, item.Hash));
+                APIResponse response = Execute(String.Format("FILE size={0}&ed2k={1}&fmask=78006A28B0&amask=F0E0F0C0", item.Size, item.Hash));
 
                 if (response.Code == RETURN_CODE.FILE)
                     ParseFileData(item, response.Message);
@@ -199,71 +199,13 @@ namespace AniDBmini
         {
             Action fileInfo = new Action(delegate
             {
-                APIResponse response = Execute(String.Format("FILE fid={0}&fmask=78006A28B0&amask=70E0F0C0", entry.fid));
+                APIResponse response = Execute(String.Format("FILE fid={0}&fmask=78006A28B0&amask=F0E0F0C0", entry.fid));
 
                 if (response.Code == RETURN_CODE.FILE)
                     ParseFileData(entry, response.Message);
             });
 
             PrioritizedCommand(fileInfo);
-        }
-
-        private void ParseFileData(object item, string data)
-        {
-            string[] info = Regex.Split(data, "\n")[1].Split('|');
-
-            AnimeEntry anime = new AnimeEntry();
-            EpisodeEntry episode = new EpisodeEntry();
-            FileEntry file = (item is HashItem) ?
-                new FileEntry((HashItem)item) : (FileEntry)item;
-
-            file.fid = int.Parse(info[0]);
-            anime.aid = episode.aid = int.Parse(info[1]);
-            episode.eid = file.eid = int.Parse(info[2]);
-            int gid = int.Parse(info[3]);
-            file.lid = int.Parse(info[4]);
-
-            file.source = info[5].FormatNullable();
-            file.acodec = info[6].Contains("'") ? info[6].Split('\'')[0] : info[6].FormatNullable();
-            file.acodec = ExtensionMethods.FormatAudioCodec(file.acodec);
-            file.vcodec = ExtensionMethods.FormatVideoCodec(info[7].FormatNullable());
-            file.vres = info[8].FormatNullable();
-
-            file.length = double.Parse(info[9]);
-
-            if (!string.IsNullOrEmpty(info[10]) && int.Parse(info[10]) != 0) episode.airdate = double.Parse(info[10]);
-
-            file.state = int.Parse(info[11]);
-            episode.watched = file.watched = Convert.ToBoolean(int.Parse(info[12]));
-            if (!string.IsNullOrEmpty(info[13]) && int.Parse(info[13]) != 0) file.watcheddate = double.Parse(info[13]);
-
-            anime.eps_total = int.Parse(info[14]);
-            anime.year = info[15].Contains('-') ?
-                        (info[15].Split('-')[0] != info[15].Split('-')[1] ? info[15] : info[15].Split('-')[0]) : info[15];
-            anime.type = info[16];
-
-            anime.romaji = info[17];
-            anime.nihongo = info[18].FormatNullable();
-            anime.english = info[19].FormatNullable();
-
-            if (Regex.IsMatch(info[20].Substring(0, 1), @"\D"))
-                episode.spl_epno = info[20];
-            else
-                episode.epno = int.Parse(info[20]);
-
-            episode.english = info[21];
-            episode.romaji = info[22].FormatNullable();
-            episode.nihongo = info[23].FormatNullable();
-
-            if (gid != 0)
-                file.Group = new GroupEntry
-                {
-                    gid = gid,
-                    group_name = info[24],
-                    group_abbr = info[25]
-                };
-
-            OnFileInfoFetched(new FileInfoFetchedArgs(anime, episode, file));
         }
 
         #endregion DATA
@@ -411,6 +353,68 @@ namespace AniDBmini
                 return 3;
             else
                 return 4;
+        }
+
+        /// <summary>
+        /// Parses the return message of a FILE command,
+        /// and then triggers the OnFileInfoFetched event.
+        /// </summary>
+        private void ParseFileData(object item, string data)
+        {
+            string[] info = Regex.Split(data, "\n")[1].Split('|');
+
+            AnimeEntry anime = new AnimeEntry();
+            EpisodeEntry episode = new EpisodeEntry();
+            FileEntry file = (item is HashItem) ?
+                new FileEntry((HashItem)item) : (FileEntry)item;
+
+            file.fid = int.Parse(info[0]);
+            anime.aid = episode.aid = int.Parse(info[1]);
+            episode.eid = file.eid = int.Parse(info[2]);
+            file.lid = int.Parse(info[4]);
+
+            file.source = info[5].FormatNullable();
+            file.acodec = info[6].Contains("'") ? info[6].Split('\'')[0] : info[6].FormatNullable();
+            file.acodec = ExtensionMethods.FormatAudioCodec(file.acodec);
+            file.vcodec = ExtensionMethods.FormatVideoCodec(info[7].FormatNullable());
+            file.vres = info[8].FormatNullable();
+
+            file.length = double.Parse(info[9]);
+
+            if (!string.IsNullOrEmpty(info[10]) && int.Parse(info[10]) != 0) episode.airdate = double.Parse(info[10]);
+
+            file.state = int.Parse(info[11]);
+            episode.watched = file.watched = Convert.ToBoolean(int.Parse(info[12]));
+            if (!string.IsNullOrEmpty(info[13]) && int.Parse(info[13]) != 0) file.watcheddate = double.Parse(info[13]);
+
+            anime.eps_total = !string.IsNullOrEmpty(info[14]) ?
+                (int.Parse(info[14]) > int.Parse(info[15]) ? int.Parse(info[14]) : int.Parse(info[15])) : int.Parse(info[15]);
+            anime.year = info[16].Contains('-') ?
+                        (info[16].Split('-')[0] != info[16].Split('-')[1] ? info[16] : info[16].Split('-')[0]) : info[16];
+            anime.type = info[17];
+
+            anime.romaji = info[18];
+            anime.nihongo = info[19].FormatNullable();
+            anime.english = info[20].FormatNullable();
+
+            if (Regex.IsMatch(info[21].Substring(0, 1), @"\D"))
+                episode.spl_epno = info[21];
+            else
+                episode.epno = info[21].Contains('-') ? int.Parse(info[21].Split('-')[0]) : int.Parse(info[21]);
+
+            episode.english = info[22];
+            episode.romaji = info[23].FormatNullable();
+            episode.nihongo = info[24].FormatNullable();
+
+            if (int.Parse(info[3]) != 0)
+                file.Group = new GroupEntry
+                {
+                    gid = int.Parse(info[3]),
+                    group_name = info[25],
+                    group_abbr = info[26]
+                };
+
+            OnFileInfoFetched(new FileInfoFetchedArgs(anime, episode, file));
         }
 
         /// <summary>

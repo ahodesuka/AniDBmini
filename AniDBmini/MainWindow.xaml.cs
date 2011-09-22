@@ -125,7 +125,7 @@ namespace AniDBmini
                 if (text != "x")
                 {
                     if (i == 3)
-                        value = ((double)stat).ToFormatedBytes(ExtensionMethods.BYTE_UNIT.MB, ExtensionMethods.BYTE_UNIT.GB);
+                        value = ((double)stat).ToFormattedBytes(ExtensionMethods.BYTE_UNIT.MB, ExtensionMethods.BYTE_UNIT.GB);
                     else if (i == 16)
                     {
                         int days = (int)Math.Floor((stat / 60f) / 24f);
@@ -671,8 +671,8 @@ namespace AniDBmini
                 {
                     timeElapsedTextBlock.Text = String.Format("Elapsed: {0}", totalTimeElapsed.ToHMS());
                     timeRemainingTextBlock.Text = String.Format("ETA: {0}", remainingSpan.ToHMS());
-                    totalBytesTextBlock.Text = String.Format("Bytes: {0} / {1}", (e.ProcessedSize + ppSize).ToFormatedBytes(ExtensionMethods.BYTE_UNIT.GB),
-                                                                                 totalQueueSize.ToFormatedBytes(ExtensionMethods.BYTE_UNIT.GB));
+                    totalBytesTextBlock.Text = String.Format("Bytes: {0} / {1}", (e.ProcessedSize + ppSize).ToFormattedBytes(ExtensionMethods.BYTE_UNIT.GB),
+                                                                                 totalQueueSize.ToFormattedBytes(ExtensionMethods.BYTE_UNIT.GB));
 
                     fileProgressBar.Value = fileProg;
                     totalProgressBar.Value = totalProg;

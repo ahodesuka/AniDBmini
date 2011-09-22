@@ -57,7 +57,7 @@ namespace AniDBmini
 
         public static void FocusWindow(IntPtr hWnd)
         {
-            ShowWindowAsync(hWnd, 1);
+            ShowWindowAsync(hWnd, 9);
             SetForegroundWindow(hWnd);
         }
 

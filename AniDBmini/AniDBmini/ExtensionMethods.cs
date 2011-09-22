@@ -68,7 +68,7 @@ namespace AniDBmini
         /// <summary>
         /// Simplifies an amount of bytes to the smallest unit.
         /// </summary>
-        public static string ToFormatedBytes(this double size)
+        public static string ToFormattedBytes(this double size)
         {
             int unit = 0;
 
@@ -84,7 +84,7 @@ namespace AniDBmini
         /// <summary>
         /// Convert bytes to a specific unit.
         /// </summary>
-        public static string ToFormatedBytes(this double size, BYTE_UNIT outUnit)
+        public static string ToFormattedBytes(this double size, BYTE_UNIT outUnit)
         {
             int unitIndex = (int)outUnit;
 
@@ -97,7 +97,7 @@ namespace AniDBmini
         /// <summary>
         /// Convert from a certain unit to another.
         /// </summary>
-        public static string ToFormatedBytes(this double size, BYTE_UNIT inUnit, BYTE_UNIT outUnit)
+        public static string ToFormattedBytes(this double size, BYTE_UNIT inUnit, BYTE_UNIT outUnit)
         {
             int unitIndex = ((int)outUnit > (int)inUnit) ?
                             (int)outUnit - (int)inUnit : (int)inUnit - (int)outUnit;

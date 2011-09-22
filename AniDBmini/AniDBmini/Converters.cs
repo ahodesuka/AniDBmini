@@ -13,7 +13,7 @@ namespace AniDBmini
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             double size = double.Parse(value.ToString());
-            return size.ToFormatedBytes();
+            return size.ToFormattedBytes();
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

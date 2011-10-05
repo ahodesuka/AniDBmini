@@ -12,8 +12,9 @@ namespace AniDBmini
     {
         #region Consts
 
-        private const int LOCALE_SSHORTDATE = 0x1F;
-        private const int LOCALE_STIME = 0x1003;
+        private const int LOCALE_SSHORTDATE = 0x1F,
+                          LOCALE_STIME = 0x1003,
+                          SW_RESTORE = 9;
 
         public const int WM_COPYDATA = 0x4A;
 
@@ -57,7 +58,7 @@ namespace AniDBmini
 
         public static void FocusWindow(IntPtr hWnd)
         {
-            ShowWindowAsync(hWnd, 9);
+            ShowWindowAsync(hWnd, SW_RESTORE);
             SetForegroundWindow(hWnd);
         }
 

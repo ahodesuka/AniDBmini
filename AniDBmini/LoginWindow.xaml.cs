@@ -47,11 +47,11 @@ namespace AniDBmini
         private void OnInitialized(object sender, EventArgs e)
         {
             if (ConfigFile.Read("autoLogin").ToBoolean() &&
-                (aniDB = new AniDBAPI(ConfigFile.Read("server").ToString(), ConfigFile.Read("port").ToInt32(), ConfigFile.Read("localPort").ToInt32())) != null)
-            {
-                if (aniDB.Login(ConfigFile.Read("username").ToString(), ConfigFile.Read("password").ToString()))
-                    StartMainWindow();
-            }
+                (aniDB = new AniDBAPI(ConfigFile.Read("server").ToString(),
+                                      ConfigFile.Read("port").ToInt32(),
+                                      ConfigFile.Read("localPort").ToInt32())).isConnected &&
+                aniDB.Login(ConfigFile.Read("username").ToString(), ConfigFile.Read("password").ToString()))
+                StartMainWindow();
             else if (ConfigFile.Read("rememberUser").ToBoolean())
             {
                 rememberUserCheckBox.IsChecked = true;
@@ -72,35 +72,35 @@ namespace AniDBmini
             loginButton.IsEnabled = false;
             string[] server = serverComboBox.SelectedValue.ToString().Split(':');
 
-            if ((aniDB = new AniDBAPI(server[0], int.Parse(server[1]), ConfigFile.Read("localPort").ToInt32())) != null)
-                if (!aniDB.Login(usernameTextBox.Text, passwordPasswordBox.Password))
-                    loginButton.IsEnabled = true;
+            if ((aniDB = new AniDBAPI(server[0], int.Parse(server[1]), ConfigFile.Read("localPort").ToInt32())).isConnected &&
+                aniDB.Login(usernameTextBox.Text, passwordPasswordBox.Password))
+            {
+                if (autoLoginCheckBox.IsChecked == true)
+                {
+                    ConfigFile.Write("autoLogin", "True");
+                    ConfigFile.Write("rememberUser", "True");
+                    ConfigFile.Write("username", usernameTextBox.Text);
+                    ConfigFile.Write("password", passwordPasswordBox.Password);
+                    ConfigFile.Write("server", server[0]);
+                    ConfigFile.Write("port", server[1]);
+                }
+                else if (rememberUserCheckBox.IsChecked == true)
+                {
+                    ConfigFile.Write("rememberUser", "True");
+                    ConfigFile.Write("username", usernameTextBox.Text);
+                }
                 else
                 {
-                    if (autoLoginCheckBox.IsChecked == true)
-                    {
-                        ConfigFile.Write("autoLogin", "True");
-                        ConfigFile.Write("rememberUser", "True");
-                        ConfigFile.Write("username", usernameTextBox.Text);
-                        ConfigFile.Write("password", passwordPasswordBox.Password);
-                        ConfigFile.Write("server", server[0]);
-                        ConfigFile.Write("port", server[1]);
-                    }
-                    else if (rememberUserCheckBox.IsChecked == true)
-                    {
-                        ConfigFile.Write("rememberUser", "True");
-                        ConfigFile.Write("username", usernameTextBox.Text);
-                    }
-                    else
-                    {
-                        ConfigFile.Write("autoLogin", "False");
-                        ConfigFile.Write("rememberUser", "False");
-                        ConfigFile.Write("username", string.Empty);
-                        ConfigFile.Write("password", string.Empty);
-                    }
-
-                    StartMainWindow();
+                    ConfigFile.Write("autoLogin", "False");
+                    ConfigFile.Write("rememberUser", "False");
+                    ConfigFile.Write("username", string.Empty);
+                    ConfigFile.Write("password", string.Empty);
                 }
+
+                StartMainWindow();
+            }
+            else
+                loginButton.IsEnabled = true;
         }
 
         private void OnKeyDown(object sender, KeyEventArgs e)

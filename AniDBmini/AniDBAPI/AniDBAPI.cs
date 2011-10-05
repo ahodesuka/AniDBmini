@@ -116,6 +116,7 @@ namespace AniDBmini
                                              "Episodes watched",
                                              "x", "x",
                                              "Time wasted" };
+        public bool isConnected;
 
         public event FileInfoFetchedHandler OnFileInfoFetched = delegate { };
         public event AnimeTabFetchedHandler OnAnimeTabFetched = delegate { };
@@ -128,8 +129,19 @@ namespace AniDBmini
         {
 #if !DEBUG
             apiserver = new IPEndPoint(IPAddress.Any, localPort);
-            conn.Connect(server, port); // TODO: PING PONG, check if API is alive.
-                                        // TODO: Check if connect was succesful or not 
+
+        retry:
+            try
+            {
+                conn.Connect(server, port);
+                isConnected = true;
+            }
+            catch (SocketException)
+            {
+                if ((MessageBox.Show("Unable to connect to api server!\nWould you like to try again?",
+                                "Connection Error!", MessageBoxButton.YesNo, MessageBoxImage.Error)) == MessageBoxResult.Yes)
+                    goto retry;
+            }
 #endif
         }
 

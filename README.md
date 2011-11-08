@@ -1,6 +1,8 @@
 # Overview
 AniDBmini is a small project that will attempt to produce an anidb.net client using their [UDP API](http://wiki.anidb.net/w/UDP_API).
+
 Some of the main features include:
+
 * Ability to hash and add files to your list
 * Media player hooking
 * Local mylist database

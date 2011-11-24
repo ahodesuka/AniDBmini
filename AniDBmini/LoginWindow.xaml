@@ -1,0 +1,27 @@
+﻿<Window x:Class="AniDBmini.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Background="{DynamicResource WindowBackgroundBrush}" Title="AniDB Login" Height="250" Width="400" ResizeMode="NoResize" BorderThickness="0"
+        Icon="/AniDBmini;component/Resources/AniDBmini.ico" Initialized="OnInitialized" WindowStartupLocation="CenterScreen" FontFamily="Calibri">
+    <Grid KeyDown="OnKeyDown">
+        <Label Content="Username" Height="20" HorizontalAlignment="Left" Margin="30,5,0,0" x:Name="usernameLabel"
+               VerticalAlignment="Top" Width="100" VerticalContentAlignment="Bottom" Padding="0,5" />
+        <TextBox Height="32" Margin="30,25,30,0" x:Name="usernameTextBox" VerticalAlignment="Top"
+                 FontSize="18" VerticalContentAlignment="Center" Padding="3" />
+        <Label Content="Password" Height="20" HorizontalAlignment="Left" Margin="30,55,0,0" x:Name="passwordLabel"
+               VerticalAlignment="Top" VerticalContentAlignment="Bottom" Width="100" Padding="0,5" />
+        <PasswordBox FontSize="18" Height="32" Margin="30,75,30,0" x:Name="passwordPasswordBox"
+                     VerticalAlignment="Top" VerticalContentAlignment="Center" />
+        <ComboBox HorizontalAlignment="Left" Margin="30,125,0,0" x:Name="serverComboBox" Width="200"
+                  FontSize="18" BorderBrush="DarkGray" BorderThickness="1" Padding="1" Height="32"
+                  VerticalAlignment="Top" SelectedValuePath="Tag">
+            <ComboBoxItem IsSelected="True">api.anidb.net:9000</ComboBoxItem>
+        </ComboBox>
+        <Button Height="32" Margin="248,125,30,0" x:Name="loginButton" VerticalAlignment="Top" BorderThickness="1"
+                Content="Login" Click="loginButton_Click" IsEnabled="True" Style="{StaticResource NuclearGreenButton}" />
+        <CheckBox Content="Auto Login" HorizontalAlignment="Left" Margin="30,167,0,0" x:Name="autoLoginCheckBox" VerticalAlignment="Top"
+                  BorderThickness="1" Click="autoLoginCheckBox_Click" />
+        <CheckBox Content="Remember Username" HorizontalAlignment="Left" Margin="30,188,0,0" x:Name="rememberUserCheckBox"
+                  VerticalAlignment="Top" BorderThickness="1" />
+    </Grid>
+</Window>

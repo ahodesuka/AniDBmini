@@ -53,6 +53,92 @@ namespace AniDBmini
             return isSQLConnOpen;
         }
 
+
+        #region UPDATE
+
+        private void UpdateAnime(AnimeEntry entry)
+        {
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
+            {
+                cmd.CommandText = @"INSERT OR REPLACE INTO anime VALUES (@aid, @type, @title, @nihongo, @english, @year, @eps_total);";
+
+                SQLiteParameter[] aParams = { new SQLiteParameter("@aid", entry.aid),
+                                              new SQLiteParameter("@type", entry.type),
+                                              new SQLiteParameter("@title", entry.title),
+                                              new SQLiteParameter("@nihongo", entry.nihongo),
+                                              new SQLiteParameter("@english", entry.english),
+                                              new SQLiteParameter("@year", entry.year),
+                                              new SQLiteParameter("@eps_total", entry.eps_total) };
+
+                aParams[3].IsNullable = aParams[4].IsNullable = true;
+
+                cmd.Parameters.AddRange(aParams);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void UpdateEpisode(EpisodeEntry entry)
+        {
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
+            {
+                cmd.CommandText = @"INSERT OR REPLACE INTO episodes VALUES (@eid, @aid, @epno, @spl_epno, @english, @nihongo, @romaji, @airdate, @watched);";
+
+                SQLiteParameter[] eParams = { new SQLiteParameter("@eid", entry.eid),
+                                              new SQLiteParameter("@aid", entry.aid),
+                                              new SQLiteParameter("@epno", entry.epno),
+                                              new SQLiteParameter("@spl_epno", entry.spl_epno),
+                                              new SQLiteParameter("@english", entry.english),
+                                              new SQLiteParameter("@nihongo", entry.nihongo),
+                                              new SQLiteParameter("@romaji", entry.romaji),
+                                              new SQLiteParameter("@airdate", entry.airdate),
+                                              new SQLiteParameter("@watched", entry.watched) };
+
+                eParams[2].IsNullable = eParams[3].IsNullable = eParams[4].IsNullable = eParams[5].IsNullable = true;
+                if (entry.epno == 0) eParams[2].Value = null;
+
+                cmd.Parameters.AddRange(eParams);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void UpdateFile(FileEntry entry)
+        {
+            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
+            {
+                cmd.CommandText = @"INSERT OR REPLACE INTO files VALUES (@fid, @lid, @eid, @gid, @ed2k, @watcheddate, @length, @size, @source,
+                                                                         @acodec, @vcodec, @vres, @path, @state, @generic);";
+
+                SQLiteParameter[] fParams = { new SQLiteParameter("@fid", entry.fid),
+                                              new SQLiteParameter("@lid", entry.lid),
+                                              new SQLiteParameter("@eid", entry.eid),
+                                              new SQLiteParameter("@gid", entry.Group.gid),
+                                              new SQLiteParameter("@ed2k", entry.ed2k),
+                                              new SQLiteParameter("@watcheddate", entry.watcheddate),
+                                              new SQLiteParameter("@length", entry.length),
+                                              new SQLiteParameter("@size", entry.size),
+                                              new SQLiteParameter("@source", entry.source),
+                                              new SQLiteParameter("@acodec", entry.acodec),
+                                              new SQLiteParameter("@vcodec", entry.vcodec),
+                                              new SQLiteParameter("@vres", entry.vres),
+                                              new SQLiteParameter("@path", entry.path),
+                                              new SQLiteParameter("@state", entry.state),
+                                              new SQLiteParameter("@generic", entry.generic) };
+
+                fParams[3].IsNullable = fParams[4].IsNullable = fParams[7].IsNullable = fParams[8].IsNullable = fParams[9].IsNullable =
+                fParams[10].IsNullable = fParams[11].IsNullable = fParams[12].IsNullable = fParams[14].IsNullable = true;
+
+                if (entry.Group.gid == 0) fParams[3].Value = null;
+                if (System.IO.File.Exists(entry.path)) fParams[13].Value = entry.state = 1;
+                else if (entry.state != 3) fParams[13].Value = entry.state = 0;
+                if (!entry.generic) fParams[14].Value = null;
+
+                cmd.Parameters.AddRange(fParams);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        #endregion UPDATE
+
         #endregion Private Methods
 
         #region Public Methods
@@ -442,90 +528,20 @@ namespace AniDBmini
 
         #endregion INSERT
 
-        #region UPDATE
 
-        private void UpdateAnime(AnimeEntry entry)
+        #region DELETE
+
+        public void DeleteFile(int lid)
         {
             using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
             {
-                cmd.CommandText = @"INSERT OR REPLACE INTO anime VALUES (@aid, @type, @title, @nihongo, @english, @year, @eps_total);";
-
-                SQLiteParameter[] aParams = { new SQLiteParameter("@aid", entry.aid),
-                                              new SQLiteParameter("@type", entry.type),
-                                              new SQLiteParameter("@title", entry.title),
-                                              new SQLiteParameter("@nihongo", entry.nihongo),
-                                              new SQLiteParameter("@english", entry.english),
-                                              new SQLiteParameter("@year", entry.year),
-                                              new SQLiteParameter("@eps_total", entry.eps_total) };
-
-                aParams[3].IsNullable = aParams[4].IsNullable = true;
-
-                cmd.Parameters.AddRange(aParams);
+                cmd.CommandText = @"DELETE FROM files WHERE lid = @lid;";
+                cmd.Parameters.Add(new SQLiteParameter("@lid", lid));
                 cmd.ExecuteNonQuery();
             }
         }
 
-        private void UpdateEpisode(EpisodeEntry entry)
-        {
-            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
-            {
-                cmd.CommandText = @"INSERT OR REPLACE INTO episodes VALUES (@eid, @aid, @epno, @spl_epno, @english, @nihongo, @romaji, @airdate, @watched);";
-
-                SQLiteParameter[] eParams = { new SQLiteParameter("@eid", entry.eid),
-                                              new SQLiteParameter("@aid", entry.aid),
-                                              new SQLiteParameter("@epno", entry.epno),
-                                              new SQLiteParameter("@spl_epno", entry.spl_epno),
-                                              new SQLiteParameter("@english", entry.english),
-                                              new SQLiteParameter("@nihongo", entry.nihongo),
-                                              new SQLiteParameter("@romaji", entry.romaji),
-                                              new SQLiteParameter("@airdate", entry.airdate),
-                                              new SQLiteParameter("@watched", entry.watched) };
-
-                eParams[2].IsNullable = eParams[3].IsNullable = eParams[4].IsNullable = eParams[5].IsNullable = true;
-                if (entry.epno == 0) eParams[2].Value = null;
-
-                cmd.Parameters.AddRange(eParams);
-                cmd.ExecuteNonQuery();
-            }
-        }
-
-        private void UpdateFile(FileEntry entry)
-        {
-            using (SQLiteCommand cmd = new SQLiteCommand(SQLConn))
-            {
-                cmd.CommandText = @"INSERT OR REPLACE INTO files VALUES (@fid, @lid, @eid, @gid, @ed2k, @watcheddate, @length, @size, @source,
-                                                                         @acodec, @vcodec, @vres, @path, @state, @generic);";
-
-                SQLiteParameter[] fParams = { new SQLiteParameter("@fid", entry.fid),
-                                              new SQLiteParameter("@lid", entry.lid),
-                                              new SQLiteParameter("@eid", entry.eid),
-                                              new SQLiteParameter("@gid", entry.Group.gid),
-                                              new SQLiteParameter("@ed2k", entry.ed2k),
-                                              new SQLiteParameter("@watcheddate", entry.watcheddate),
-                                              new SQLiteParameter("@length", entry.length),
-                                              new SQLiteParameter("@size", entry.size),
-                                              new SQLiteParameter("@source", entry.source),
-                                              new SQLiteParameter("@acodec", entry.acodec),
-                                              new SQLiteParameter("@vcodec", entry.vcodec),
-                                              new SQLiteParameter("@vres", entry.vres),
-                                              new SQLiteParameter("@path", entry.path),
-                                              new SQLiteParameter("@state", entry.state),
-                                              new SQLiteParameter("@generic", entry.generic) };
-
-                fParams[3].IsNullable = fParams[4].IsNullable = fParams[7].IsNullable = fParams[8].IsNullable = fParams[9].IsNullable =
-                fParams[10].IsNullable = fParams[11].IsNullable = fParams[12].IsNullable = fParams[14].IsNullable = true;
-
-                if (entry.Group.gid == 0) fParams[3].Value = null;
-                if (System.IO.File.Exists(entry.path)) fParams[13].Value = entry.state = 1;
-                else if (entry.state != 3) fParams[13].Value = entry.state = 0;
-                if (!entry.generic) fParams[14].Value = null;
-
-                cmd.Parameters.AddRange(fParams);
-                cmd.ExecuteNonQuery();
-            }
-        }
-
-        #endregion UPDATE
+        #endregion DELETE
 
         #endregion Public Methods
 

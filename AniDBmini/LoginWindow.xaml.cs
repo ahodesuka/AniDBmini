@@ -70,11 +70,12 @@ namespace AniDBmini
 			}
 
             loginButton.IsEnabled = false;
-            string[] server = serverComboBox.SelectedValue.ToString().Split(':');
-
+            string[] server = serverComboBox.SelectionBoxItem.ToString().Split(':');
+#if !DEBUG
             if ((aniDB = new AniDBAPI(server[0], int.Parse(server[1]), ConfigFile.Read("localPort").ToInt32())).isConnected &&
                 aniDB.Login(usernameTextBox.Text, passwordPasswordBox.Password))
             {
+#endif
                 if (autoLoginCheckBox.IsChecked == true)
                 {
                     ConfigFile.Write("autoLogin", "True");
@@ -98,9 +99,11 @@ namespace AniDBmini
                 }
 
                 StartMainWindow();
+#if !DEBUG
             }
             else
                 loginButton.IsEnabled = true;
+#endif
         }
 
         private void OnKeyDown(object sender, KeyEventArgs e)

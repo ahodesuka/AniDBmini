@@ -115,12 +115,11 @@ namespace AniDBmini
         private void InitializeStats()
         {
             int[] stats = m_aniDBAPI.MyListStats();
-            int i = 0;
 
-            foreach (int stat in stats)
+            for (int i = 0, MAX = stats.Length; i < MAX; i++)
             {
-                string text = AniDBAPI.statsText[i];
-                string value;
+                string text = AniDBAPI.statsText[i], value;
+                int stat = stats[i];
 
                 if (text != "x")
                 {
@@ -140,8 +139,6 @@ namespace AniDBmini
 
                     mylistStatsList.Add(new MylistStat(text, value));
                 }
-
-                i++;
             }
         }
 
@@ -474,7 +471,11 @@ namespace AniDBmini
             }
 
             m_myList.InsertFileInfo(e);
-            Dispatcher.BeginInvoke(new Action(delegate { MylistTreeListView.Refresh(); }));
+            Dispatcher.BeginInvoke(new Action(delegate
+            {
+                if (MylistTreeListView != null)
+                    MylistTreeListView.Refresh();
+            }));
         }
 
         private void mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -512,6 +513,20 @@ namespace AniDBmini
         #endregion Main Window
 
         #region Home Tab
+
+        private void refreshStatsButton_Click(object sender, RoutedEventArgs e)
+        {
+            mylistStatsList.Clear();
+            InitializeStats();
+            (sender as Button).IsEnabled = false;
+
+            ThreadPool.QueueUserWorkItem(new WaitCallback(x =>
+            {
+                Button btn = x as Button;
+                Thread.Sleep(TimeSpan.FromMinutes(15));
+                btn.Dispatcher.BeginInvoke(new Action(delegate { btn.IsEnabled = true; }));
+            }), sender);
+        }
 
         private void clearDebugLog(object sender, RoutedEventArgs e)
         {
@@ -781,9 +796,7 @@ namespace AniDBmini
             object entry = (sender as MenuItem).Tag;
 
             if (entry is AnimeEntry)
-            {
                 AddToPlaylist(GetFilePathList(sender), true);
-            }
             else if (entry is FileEntry)
             {
                 FileEntry fEntry = entry as FileEntry;
@@ -813,6 +826,20 @@ namespace AniDBmini
         private void MarkUnwatched_Click(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void RemoveFromList_Click(object sender, RoutedEventArgs e)
+        {
+            FileEntry fEntry = (sender as MenuItem).Tag as FileEntry;
+
+            if (m_aniDBAPI.MyListDel(fEntry.lid))
+            {
+                if (!String.IsNullOrEmpty(fEntry.path))
+                    AniDBAPI.AppendDebugLine(String.Format("Removed {0} from mylist.", Path.GetFileName(fEntry.path)));
+
+                m_myList.DeleteFile(fEntry.lid);
+                MylistTreeListView.Refresh();
+            }
         }
 
         #endregion Mylist Tab

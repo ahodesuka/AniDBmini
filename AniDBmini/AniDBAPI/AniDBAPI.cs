@@ -75,6 +75,13 @@ namespace AniDBmini
             SERVER_BUSY                              = 602
         };
 
+        public enum REMOVE_TYPE
+        {
+            LID,
+            FID,
+            AID
+        };
+
         #endregion Enums
 
         #region Structs
@@ -142,6 +149,8 @@ namespace AniDBmini
                                 "Connection Error!", MessageBoxButton.YesNo, MessageBoxImage.Error)) == MessageBoxResult.Yes)
                     goto retry;
             }
+#else
+            isConnected = true;
 #endif
         }
 
@@ -257,6 +266,11 @@ namespace AniDBmini
             PrioritizedCommand(addToList);
         }
 
+        public bool MyListDel(int lid)
+        {
+            return Execute(String.Format("MYLISTDEL lid={0}", lid)).Code == RETURN_CODE.MYLIST_ENTRY_DELETED;
+        }
+
         /// <summary>
         /// Retrieves mylist stats.
         /// </summary>
@@ -337,7 +351,7 @@ namespace AniDBmini
                 lock (queueLock)
                 {
                     double secondsSince = DateTime.Now.Subtract(m_lastCommand).TotalSeconds;
-                    int timeout = CalculatedTimeout();
+                    int timeout = CalculateTimeout();
 
                     if (secondsSince < timeout)
                         Thread.Sleep(TimeSpan.FromSeconds(timeout - secondsSince));
@@ -353,7 +367,7 @@ namespace AniDBmini
         /// using a list of datetimes for every query in the past minute.
         /// </summary>
         /// <returns>Timeout in seconds.</returns>
-        private int CalculatedTimeout()
+        private int CalculateTimeout()
         {
             queryLog.RemoveAll(x => DateTime.Now.Subtract(x).TotalSeconds > 60); // remove old timestamps
 

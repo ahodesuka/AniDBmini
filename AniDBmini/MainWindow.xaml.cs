@@ -33,16 +33,16 @@ namespace AniDBmini
 
         public static string m_AppName = Application.ResourceAssembly.GetName().Name;
 
-        private static string _aLang;
-        public static string m_aLang
+        private static string m_aLang;
+        public static string animeLang
         {
-            get { return _aLang; }
+            get { return m_aLang; }
         }
 
-        private static string _eLang;
-        public static string m_eLang
+        private static string m_eLang;
+        public static string episodeLang
         {
-            get { return _eLang; }
+            get { return m_eLang; }
         }
 
         private int _pendingTasks;
@@ -63,6 +63,7 @@ namespace AniDBmini
 
         private AniDBAPI m_aniDBAPI;
         private MPCAPI m_mpcAPI;
+        private MPCProcWatcher m_mpcProcWatcher;
         private MylistDB m_myList;
 
         private DateTime m_hashingStartTime;
@@ -87,11 +88,12 @@ namespace AniDBmini
             m_aniDBAPI = api;
             AniDBAPI.AppendDebugLine("Welcome to AniDBmini, connected to: " + m_aniDBAPI.APIServer);
 
-            _aLang = ConfigFile.Read("aLang").ToString();
-            _eLang = ConfigFile.Read("eLang").ToString();
-
             InitializeComponent();
+
             SetMylistVisibility();
+
+            m_mpcProcWatcher = new MPCProcWatcher();
+            m_mpcProcWatcher.OnMPCStarted += new MPCStartedHandler(OnMPCStarted);
 
             mylistStats.ItemsSource = mylistStatsList;
             debugListBox.ItemsSource = m_aniDBAPI.DebugLog;
@@ -116,7 +118,7 @@ namespace AniDBmini
         {
             int[] stats = m_aniDBAPI.MyListStats();
 
-            for (int i = 0, MAX = stats.Length; i < MAX; i++)
+            for (int i = 0; i < stats.Length; i++)
             {
                 string text = AniDBAPI.statsText[i], value;
                 int stat = stats[i];
@@ -143,6 +145,15 @@ namespace AniDBmini
         }
 
         /// <summary>
+        /// Load current config file settings.
+        /// </summary>
+        private void InitializeConfig()
+        {
+            m_aLang = ConfigFile.Read("aLang").ToString();
+            m_eLang = ConfigFile.Read("eLang").ToString();
+        }
+
+        /// <summary>
         /// Initializes the tray icon.
         /// </summary>
         private void InitializeNotifyIcon() // TODO: add options (minimize on close, disable tray icon, always show, etc.)
@@ -155,7 +166,7 @@ namespace AniDBmini
 
             Forms.MenuItem cm_open = new Forms.MenuItem();
             cm_open.Text = "Open";
-            cm_open.Click += (s, e) => { Show(); WindowState = m_storedWindowState; };
+            cm_open.Click += (s, e) => { this.Show(); WindowState = m_storedWindowState; };
             m_notifyContextMenu.MenuItems.Add(cm_open);
 
             Forms.MenuItem cm_MPCHCopen = new Forms.MenuItem();
@@ -251,6 +262,21 @@ namespace AniDBmini
         }
 
         /// <summary>
+        /// Adds a hashItem to the hash list.
+        /// </summary>
+        /// <param name="path">Path to file.</param>
+        private void addRowToHashTable(HashItem item)
+        {
+            lock (m_hashingLock)
+                hashFileList.Insert(0, item);
+
+            if (isHashing)
+                totalQueueSize += item.Size;
+            else if (!isHashing)
+                beginHashing();
+        }
+
+        /// <summary>
         /// Removes a hash entry from the list.
         /// </summary>
         /// <param name="item">Item to remove.</param>
@@ -305,7 +331,14 @@ namespace AniDBmini
         {
             ppSize += item.Size;
 
-            if (addToMyListCheckBox.IsChecked == true)
+            if (item.FromMPC)
+            {
+                m_aniDBAPI.MyListAdd(item);
+
+                if (ConfigFile.Read("mpcShowOSD").ToBoolean() && m_mpcAPI != null && m_mpcAPI.isHooked)
+                    m_mpcAPI.OSDShowMessage(String.Format("{0}: File marked as watched", m_AppName));
+            }
+            else if (addToMyListCheckBox.IsChecked == true)
             {
                 item.Watched = (bool)watchedCheckBox.IsChecked;
                 item.State = stateComboBox.SelectedIndex;
@@ -356,18 +389,18 @@ namespace AniDBmini
 
         private List<string> GetFilePathList(object sender)
         {
-            object entry = (sender as MenuItem).Tag;
+            object entry = ((MenuItem)sender).Tag;
             List<string> fPaths = new List<string>();
 
             if (entry is AnimeEntry)
             {
-                foreach (FileEntry file in m_myList.SelectFilesFromAnime((entry as AnimeEntry).aid))
+                foreach (FileEntry file in m_myList.SelectFilesFromAnime(((AnimeEntry)entry).aid))
                     if (File.Exists(file.path))
                         fPaths.Add(file.path);
             }
             else if (entry is FileEntry)
             {
-                FileEntry fEntry = entry as FileEntry;
+                FileEntry fEntry = (FileEntry)entry;
 
                 if (File.Exists(fEntry.path))
                     fPaths.Add(fEntry.path);
@@ -390,13 +423,14 @@ namespace AniDBmini
 
         private void OnInitialized(object sender, EventArgs e)
         {
+            InitializeStats();
+            InitializeConfig();
+            InitializeNotifyIcon();
+
             m_myList = new MylistDB();
 
             if (m_myList.isSQLConnOpen)
                 MylistTreeListView.Model = new MylistModel(m_myList);
-
-            InitializeStats();
-            InitializeNotifyIcon();
         }
 
         private void ShowOpionsWindow(object sender, RoutedEventArgs e)
@@ -404,8 +438,11 @@ namespace AniDBmini
             OptionsWindow options = new OptionsWindow();
             options.Owner = this;
 
-            if (options.ShowDialog() == true && m_mpcAPI != null)
-                m_mpcAPI.LoadConfig();
+            if (options.ShowDialog() == true)
+            {
+                if (m_mpcAPI != null)
+                    m_mpcAPI.LoadConfig();
+            }
         }
 
         /// <summary>
@@ -427,20 +464,43 @@ namespace AniDBmini
             }
         }
 
+        private void OnMPCStarted(System.Management.ManagementObject obj)
+        {
+            string args = null;
+
+            if (m_mpcAPI == null || (UInt32)obj["ProcessID"] != m_mpcAPI.ProcessID)
+            {
+                args = obj["CommandLine"].ToString();
+                obj.InvokeMethod("Terminate", null);
+
+                Dispatcher.BeginInvoke(new Action(delegate
+                {
+                    if (m_mpcAPI == null)
+                        mpchcLaunch(null, null);
+
+                    if (args != null)
+                    {
+                        string[] argsArray = args.Split('"')
+                            .Where(x => x != String.Empty && x != " ").ToArray<string>();
+
+                        foreach (string arg in argsArray)
+                        {
+                            // TODO: Check if the file is already in the playlist.
+                            if (File.Exists(arg) && allowedVideoFiles.Contains("*" + Path.GetExtension(arg).ToLower()))
+                                m_mpcAPI.AddFileToPlaylist(arg);
+                        }
+                    }
+                }));
+            }
+        }
+
         private void OnFileWatched(object sender, FileWatchedArgs e)
         {
-            HashItem item = new HashItem(e.Path);
+            HashItem item = e.Item;
             item.State = 1;
-            item.Watched = true;
+            item.Watched = item.FromMPC = true;
 
-            ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
-            {
-                item = m_aniDBAPI.ed2kHash(item);
-                m_aniDBAPI.MyListAdd(item);
-
-                if (ConfigFile.Read("mpcShowOSD").ToBoolean() && m_mpcAPI != null && m_mpcAPI.isHooked)
-                    m_mpcAPI.OSDShowMessage(String.Format("{0}: File marked as watched", m_AppName));
-            }));
+            addRowToHashTable(item);
         }
 
         private void randomAnimeButton_Click(object sender, RoutedEventArgs e)
@@ -518,14 +578,18 @@ namespace AniDBmini
         {
             mylistStatsList.Clear();
             InitializeStats();
-            (sender as Button).IsEnabled = false;
 
-            ThreadPool.QueueUserWorkItem(new WaitCallback(x =>
+            Button btn = (Button)sender;
+            btn.IsEnabled = false;
+
+            DispatcherTimer timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromMinutes(60);
+            timer.Tick += delegate
             {
-                Button btn = x as Button;
-                Thread.Sleep(TimeSpan.FromMinutes(15));
-                btn.Dispatcher.BeginInvoke(new Action(delegate { btn.IsEnabled = true; }));
-            }), sender);
+                btn.IsEnabled = true;
+                timer.Stop();
+            };
+            timer.Start();
         }
 
         private void clearDebugLog(object sender, RoutedEventArgs e)
@@ -563,7 +627,7 @@ namespace AniDBmini
         private void removeSelectedHashItems(object sender, RoutedEventArgs e)
         {
             while (hashingListBox.SelectedItems.Count > 0)
-                removeRowFromHashTable((HashItem)hashingListBox.SelectedItems[0], true);
+                removeRowFromHashTable(hashingListBox.SelectedItems[0] as HashItem, true);
         }
 
         private void clearHashItems(object sender, RoutedEventArgs e)
@@ -607,13 +671,13 @@ namespace AniDBmini
                     return;
                 }
 
-                HashItem _temp = m_aniDBAPI.ed2kHash(hashFileList[0]);
+                HashItem thisItem = hashFileList[0],
+                        _temp = m_aniDBAPI.ed2kHash(thisItem);
 
                 if (isHashing && _temp != null) // if we did not abort remove item from queue and process
                 {
-                    hashFileList[0] = _temp;
-                    Dispatcher.BeginInvoke(new Action<HashItem>(FinishHash), hashFileList[0]);
-                    removeRowFromHashTable(hashFileList[0]);
+                    Dispatcher.BeginInvoke(new Action<HashItem>(FinishHash), _temp);
+                    removeRowFromHashTable(hashFileList[hashFileList.IndexOf(thisItem)]);
                 }
             }
         }
@@ -657,14 +721,14 @@ namespace AniDBmini
                 ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
                 {
                     foreach (string _file in Directory.GetFiles(dlg.SelectedPath, "*.*")
-                                                      .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
+                        .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
                         addRowToHashTable(_file);
 
                     foreach (string dir in Directory.GetDirectories(dlg.SelectedPath))
                         try
                         {
                             foreach (string _file in Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories)
-                                                              .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
+                                .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
                                 addRowToHashTable(_file);
                         }
                         catch (UnauthorizedAccessException) { }
@@ -678,7 +742,7 @@ namespace AniDBmini
             double totalProg = (e.ProcessedSize + ppSize) / totalQueueSize * 100;
 
             TimeSpan totalTimeElapsed = DateTime.Now - m_hashingStartTime;
-            TimeSpan remainingSpan = TimeSpan.FromSeconds(totalQueueSize * (totalTimeElapsed.TotalSeconds / (ppSize + e.ProcessedSize)) - totalTimeElapsed.TotalSeconds - 0.5);
+            TimeSpan remainingSpan = TimeSpan.FromSeconds(Math.Ceiling(totalQueueSize * (totalTimeElapsed.TotalSeconds / (ppSize + e.ProcessedSize)) - totalTimeElapsed.TotalSeconds));
 
             Dispatcher.BeginInvoke(new Action(delegate
             {
@@ -717,7 +781,7 @@ namespace AniDBmini
         
         private void EntryViewDetails_Click(object sender, RoutedEventArgs e)
         {
-            m_aniDBAPI.Anime(int.Parse(((MenuItem)sender).Tag.ToString()));
+            m_aniDBAPI.Anime(int.Parse((sender as MenuItem).Tag.ToString()));
         }
 
         private void AddToMPCHC_Click(object sender, RoutedEventArgs e)
@@ -830,7 +894,7 @@ namespace AniDBmini
 
         private void RemoveFromList_Click(object sender, RoutedEventArgs e)
         {
-            FileEntry fEntry = (sender as MenuItem).Tag as FileEntry;
+            FileEntry fEntry = (FileEntry)(sender as MenuItem).Tag;
 
             if (m_aniDBAPI.MyListDel(fEntry.lid))
             {
@@ -848,7 +912,7 @@ namespace AniDBmini
 
         private void OnTabCloseClick(object sender, RoutedEventArgs e)
         {
-            Button s = (Button)sender;
+            Button s = sender as Button;
             animeTabList.RemoveAll(x => x.AnimeID == int.Parse(s.Tag.ToString()));
         }
 
@@ -894,7 +958,7 @@ namespace AniDBmini
             }
         }
 
-        #endregion
+        #endregion Properties
 
     }
 }

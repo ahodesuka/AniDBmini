@@ -59,7 +59,7 @@ namespace AniDBmini
             return String.Format("{0}h {1}m {2}s", (int)ts.TotalHours, ts.Minutes.ToString("00"), ts.Seconds.ToString("00"));
         }
 
-        public static string ToFormatedLength(this TimeSpan ts)
+        public static string ToFormattedLength(this TimeSpan ts)
         {
             return String.Format("{0}{1}m", ((int)ts.TotalHours > 0) ? String.Format("{0}h ", (int)ts.TotalHours) : null,
                                             ts.Minutes.ToString("00"));

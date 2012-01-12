@@ -50,7 +50,7 @@ namespace AniDBmini.Collections
                                                        entry.eps_have,
                                                        (entry.spl_watched > 0) ? String.Format("+{0}", entry.spl_watched) : null);
             m_entry.Col3 = entry.year;
-            m_entry.Col4 = length.ToFormatedLength();
+            m_entry.Col4 = length.ToFormattedLength();
             m_entry.Col5 = entry.size.ToFormattedBytes();
 
             return m_entry;
@@ -71,7 +71,7 @@ namespace AniDBmini.Collections
             if (entry.airdate != null)
                 m_entry.Col3 = entry.airdate.ToDateTime(false).ToShortDateString();
 
-            m_entry.Col4 = length.ToFormatedLength();
+            m_entry.Col4 = length.ToFormattedLength();
             m_entry.Col5 = entry.size.ToFormattedBytes();
 
             return m_entry;
@@ -99,7 +99,7 @@ namespace AniDBmini.Collections
             if (entry.watcheddate != null)
                 m_entry.Col2 = String.Format("{0} {1}", entry.watcheddate.ToDateTime().ToShortDateString(),
                                                         entry.watcheddate.ToDateTime().ToShortTimeString());
-            m_entry.Col4 = length.ToFormatedLength();
+            m_entry.Col4 = length.ToFormattedLength();
             m_entry.Col5 = entry.size.ToFormattedBytes();
 
             return m_entry;

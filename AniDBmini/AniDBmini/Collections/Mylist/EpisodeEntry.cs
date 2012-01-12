@@ -47,7 +47,7 @@ namespace AniDBmini.Collections
         {
             get
             {
-                switch (MainWindow.m_eLang)
+                switch (MainWindow.episodeLang)
                 {
                     case "romaji":
                         if (!string.IsNullOrEmpty(romaji)) return romaji;

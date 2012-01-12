@@ -179,7 +179,7 @@ namespace AniDBmini
                                                LEFT JOIN episodes AS e ON e.aid = a.aid
                                                LEFT JOIN files AS f ON f.eid = e.eid
                                                 GROUP BY a.aid
-                                                ORDER BY IFNULL(a.{0}, a.romaji) COLLATE NOCASE ASC;", MainWindow.m_aLang);
+                                                ORDER BY IFNULL(a.{0}, a.romaji) COLLATE NOCASE ASC;", MainWindow.animeLang);
 
                 using (SQLiteDataReader reader = cmd.ExecuteReader())
                     while (reader.Read())

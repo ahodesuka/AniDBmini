@@ -4,6 +4,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
@@ -239,9 +240,10 @@ namespace AniDBmini
         private OSD_MESSAGEPOS m_OSDMSGPos;
 
         private string m_currentFileTitle, m_currentFilePath;
-        private int m_currentFileLength, m_currentFilePosition, m_currentFileTick, m_OSDMSGDur;
+        private string[] m_currentPlaylist;
+        private int m_currentFileLength, m_currentFilePosition, m_currentFileTick, m_OSDMSGDur, m_mpcProcID;
         private double m_watchedWhenPerc;
-        private bool m_currentFileWatched, m_ShowInFileTitle;
+        private bool m_currentFileWatched, m_gotPlaylist, m_ShowInFileTitle;
 
         public bool isHooked { get; private set; }
         public event FileWatchedHandler OnFileWatched = delegate { };
@@ -258,21 +260,25 @@ namespace AniDBmini
             m_Source = HwndSource.FromHwnd(m_hWnd);
             m_Source.AddHook(WndProc);
             
-            AniDBAPI.AppendDebugLine("MPC-HC hook added.");
+            AniDBAPI.AppendDebugLine("MPC-HC hook added");
 
             using (Process MPC = new Process())
             {
-                MPC.StartInfo = new ProcessStartInfo(ConfigFile.Read("mpcPath").ToString(), "/slave " + m_hWnd.ToInt32());
+                MPC.StartInfo = new ProcessStartInfo(ConfigFile.Read("mpcPath").ToString(), String.Format("/slave {0}", m_hWnd.ToInt32()));
                 MPC.Start();
+
+                m_mpcProcID = MPC.Id;
             }
 
             m_PlayTimer = new DispatcherTimer();
             m_PlayTimer.Interval = TimeSpan.FromMilliseconds(1000);
             m_PlayTimer.Tick += delegate
             {
-                m_currentFileTick++;
+                ++m_currentFileTick;
                 SendData(MPCAPI_SENDCOMMAND.CMD_GETCURRENTPOSITION, String.Empty);
             };
+
+            SendData(MPCAPI_SENDCOMMAND.CMD_GETPLAYLIST, String.Empty);
         }
 
         #endregion Constructor
@@ -288,6 +294,8 @@ namespace AniDBmini
                 {
                     MPCAPI_COMMAND nCmd = (MPCAPI_COMMAND)cds.dwData;
                     string mpcMSG = new String((char*)cds.lpData, 0, cds.cbData / 2);
+
+                    System.Diagnostics.Debug.WriteLine(String.Format("{0} : {1}", nCmd, mpcMSG));
 
                     switch (nCmd)
                     {
@@ -315,6 +323,10 @@ namespace AniDBmini
                             m_currentFilePosition = m_currentFileTick = 0;
                             LoadConfig();
                             SetTitle();
+                            break;
+                        case MPCAPI_COMMAND.CMD_PLAYLIST:
+                            m_currentPlaylist = mpcMSG.Split('|');
+                            m_gotPlaylist = true;
                             break;
                         case MPCAPI_COMMAND.CMD_PLAYMODE:
                             m_currentPlayState = (MPC_PLAYSTATE)int.Parse(mpcMSG);
@@ -351,6 +363,7 @@ namespace AniDBmini
                             break;
                     }
                 }
+
                 handled = true;
             }
             else
@@ -435,7 +448,7 @@ namespace AniDBmini
             m_Source.RemoveHook(WndProc);
             isHooked = false;
 
-            AniDBAPI.AppendDebugLine("MPC-HC hook removed.");
+            AniDBAPI.AppendDebugLine("MPC-HC hook removed");
         }
 
         #endregion Private Methods
@@ -505,7 +518,23 @@ namespace AniDBmini
             SendData(MPCAPI_SENDCOMMAND.CMD_OSDSHOWMESSAGE, msg);
         }
 
+        public string[] GetPlaylist()
+        {
+            SendData(MPCAPI_SENDCOMMAND.CMD_GETPLAYLIST, String.Empty);
+
+            while (!m_gotPlaylist) Thread.Sleep(10);
+            m_gotPlaylist = false;
+
+            return m_currentPlaylist;
+        }
+
         #endregion Public Methods
+
+        #region Properties
+
+        public int ProcessID { get { return m_mpcProcID; } }
+
+        #endregion Properties
 
     }
 }

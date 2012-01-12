@@ -1,14 +1,15 @@
 ﻿using System;
+using AniDBmini.Collections;
 
 namespace AniDBmini
 {
     public class FileWatchedArgs : EventArgs
     {
-        public string Path { get; private set; }
+        public HashItem Item { get; private set; }
 
         public FileWatchedArgs(string f_Path)
         {
-            Path = f_Path;
+            Item = new HashItem(f_Path);
         }
     }
 

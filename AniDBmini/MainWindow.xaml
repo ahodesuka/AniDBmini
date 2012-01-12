@@ -191,7 +191,7 @@
             </Grid>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsEnabled" Value="False">
-                    <Setter TargetName="Img" Property="Opacity" Value="0.4"/>
+                    <Setter TargetName="Img" Property="Opacity" Value="0.3"/>
                 </Trigger>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Trigger.EnterActions>

@@ -18,6 +18,7 @@ namespace AniDBmini.Collections
         /// </summary>
         public int State { get; set; }
 
+        public bool FromMPC { get; set; }
         public bool Watched { get; set; }
         public bool Edit { get; set; }
 

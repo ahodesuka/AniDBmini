@@ -44,7 +44,7 @@ namespace AniDBmini.Collections
         {
             get
             {
-                switch (MainWindow.m_aLang)
+                switch (MainWindow.animeLang)
                 {
                     case "english":
                         if (!string.IsNullOrEmpty(english)) return english;

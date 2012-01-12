@@ -91,10 +91,10 @@ namespace AniDBmini
             {
                 string keyChar = e.Text;
                 TreeNode tn = Node.Tree.Root.Children.FirstOrDefault(x => x != Node && x.Index > Node.Index &&
-                    (x.Tag as MylistEntry).Col0.StartsWith(keyChar, StringComparison.CurrentCultureIgnoreCase));
+                    ((MylistEntry)x.Tag).Col0.StartsWith(keyChar, StringComparison.CurrentCultureIgnoreCase));
 
                 if (tn != null || (tn = Node.Tree.Root.Children.FirstOrDefault(x => x != Node &&
-                        (x.Tag as MylistEntry).Col0.StartsWith(keyChar, StringComparison.CurrentCultureIgnoreCase))) != null)
+                        ((MylistEntry)x.Tag).Col0.StartsWith(keyChar, StringComparison.CurrentCultureIgnoreCase))) != null)
                 {
                     tn.Tree.ScrollIntoView(tn);
                     e.Handled = true;
@@ -107,7 +107,7 @@ namespace AniDBmini
 
         protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
         {
-            if (Node != null && FindAncestor<RowExpander>(e.OriginalSource as DependencyObject) == null)
+            if (Node != null && FindAncestor<RowExpander>((DependencyObject)e.OriginalSource) == null)
                 Node.Tree.SetIsExpanded(Node, !Node.IsExpanded, true);
             else
                 base.OnMouseDoubleClick(e);

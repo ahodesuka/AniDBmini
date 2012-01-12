@@ -121,7 +121,7 @@
                             <Label.ToolTip>
                                 <TextBlock>
                                     The percent of the file in which you need to watch for the file to be counted as watched.<LineBreak/>
-                                    Note: Does not include time skipped, ie OP/EP/Previews.
+                                    Note: Does not include time skipped.
                                 </TextBlock>
                             </Label.ToolTip>
                         </Label>
@@ -129,7 +129,7 @@
                             <Slider.ToolTip>
                                 <TextBlock>
                                     The percent of the file in which you need to watch for the file to be counted as watched.<LineBreak/>
-                                    Note: Does not include time skipped, ie OP/EP/Previews.
+                                    Note: Does not include time skipped.
                                 </TextBlock>
                             </Slider.ToolTip>
                         </Slider>

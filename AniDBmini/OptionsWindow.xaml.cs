@@ -39,7 +39,8 @@ namespace AniDBmini
             adbmUsernameTextBox.Text = ConfigFile.Read("username").ToString();
             adbmPasswordPasswordBox.Password = ConfigFile.Read("password").ToString();
             adbmLocalPortTextBox.Text = ConfigFile.Read("localPort").ToString();
-            
+            adbmAutoLoginCheckBox.IsChecked = ConfigFile.Read("autoLogin").ToBoolean();
+            adbmRememberUserCheckBox.IsChecked = ConfigFile.Read("rememberUser").ToBoolean();
 
             MPCAPI.MPC_WATCHED mpcMarkedWatched = (MPCAPI.MPC_WATCHED)ConfigFile.Read("mpcMarkWatched").ToInt32();
 
@@ -60,6 +61,12 @@ namespace AniDBmini
 
         private void SaveOptions()
         {
+            ConfigFile.Write("username", adbmUsernameTextBox.Text);
+            ConfigFile.Write("password", adbmPasswordPasswordBox.Password);
+            ConfigFile.Write("localPort", adbmLocalPortTextBox.Text);
+            ConfigFile.Write("autoLogin", adbmAutoLoginCheckBox.IsChecked.ToString());
+            ConfigFile.Write("rememberUser", adbmRememberUserCheckBox.IsChecked.ToString());
+
             ConfigFile.Write("mpcPath", mpchcLocationTextBox.Text);
             ConfigFile.Write("mpcMarkWatched", mpcMarkAfter.IsChecked == true ? "2" : (mpcMarkDuring.IsChecked == true ? "1" : "0"));
             ConfigFile.Write("mpcMarkWatchedPerc", mpcWatchedPerc.Text);
@@ -104,8 +111,8 @@ namespace AniDBmini
             if (result == true)
             {
                 if (System.IO.Path.GetFileNameWithoutExtension(dlg.FileName) == "mpc-hc64" && IntPtr.Size == 4)
-                    MessageBox.Show("Media Player Classic - Home Cinema 64bit will not work\nwith the 32bit version of " + MainWindow.m_AppName + ".\n\n" +
-                                    "Please use the 64bit version of " + MainWindow.m_AppName + ".\nOr use the 32bit version of Media Player Classic - Home Cinema.",
+                    MessageBox.Show(String.Format("Media Player Classic - Home Cinema 64bit will not work\nwith the 32bit version of {0}.\n\n" +
+                                    "Please use the 64bit version of {0}.\nOr use the 32bit version of Media Player Classic - Home Cinema.",  MainWindow.m_AppName),
                                     "Alert!", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 else
                     mpchcLocationTextBox.Text = dlg.FileName;

@@ -33,6 +33,18 @@ namespace AniDBmini
             m_mpcWatcher.Start();
         }
 
+        /// <summary>
+        /// Checks for already running mpc processes.
+        /// </summary>
+        public void StartUp()
+        {
+            ManagementObjectSearcher mpcProcs = new ManagementObjectSearcher(m_wScope,
+                new SelectQuery("SELECT * FROM Win32_Process WHERE Name = 'mpc-hc.exe' OR name = 'mpc-hc64.exe'"));
+
+            foreach (ManagementObject obj in mpcProcs.Get())
+                OnMPCStarted(obj);
+        }
+
         private void m_mpcWatcher_EventArrived(object sender, EventArrivedEventArgs e)
         {
             string eType = e.NewEvent.ClassPath.ClassName;
@@ -41,6 +53,7 @@ namespace AniDBmini
             if (eType == "__InstanceCreationEvent")
             {
                 ObjectQuery objQuery = new ObjectQuery(String.Format(@"SELECT * FROM Win32_Process WHERE ProcessID = '{0}'", processID));
+
                 using (ManagementObjectSearcher objSearcher = new ManagementObjectSearcher(objQuery))
                     using (ManagementObjectCollection objCollection = objSearcher.Get())
                         foreach (ManagementObject obj in objCollection)

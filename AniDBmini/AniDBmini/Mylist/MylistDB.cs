@@ -528,7 +528,6 @@ namespace AniDBmini
 
         #endregion INSERT
 
-
         #region DELETE
 
         public void DeleteFile(int lid)

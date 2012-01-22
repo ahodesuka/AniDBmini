@@ -28,10 +28,10 @@ namespace AniDBmini
 
         private enum MPC_PLAYSTATE
         {
-            PS_PLAY = 0,
-            PS_PAUSE = 1,
-            PS_STOP = 2,
-            PS_UNUSED = 3
+            PS_PLAY,
+            PS_PAUSE,
+            PS_STOP,
+            PS_UNUSED
         };
 
         private enum MPCAPI_COMMAND
@@ -201,16 +201,16 @@ namespace AniDBmini
 
         private enum OSD_MESSAGEPOS
         {
-            OSD_NOMESSAGE = 0,
-            OSD_TOPLEFT = 1,
-            OSD_TOPRIGHT = 2
+            OSD_NOMESSAGE,
+            OSD_TOPLEFT,
+            OSD_TOPRIGHT
         };
 
         public enum MPC_WATCHED
         {
-            DISABLED = 0,
-            DURING_TICKS = 1,
-            AFTER_FINISHED = 2
+            DISABLED,
+            DURING_TICKS,
+            AFTER_FINISHED
         };
 
         #endregion Enums
@@ -240,10 +240,9 @@ namespace AniDBmini
         private OSD_MESSAGEPOS m_OSDMSGPos;
 
         private string m_currentFileTitle, m_currentFilePath;
-        private string[] m_currentPlaylist;
         private int m_currentFileLength, m_currentFilePosition, m_currentFileTick, m_OSDMSGDur, m_mpcProcID;
         private double m_watchedWhenPerc;
-        private bool m_currentFileWatched, m_gotPlaylist, m_ShowInFileTitle;
+        private bool m_currentFileWatched, m_ShowInFileTitle;
 
         public bool isHooked { get; private set; }
         public event FileWatchedHandler OnFileWatched = delegate { };
@@ -277,8 +276,6 @@ namespace AniDBmini
                 ++m_currentFileTick;
                 SendData(MPCAPI_SENDCOMMAND.CMD_GETCURRENTPOSITION, String.Empty);
             };
-
-            SendData(MPCAPI_SENDCOMMAND.CMD_GETPLAYLIST, String.Empty);
         }
 
         #endregion Constructor
@@ -290,12 +287,11 @@ namespace AniDBmini
             if (msg == WinAPI.WM_COPYDATA)
             {
                 WinAPI.COPYDATASTRUCT cds = (WinAPI.COPYDATASTRUCT)Marshal.PtrToStructure(lParam, typeof(WinAPI.COPYDATASTRUCT));
+
                 if (cds.cbData > 0)
                 {
                     MPCAPI_COMMAND nCmd = (MPCAPI_COMMAND)cds.dwData;
                     string mpcMSG = new String((char*)cds.lpData, 0, cds.cbData / 2);
-
-                    System.Diagnostics.Debug.WriteLine(String.Format("{0} : {1}", nCmd, mpcMSG));
 
                     switch (nCmd)
                     {
@@ -324,10 +320,6 @@ namespace AniDBmini
                             LoadConfig();
                             SetTitle();
                             break;
-                        case MPCAPI_COMMAND.CMD_PLAYLIST:
-                            m_currentPlaylist = mpcMSG.Split('|');
-                            m_gotPlaylist = true;
-                            break;
                         case MPCAPI_COMMAND.CMD_PLAYMODE:
                             m_currentPlayState = (MPC_PLAYSTATE)int.Parse(mpcMSG);
                             SetTitle();
@@ -351,7 +343,7 @@ namespace AniDBmini
                                     IsMPCAlive();
                                     break;
                                 case MPC_LOADSTATE.MLS_CLOSING:
-                                    if (!m_currentFileWatched && m_watchedWhen == MPC_WATCHED.AFTER_FINISHED &&
+                                    if (m_watchedWhen == MPC_WATCHED.AFTER_FINISHED && !m_currentFileWatched &&
                                         m_currentFileTick > m_currentFileLength * m_watchedWhenPerc)
                                     {
                                         OnFileWatched(this, new FileWatchedArgs(m_currentFilePath));
@@ -415,6 +407,15 @@ namespace AniDBmini
             Marshal.FreeCoTaskMem(nCDS.lpData);
         }
 
+        /// <summary>
+        /// Send a command to MPC-HC
+        /// </summary>
+        /// <param name="nCmd">Command to send.</param>
+        private void SendData(MPCAPI_SENDCOMMAND nCmd)
+        {
+            SendData(nCmd, String.Empty);
+        }
+
         private bool IsMPCAlive()
         {
             if (!WinAPI.IsWindowVisible(m_hWndMPC))
@@ -426,20 +427,23 @@ namespace AniDBmini
             return true;
         }
 
-        private void SetTitle(string o_Title = null)
+        private void SetTitle()
+        {
+            if (m_currentPlayState == MPC_PLAYSTATE.PS_STOP)
+            {
+                SetTitle(MainWindow.m_AppName);
+                return;
+            }
+
+            string playState = m_currentPlayState == MPC_PLAYSTATE.PS_PAUSE ? "[Paused] " : String.Empty;
+
+            SetTitle(String.Format("{0} - {1}{2}", MainWindow.m_AppName, playState, m_currentFileTitle));
+        }
+
+        private void SetTitle(string o_Title)
         {
             if (m_ShowInFileTitle)
-            {
-                if (!string.IsNullOrWhiteSpace(o_Title))
-                    m_MainWindow.wTitle = o_Title;
-                else
-                {
-                    string playState = m_currentPlayState == MPC_PLAYSTATE.PS_PLAY ||
-                                       m_currentPlayState == MPC_PLAYSTATE.PS_STOP ? String.Empty : "[Paused] ";
-
-                    m_MainWindow.wTitle = String.Format("{0} - {1}{2}", MainWindow.m_AppName, playState, m_currentFileTitle);
-                }
-            }
+                m_MainWindow.wTitle = o_Title;
         }
 
         private void RemoveHook()
@@ -457,7 +461,7 @@ namespace AniDBmini
 
         public void CloseMPC()
         {
-            SendData(MPCAPI_SENDCOMMAND.CMD_CLOSEAPP, String.Empty);
+            SendData(MPCAPI_SENDCOMMAND.CMD_CLOSEAPP);
         }
 
         public bool FocusMPC()
@@ -489,7 +493,7 @@ namespace AniDBmini
         /// </summary>
         public void ClearPlaylist()
         {
-            SendData(MPCAPI_SENDCOMMAND.CMD_CLEARPLAYLIST, String.Empty);
+            SendData(MPCAPI_SENDCOMMAND.CMD_CLEARPLAYLIST);
         }
 
         /// <summary>
@@ -506,7 +510,7 @@ namespace AniDBmini
         /// </summary>
         public void StartPlaylist()
         {
-            SendData(MPCAPI_SENDCOMMAND.CMD_STARTPLAYLIST, String.Empty);
+            SendData(MPCAPI_SENDCOMMAND.CMD_STARTPLAYLIST);
         }
 
         /// <summary>
@@ -518,21 +522,20 @@ namespace AniDBmini
             SendData(MPCAPI_SENDCOMMAND.CMD_OSDSHOWMESSAGE, msg);
         }
 
-        public string[] GetPlaylist()
-        {
-            SendData(MPCAPI_SENDCOMMAND.CMD_GETPLAYLIST, String.Empty);
-
-            while (!m_gotPlaylist) Thread.Sleep(10);
-            m_gotPlaylist = false;
-
-            return m_currentPlaylist;
-        }
-
         #endregion Public Methods
 
         #region Properties
 
         public int ProcessID { get { return m_mpcProcID; } }
+
+        public string CurrentFileName
+        {
+            get
+            {
+                return m_currentPlayState != MPC_PLAYSTATE.PS_STOP ?
+                    System.IO.Path.GetFileName(m_currentFilePath) : String.Empty;
+            }
+        }
 
         #endregion Properties
 

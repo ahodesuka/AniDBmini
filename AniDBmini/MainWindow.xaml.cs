@@ -94,6 +94,7 @@ namespace AniDBmini
 
             m_mpcProcWatcher = new MPCProcWatcher();
             m_mpcProcWatcher.OnMPCStarted += new MPCStartedHandler(OnMPCStarted);
+            m_mpcProcWatcher.StartUp();
 
             mylistStats.ItemsSource = mylistStatsList;
             debugListBox.ItemsSource = m_aniDBAPI.DebugLog;
@@ -252,7 +253,7 @@ namespace AniDBmini
         {
             HashItem item = new HashItem(path);
 
-            lock (m_hashingLock)
+            //lock (m_hashingLock)
                 hashFileList.Add(item);
 
             if (isHashing)
@@ -267,7 +268,7 @@ namespace AniDBmini
         /// <param name="path">Path to file.</param>
         private void addRowToHashTable(HashItem item)
         {
-            lock (m_hashingLock)
+            //lock (m_hashingLock)
                 hashFileList.Insert(0, item);
 
             if (isHashing)
@@ -336,7 +337,8 @@ namespace AniDBmini
                 m_aniDBAPI.MyListAdd(item);
 
                 if (ConfigFile.Read("mpcShowOSD").ToBoolean() && m_mpcAPI != null && m_mpcAPI.isHooked)
-                    m_mpcAPI.OSDShowMessage(String.Format("{0}: File marked as watched", m_AppName));
+                    m_mpcAPI.OSDShowMessage(String.Format("{0}: File marked as watched{1}", m_AppName,
+                        m_mpcAPI.CurrentFileName != item.Name ? String.Format(", ({0})", item.Name) : String.Empty));
             }
             else if (addToMyListCheckBox.IsChecked == true)
             {
@@ -468,25 +470,23 @@ namespace AniDBmini
         {
             string args = null;
 
-            if (m_mpcAPI == null || (UInt32)obj["ProcessID"] != m_mpcAPI.ProcessID)
+            if (m_mpcAPI == null || !m_mpcAPI.isHooked || (UInt32)obj["ProcessID"] != m_mpcAPI.ProcessID)
             {
                 args = obj["CommandLine"].ToString();
                 obj.InvokeMethod("Terminate", null);
 
                 Dispatcher.BeginInvoke(new Action(delegate
                 {
-                    if (m_mpcAPI == null)
+                    if (m_mpcAPI == null || !m_mpcAPI.isHooked)
                         mpchcLaunch(null, null);
 
                     if (args != null)
                     {
-                        string[] argsArray = args.Split('"')
-                            .Where(x => x != String.Empty && x != " ").ToArray<string>();
+                        string[] argsArray   = args.Split('"').Where(x => !String.IsNullOrWhiteSpace(x)).ToArray<string>();
 
                         foreach (string arg in argsArray)
                         {
-                            // TODO: Check if the file is already in the playlist.
-                            if (File.Exists(arg) && allowedVideoFiles.Contains("*" + Path.GetExtension(arg).ToLower()))
+                            if (File.Exists(arg) && allowedVideoFiles.Contains(String.Format("*{0}", Path.GetExtension(arg).ToLower())))
                                 m_mpcAPI.AddFileToPlaylist(arg);
                         }
                     }
@@ -500,7 +500,8 @@ namespace AniDBmini
             item.State = 1;
             item.Watched = item.FromMPC = true;
 
-            addRowToHashTable(item);
+            lock (m_hashingLock)
+                addRowToHashTable(item);
         }
 
         private void randomAnimeButton_Click(object sender, RoutedEventArgs e)
@@ -619,7 +620,8 @@ namespace AniDBmini
                     FileInfo fi = new FileInfo(files[i]);
 
                     if (allowedVideoFiles.Contains<string>("*" + fi.Extension.ToLower()))
-                        addRowToHashTable(fi.FullName);
+                        lock (m_hashingLock)
+                            addRowToHashTable(fi.FullName);
                 }
             }
         }
@@ -704,8 +706,9 @@ namespace AniDBmini
             {
                 ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
                 {
-                    for (int i = 0; i < dlg.FileNames.Length; i++)
-                        addRowToHashTable(dlg.FileNames[i]);
+                    lock (m_hashingLock)
+                        for (int i = 0; i < dlg.FileNames.Length; i++)
+                            addRowToHashTable(dlg.FileNames[i]);
                 }));
             }
         }
@@ -720,18 +723,21 @@ namespace AniDBmini
             {
                 ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
                 {
-                    foreach (string _file in Directory.GetFiles(dlg.SelectedPath, "*.*")
-                        .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
-                        addRowToHashTable(_file);
+                    lock (m_hashingLock)
+                    {
+                        foreach (string _file in Directory.GetFiles(dlg.SelectedPath, "*.*")
+                            .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
+                            addRowToHashTable(_file);
 
-                    foreach (string dir in Directory.GetDirectories(dlg.SelectedPath))
-                        try
-                        {
-                            foreach (string _file in Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories)
-                                .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
-                                addRowToHashTable(_file);
-                        }
-                        catch (UnauthorizedAccessException) { }
+                        foreach (string dir in Directory.GetDirectories(dlg.SelectedPath))
+                            try
+                            {
+                                foreach (string _file in Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories)
+                                    .Where(x => allowedVideoFiles.Contains("*" + Path.GetExtension(x).ToLower())))
+                                    addRowToHashTable(_file);
+                            }
+                            catch (UnauthorizedAccessException) { }
+                    }
                 }));
             }
         }

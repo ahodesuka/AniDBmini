@@ -313,11 +313,6 @@
   <ItemGroup>
     <Resource Include="Resources\refresh.png" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="SQLite.Interop.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

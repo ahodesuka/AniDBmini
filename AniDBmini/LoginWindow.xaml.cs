@@ -15,7 +15,7 @@ namespace AniDBmini
 
         #region Fields
 
-        private AniDBAPI aniDB;
+        private AniDBAPI m_aniDB;
 
         #endregion Fields
 
@@ -32,10 +32,10 @@ namespace AniDBmini
 
         private void StartMainWindow()
         {
-            MainWindow main = new MainWindow(aniDB);            
+            MainWindow main = new MainWindow(m_aniDB);            
             main.Show();
 
-            aniDB.MainWindow = main;
+            m_aniDB.MainWindow = main;
 
             this.Close();
         }
@@ -47,10 +47,10 @@ namespace AniDBmini
         private void OnInitialized(object sender, EventArgs e)
         {
             if (ConfigFile.Read("autoLogin").ToBoolean() &&
-                (aniDB = new AniDBAPI(ConfigFile.Read("server").ToString(),
+                (m_aniDB = new AniDBAPI(ConfigFile.Read("server").ToString(),
                                       ConfigFile.Read("port").ToInt32(),
                                       ConfigFile.Read("localPort").ToInt32())).isConnected &&
-                aniDB.Login(ConfigFile.Read("username").ToString(), ConfigFile.Read("password").ToString()))
+                m_aniDB.Login(ConfigFile.Read("username").ToString(), ConfigFile.Read("password").ToString()))
                 StartMainWindow();
             else if (ConfigFile.Read("rememberUser").ToBoolean())
             {
@@ -72,8 +72,8 @@ namespace AniDBmini
             loginButton.IsEnabled = false;
             string[] server = serverComboBox.SelectionBoxItem.ToString().Split(':');
 #if !DEBUG
-            if ((aniDB = new AniDBAPI(server[0], int.Parse(server[1]), ConfigFile.Read("localPort").ToInt32())).isConnected &&
-                aniDB.Login(usernameTextBox.Text, passwordPasswordBox.Password))
+            if ((m_aniDB = new AniDBAPI(server[0], int.Parse(server[1]), ConfigFile.Read("localPort").ToInt32())).isConnected &&
+                m_aniDB.Login(usernameTextBox.Text, passwordPasswordBox.Password))
             {
 #endif
                 if (autoLoginCheckBox.IsChecked == true)

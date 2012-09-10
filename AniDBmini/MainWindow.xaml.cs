@@ -252,9 +252,7 @@ namespace AniDBmini
         private void addRowToHashTable(string path)
         {
             HashItem item = new HashItem(path);
-
-            //lock (m_hashingLock)
-                hashFileList.Add(item);
+            hashFileList.Add(item);
 
             if (isHashing)
                 totalQueueSize += item.Size;
@@ -268,8 +266,7 @@ namespace AniDBmini
         /// <param name="path">Path to file.</param>
         private void addRowToHashTable(HashItem item)
         {
-            //lock (m_hashingLock)
-                hashFileList.Insert(0, item);
+            hashFileList.Insert(0, item);
 
             if (isHashing)
                 totalQueueSize += item.Size;

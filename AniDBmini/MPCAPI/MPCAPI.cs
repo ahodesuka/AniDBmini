@@ -240,8 +240,8 @@ namespace AniDBmini
         private OSD_MESSAGEPOS m_OSDMSGPos;
 
         private string m_currentFileTitle, m_currentFilePath;
-        private int m_currentFileLength, m_currentFilePosition, m_currentFileTick, m_OSDMSGDur, m_mpcProcID;
-        private double m_watchedWhenPerc;
+        private int m_OSDMSGDur, m_mpcProcID;
+        private double m_watchedWhenPerc, m_currentFileLength, m_currentFilePosition, m_currentFileTick;
         private bool m_currentFileWatched, m_ShowInFileTitle;
 
         public bool isHooked { get; private set; }
@@ -291,7 +291,7 @@ namespace AniDBmini
                 if (cds.cbData > 0)
                 {
                     MPCAPI_COMMAND nCmd = (MPCAPI_COMMAND)cds.dwData;
-                    string mpcMSG = new String((char*)cds.lpData, 0, cds.cbData / 2);
+                    string mpcMSG = new String((char*)cds.lpData, 0, cds.cbData / 2 - 1);
 
                     switch (nCmd)
                     {
@@ -301,7 +301,7 @@ namespace AniDBmini
                             break;
                         case MPCAPI_COMMAND.CMD_CURRENTPOSITION:
                         case MPCAPI_COMMAND.CMD_NOTIFYSEEK:
-                            m_currentFilePosition = int.Parse(mpcMSG);
+                            m_currentFilePosition = double.Parse(mpcMSG);
                             if (!m_currentFileWatched && m_watchedWhen == MPC_WATCHED.DURING_TICKS &&
                                 m_currentFileTick > m_currentFileLength * m_watchedWhenPerc)
                             {
@@ -314,7 +314,7 @@ namespace AniDBmini
                             string[] playing = mpcMSG.Split('|');
                             m_currentFileTitle = !string.IsNullOrWhiteSpace(playing[0]) ? playing[0] : System.IO.Path.GetFileName(playing[3]);
                             m_currentFilePath = playing[3];
-                            m_currentFileLength = int.Parse(playing[4]);
+                            m_currentFileLength = double.Parse(playing[4]);
                             m_currentFileWatched = false;
                             m_currentFilePosition = m_currentFileTick = 0;
                             LoadConfig();
